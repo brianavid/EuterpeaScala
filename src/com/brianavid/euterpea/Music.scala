@@ -114,6 +114,7 @@ sealed trait Music
   }
   
   def >(a:Music) = new >(this,a)
+  def --(a:Music) = new Slur(this,a)
   def &(a:Music) = new &(this,a)
   
   def / (mod: Modifier) = mod match 
@@ -212,6 +213,16 @@ case class > (a: Music, b: Music) extends Music
   {
     val duration1 = a.add(context)
     val duration2 = b.add(context.copy(position = context.position + duration1))
+    duration1 + duration2
+  }
+}
+
+case class Slur(a: Music, b: Music) extends Music
+{
+  def add(context: SequenceContext) : Long =
+  {
+    val duration1 = a.add(context.copy(noteWidth=1.0))
+    val duration2 = b.add(context.copy(noteWidth = context.noteWidth-0.2, volumeInc = context.volumeInc-10, position = context.position + duration1))
     duration1 + duration2
   }
 }
