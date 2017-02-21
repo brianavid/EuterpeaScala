@@ -7,7 +7,7 @@ object BirdsInTheSpringBaritone {
   val melody3 = Line( Rest, -A, -A, En/:(D > D), Cs, -B, Cs--D)
   val melody4 = Line( E, En/:(Fs > Fs), D, G, En/:(Fs--D), -B, Cs, D, En/:(E--D), Cs, D/Hn)
   val baritone = Width(0.8) /: Instrument("Vibraphone") /: Line(melody1, melody2, melody3, melody4)
-  val tune = Tempo(160) /: (baritone)
+  val tune = Tempo(80) /: (baritone)
 }
 
 object Test1 {

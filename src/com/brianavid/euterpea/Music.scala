@@ -7,32 +7,51 @@ import java.io.File
 
 //-------------------------
 
-trait Modifier
+//  Midi tunes are constructed from objects of trait Music and of trait Modifier.
+//
+//  Music objects can be combined into an abstract syntax tree of smaller Music objects,
+//  combined in various way - in particular sequentially (e.g. for lines of melody) and 
+//  in parallel (e.g. for chords or multiple tracks). Everything from a complete tune down
+//  to an individual Note or Rest is Music.
+//  
+//  Modifier objects can be applied to any and all Music objects to affect how the Music is 
+//  played. Modifiers can affect many aspects, such as tempo, note duration and width, 
+//  instrument, volume, etc.
+
+sealed trait Modifier
+
+//-------------------------
+
+//  The Duration modifier denotes the beat of a Note or Rest.
+//  At its basic, it is a Whole, Half, Quarter, Eighth ... note
+//  Durations can be added together, dotted, or split into three (for triplets)
 
 class Duration(val beats: Int) extends Modifier
 {
-  def dot = new Duration( beats * 3 / 2)
-  def + (next: Duration) = new Duration( beats + next.beats)
-}
-object Duration  {
-  val BPQN = 480
+  def dot = new Duration( beats * 3 / 2)  //  Note and a half
+  def + (next: Duration) = new Duration( beats + next.beats) //  Simply added together
 }
 
-case object Wn extends Duration(Duration.BPQN*4)
-case object Hn extends Duration(Duration.BPQN*2)
-case object Qn extends Duration(Duration.BPQN)
-case object En extends Duration(Duration.BPQN/2)
-case object Sn extends Duration(Duration.BPQN/4)
-case object Tn extends Duration(Duration.BPQN/8)
+object Duration  {
+  val BPQN = 960    //  The granularity of note length sub-divisions
+}
+
+case object Wn extends Duration(Duration.BPQN*4)  //  Whole note
+case object Hn extends Duration(Duration.BPQN*2)  //  Half note
+case object Qn extends Duration(Duration.BPQN)    //  Quarter note
+case object En extends Duration(Duration.BPQN/2)  //  Eighth note
+case object Sn extends Duration(Duration.BPQN/4)  //  Sixteenth note
+case object Tn extends Duration(Duration.BPQN/8)  //  Thirty-second note
 case class Triplet(base: Duration) extends Duration(base.beats * 2 / 3)
 
 //-------------------------
 
-abstract class Dynamics(val inc: Int) extends Modifier
-case object Fv extends Dynamics(+10)
-case object FFv extends Dynamics(+20)
-case object Pv extends Dynamics(-10)
-case object PPv extends Dynamics(-20)
+abstract class Dynamics(val volume: Int) extends Modifier
+case object MFv  extends Dynamics(64) 
+case object Fv extends Dynamics(MFv.volume+10)
+case object FFv extends Dynamics(MFv.volume+20)
+case object Pv extends Dynamics(MFv.volume-10)
+case object PPv extends Dynamics(MFv.volume-20)
 
 case class Tempo (bpm: Int) extends Modifier
 
@@ -63,19 +82,18 @@ case class SequenceContext (
   val position: Long,
   val noteWidth: Double,
   val duration: Duration,
-  val volumeInc: Int = 0,
+  val volume: Int = 64,
   val currentInstrument: Int = 1)
 {
-  val HiResResolution = 1000
-  def durationHiRes: Long = duration.beats.toLong * 60000 * HiResResolution / Duration.BPQN / tempoBPM
-  def positionMS(durationHiRes: Long) = ((position + durationHiRes + HiResResolution/2) / HiResResolution).toInt
+  def durationTicks: Int = duration.beats * 60 / tempoBPM
+  def positionTicks(durationTicks: Int) = position + durationTicks
 }
 
 //-------------------------
 
 sealed trait Music
 {
-  def add(context: SequenceContext) : Long
+  def add(context: SequenceContext) : Int
   
   private def playSequence(sequence: M.Sequence) {
     val seq = MS.getSequencer
@@ -120,7 +138,7 @@ sealed trait Music
   def / (mod: Modifier) = mod match 
   {
     case (dur: Duration) => new WithBeat (dur, this)
-    case (vol: Dynamics) => new WithVolume(vol.inc, this)
+    case (vol: Dynamics) => new WithVolume(vol.volume, this)
     case Tempo(tempo) => new WithTempo( tempo, this) 
     case Width(width) => new WithWidth( width, this) 
     case Transpose( num: Int) => new WithTranspose( num, this)
@@ -147,20 +165,20 @@ case class Note(
   def unary_+ = copy(octave = octave+1)
   def unary_- = copy(octave = octave-1)
   
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
     val MiddleC = 60
     val track = context.tracks.getOrElseUpdate(context.currentTrackName, context.sequence.createTrack())
     val channel = context.channels.getOrElseUpdate(context.currentTrackName, context.channels.size)
     val pitch = MiddleC + semitones + octave*12 + context.transpose
-    val noteDurationHiRes = context.durationHiRes
+    val noteDurationTicks = context.durationTicks
         
     //Console.println(s"${context.position} ${display}")
     
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, pitch, 64+context.volumeInc),context.positionMS(0)))
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, channel, pitch, 0),context.positionMS(noteDurationHiRes)))
+    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, pitch, context.volume),context.positionTicks(0)))
+    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, channel, pitch, 0),context.positionTicks(noteDurationTicks)))
     
-    noteDurationHiRes
+    noteDurationTicks
   }
 }
 
@@ -200,30 +218,30 @@ object Bs extends Note( 12, "Bs")
 
 case object Rest extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
-    context.durationHiRes
+    context.durationTicks
   }
 }
 
 
 case class > (a: Music, b: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
-    val duration1 = a.add(context)
-    val duration2 = b.add(context.copy(position = context.position + duration1))
-    duration1 + duration2
+    val durationTicks1 = a.add(context)
+    val durationTicks2 = b.add(context.copy(position = context.positionTicks(durationTicks1)))
+    durationTicks1 + durationTicks2
   }
 }
 
 case class Slur(a: Music, b: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
-    val duration1 = a.add(context.copy(noteWidth=1.0))
-    val duration2 = b.add(context.copy(noteWidth = context.noteWidth-0.2, volumeInc = context.volumeInc-10, position = context.position + duration1))
-    duration1 + duration2
+    val durationTicks1 = a.add(context.copy(noteWidth=1.0))
+    val durationTicks2 = b.add(context.copy(noteWidth = context.noteWidth-0.2, volume = context.volume-10, position = context.positionTicks(durationTicks1)))
+    durationTicks1 + durationTicks2
   }
 }
 
@@ -231,11 +249,11 @@ case class Slur(a: Music, b: Music) extends Music
 
 case class & (a: Music, b: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
-    val duration1 = a.add(context)
-    val duration2 = b.add(context)
-    duration1 max duration2
+    val durationTicks1 = a.add(context)
+    val durationTicks2 = b.add(context)
+    durationTicks1 max durationTicks2
   }
 }
 
@@ -243,7 +261,7 @@ case class & (a: Music, b: Music) extends Music
 
 case class WithBeat(duration: Duration, music: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
     music.add(context.copy(duration=duration))
   }
@@ -253,7 +271,7 @@ case class WithBeat(duration: Duration, music: Music) extends Music
 
 case class WithTempo( bpm: Int, music: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
     music.add(context.copy(tempoBPM=bpm))
   }
@@ -263,7 +281,7 @@ case class WithTempo( bpm: Int, music: Music) extends Music
 
 case class WithWidth( noteWidth: Double, music: Music) extends Music 
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
     music.add(context.copy(noteWidth=noteWidth))
   }
@@ -271,17 +289,17 @@ case class WithWidth( noteWidth: Double, music: Music) extends Music
 
 case class WithTranspose(num: Int, music: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
     music.add(context.copy(transpose = context.transpose + num))
   }
 }
 
-case class WithVolume(inc: Int, music: Music) extends Music
+case class WithVolume(volume: Int, music: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
-    music.add(context.copy(volumeInc=context.volumeInc+inc))
+    music.add(context.copy(volume=volume))
   }
 }
 
@@ -289,7 +307,7 @@ case class WithVolume(inc: Int, music: Music) extends Music
 
 case class WithTimeSig( beatsPerBar: Int, duration: Duration, music: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
     music.add(context.copy())
   }
@@ -299,7 +317,7 @@ case class WithTimeSig( beatsPerBar: Int, duration: Duration, music: Music) exte
 
 case class WithTrack( trackName: String, music: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
     music.add(context.copy(currentTrackName = trackName))
   }
@@ -309,15 +327,15 @@ case class WithTrack( trackName: String, music: Music) extends Music
 
 case class WithInstrument( instrument: Int, music: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
     val track = context.tracks.getOrElseUpdate(context.currentTrackName, context.sequence.createTrack())
     val channel = context.channels.getOrElseUpdate(context.currentTrackName, context.channels.size)
     val prevInstrument = context.currentInstrument 
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, instrument-1, 0), context.positionMS(0)))
-    val duration = music.add(context.copy(currentInstrument = instrument))
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, prevInstrument-1, 0), context.positionMS(duration)))
-    duration
+    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, instrument-1, 0), context.positionTicks(0)))
+    val durationTicks = music.add(context.copy(currentInstrument = instrument))
+    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, prevInstrument-1, 0), context.positionTicks(durationTicks)))
+    durationTicks
   }
 }
 
@@ -325,7 +343,7 @@ case class WithInstrument( instrument: Int, music: Music) extends Music
 
 case class WithPulse( stressesPerBar: Int, stressValue: Int, music: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
     music.add(context.copy())
   }
@@ -335,7 +353,7 @@ case class WithPulse( stressesPerBar: Int, stressValue: Int, music: Music) exten
 
 case class WithSwing( duration: Duration, swing: Double, music: Music) extends Music
 {
-  def add(context: SequenceContext) : Long =
+  def add(context: SequenceContext) : Int =
   {
     music.add(context.copy())
   }
