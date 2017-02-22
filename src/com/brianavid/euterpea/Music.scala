@@ -39,6 +39,9 @@ object Timing
   val resolution = 1000    //  The granularity of computation within a beat
   
   //  Construct the timing object for the number of beats and a tempo
+  def apply(duration: Duration) = new Timing( duration.beats * resolution )
+  
+  //  Construct the timing object for the number of beats and a tempo
   def apply(beats: Int, tempoBPM: Int) = new Timing( beats * 60 * resolution / tempoBPM)
 }
 
@@ -52,24 +55,24 @@ sealed trait Modifier
 //  At its basic, it is a Whole, Half, Quarter, Eighth ... note
 //  Durations can be added together, dotted, or split into three (for triplets)
 
-class Duration(val beats: Int) extends Modifier
+class Duration(val beats: Int, val timeSigDenom: Byte) extends Modifier
 {
-  def dot = new Duration( beats * 3 / 2)  //  Note and a half
-  def + (next: Duration) = new Duration( beats + next.beats) //  Simply added together
+  def dot = new Duration( beats * 3 / 2, timeSigDenom)  //  Note and a half
+  def + (next: Duration) = new Duration( beats + next.beats, timeSigDenom) //  Simply added together
 }
 
 object Duration
 {
-  val BPQN = 960    //  The granularity of note length sub-divisions
+  val BPQN = 480    //  The granularity of note length sub-divisions
 }
 
-case object Wn extends Duration(Duration.BPQN*4)  //  Whole note
-case object Hn extends Duration(Duration.BPQN*2)  //  Half note
-case object Qn extends Duration(Duration.BPQN)    //  Quarter note
-case object En extends Duration(Duration.BPQN/2)  //  Eighth note
-case object Sn extends Duration(Duration.BPQN/4)  //  Sixteenth note
-case object Tn extends Duration(Duration.BPQN/8)  //  Thirty-second note
-case class Triplet(base: Duration) extends Duration(base.beats * 2 / 3)
+case object Wn extends Duration(Duration.BPQN*4, 0)  //  Whole note
+case object Hn extends Duration(Duration.BPQN*2, 1)  //  Half note
+case object Qn extends Duration(Duration.BPQN, 2)    //  Quarter note
+case object En extends Duration(Duration.BPQN/2, 3)  //  Eighth note
+case object Sn extends Duration(Duration.BPQN/4, 4)  //  Sixteenth note
+case object Tn extends Duration(Duration.BPQN/8, 5)  //  Thirty-second note
+case class Triplet(base: Duration) extends Duration(base.beats * 2 / 3, base.timeSigDenom)
 
 
 //-------------------------
@@ -86,6 +89,10 @@ case object PPv extends Volume(MFv.volume-20) //  Even quieter
 //  The Tempo Modifier controls and varies the tempo of the music
 
 case class Tempo (bpm: Int) extends Modifier
+
+//  The TimeSig Modifier controls and varies the time signature of the music
+
+case class TimeSig (number: Byte, duration: Duration) extends Modifier
 
 //  The Width Modifier controls the proportion of the time that a note actually 
 //  sounds within its duration 
@@ -130,18 +137,48 @@ object Instrument
 case class SequenceContext (
   val sequence: M.Sequence,                 //  The sequence being constructed
   val position: Timing,                     //  The current position (hi res) where music will be added to the sequence
+  val timingTrack: M.Track,
   val currentTrackName: String,             //  The current track name 
   val tracks: mutable.Map[String,M.Track],  //  The mapping of track named onto sequence tracks
   val channels: mutable.Map[String,Int],    //  The mapping of track named onto (all different) Midi channels
   val transpose: Int = 0,                   //  Any specified prevailing chromatic transposition
   val tempoBPM: Int,                        //  The current tempo, in beats per minute
   val duration: Duration,                   //  The current duration of all notes in the music
+  val timeSig: TimeSig,                     //  The current time signature of all bars in the music
   val noteWidth: Double,                    //  The proportion of the width each note sounds within its duration
   val volume: Int = MFv.volume,             //  The volume of notes played
   val currentInstrument: Int = 1)           //  The General Midi instrument on which notes are played
 {
   //  The Timing of the current duration at the current tempo
-  def durationTiming = Timing( duration.beats, tempoBPM)
+  def durationTiming = Timing( duration)
+  
+  //  Write the specified Tempo to the timing track 
+  def writeTempo(bpm: Int, position: Timing) = {
+    val bytearray = BigInt(60000000/bpm).toByteArray
+    val pad = Array.fill[Byte](3-bytearray.length)(0)
+    
+    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x51, pad++bytearray, 3),position.ticks))    
+  }
+  
+  //  Write the specified Time Signature to the timing track
+  def writeTimeSig(number: Byte, dur: Duration, position: Timing) = {
+    val bytearray = Array[Byte](number, dur.timeSigDenom, 24, 8)
+    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x58, bytearray, bytearray.length),position.ticks))    
+  }
+  
+  //  Get or create the named track, and when creating add its name to the track
+  def getTrack = 
+  {
+    if (!tracks.contains(currentTrackName)) 
+    {
+      val bytearray = currentTrackName.getBytes
+
+      tracks(currentTrackName)  = sequence.createTrack()
+      tracks(currentTrackName).add(new M.MidiEvent(new M.MetaMessage(0x03, bytearray, bytearray.length),position.ticks))    
+    }
+    tracks(currentTrackName) 
+
+  }
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -174,11 +211,13 @@ sealed trait Music
     val context = new SequenceContext(
         sequence=sequence,                          // The sequence being constructed
         position=Timing(0),                         // Start at the beginning
+        timingTrack=sequence.createTrack(),
         currentTrackName="", 
         tracks=new mutable.HashMap[String,M.Track], // An empty track mapping table
         channels=new mutable.HashMap[String,Int],   // An empty Midi channel mapping table
         tempoBPM=120,                               // Default tempo
         noteWidth=DefaultWidth.noteWidth,           // Not quite legato
+        timeSig=TimeSig(4,Qn),                      // 4/4
         duration=Qn)                                // Default notes are quarter notes
     
     //  Add the music by recursively adding the root
@@ -217,6 +256,7 @@ sealed trait Music
     case (dur: Duration) => new WithBeat (dur, this)
     case (vol: Volume) => new WithVolume(vol.volume, this)
     case Tempo(tempo) => new WithTempo( tempo, this) 
+    case TimeSig(number: Byte, dur: Duration) => new WithTimeSig( number, dur, this) 
     case Width(width) => new WithWidth( width, this) 
     case Transpose( num: Int) => new WithTranspose( num, this)
     case Octave( num: Int) => new WithTranspose( num*12, this)
@@ -257,7 +297,7 @@ case class Note(
     val MiddleC = 60
     
     //  Get the track identified by the track name, creating it if it does not exist
-    val track = context.tracks.getOrElseUpdate(context.currentTrackName, context.sequence.createTrack())
+    val track = context.getTrack
     
     //  Get the Midi channel identified by the track name, creating it if it does not exist
     val channel = context.channels.getOrElseUpdate(context.currentTrackName, context.channels.size)
@@ -389,7 +429,27 @@ case class WithTempo( bpm: Int, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    music.add(context.copy(tempoBPM=bpm))
+    val saveBPM=context.tempoBPM
+    context.writeTempo(bpm, context.position)
+    val durationTiming = music.add(context)
+    context.writeTempo(saveBPM, context.position+durationTiming)
+    durationTiming
+  }
+}
+
+//-------------------------
+
+//  Add the music, with a changed current time signature
+
+case class WithTimeSig( number: Byte, dur: Duration, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    val saveTimeSig=context.timeSig
+    context.writeTimeSig(number, dur, context.position)
+    val durationTiming = music.add(context.copy( timeSig=TimeSig(number, dur)))
+    context.writeTimeSig(saveTimeSig.number, saveTimeSig.duration, context.position+durationTiming)
+    durationTiming
   }
 }
 
@@ -431,18 +491,6 @@ case class WithVolume(volume: Int, music: Music) extends Music
 
 //-------------------------
 
-//  Add the music, with a changed current time signature
-
-case class WithTimeSig( beatsPerBar: Int, duration: Duration, music: Music) extends Music
-{
-  def add(context: SequenceContext) =
-  {
-    music.add(context.copy())
-  }
-}
-
-//-------------------------
-
 //  Add the music, with a changed current track name, which may or may not already exist in the tune
 
 case class WithTrack( trackName: String, music: Music) extends Music
@@ -461,7 +509,7 @@ case class WithInstrument( instrument: Int, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    val track = context.tracks.getOrElseUpdate(context.currentTrackName, context.sequence.createTrack())
+    val track = context.getTrack
     val channel = context.channels.getOrElseUpdate(context.currentTrackName, context.channels.size)
     val prevInstrument = context.currentInstrument 
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, instrument-1, 0), context.position.ticks))
