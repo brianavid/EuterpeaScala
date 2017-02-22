@@ -1,5 +1,6 @@
 package com.brianavid.euterpea
 
+//  Instruments in the General Midi set, defined as integer numbers and also as a string name to 
 object Instruments {
   val Acoustic_Grand_Piano = 1
   val Bright_Acoustic_Piano = 2
