@@ -40,9 +40,6 @@ object Timing
   
   //  Construct the timing object for the number of beats and a tempo
   def apply(duration: Duration) = new Timing( duration.beats * resolution )
-  
-  //  Construct the timing object for the number of beats and a tempo
-  def apply(beats: Int, tempoBPM: Int) = new Timing( beats * 60 * resolution / tempoBPM)
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -431,7 +428,7 @@ case class WithTempo( bpm: Int, music: Music) extends Music
   {
     val saveBPM=context.tempoBPM
     context.writeTempo(bpm, context.position)
-    val durationTiming = music.add(context)
+    val durationTiming = music.add(context.copy(tempoBPM=context.tempoBPM))
     context.writeTempo(saveBPM, context.position+durationTiming)
     durationTiming
   }
