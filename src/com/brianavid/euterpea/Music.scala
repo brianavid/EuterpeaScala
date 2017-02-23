@@ -287,6 +287,9 @@ case class Note(
   def unary_+ = copy(octave = octave+1)  //  The Note plays one octave higher 
   def unary_- = copy(octave = octave-1)  //  The Note plays one octave lower
   
+  def  / (lyric: String) = new WithLyric(lyric, this)
+  def  /: (lyric: String) = new WithLyric(lyric, this)
+  
   //  Add the Note to the sequence at the current position with the Instrument, Duration and Volume
   //  specified in the current SequenceContext
   def add(context: SequenceContext) =
@@ -536,6 +539,22 @@ case class WithSwing( duration: Duration, swing: Double, music: Music) extends M
 {
   def add(context: SequenceContext) =
   {
+    music.add(context.copy())
+  }
+}
+
+//-------------------------
+
+//  Add the music, which will ne a single Note, with the lyric associated with the time of the note 
+
+case class WithLyric( lyric: String, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    val bytearray = lyric.getBytes
+
+    val track = context.getTrack
+    track.add(new M.MidiEvent(new M.MetaMessage(0x05, bytearray, bytearray.length),context.position.ticks))    
     music.add(context.copy())
   }
 }
