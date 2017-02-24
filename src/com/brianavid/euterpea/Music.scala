@@ -22,24 +22,48 @@ import java.io.File
 
 //  The Timing classs is a high resolution representation of the duration and position of music
 //  Use of a higher resolution reduces drift in timing due to rounding errors and tempo changes
-case class Timing(val hiResTime: Long)
+case class Timing(val hiResTime: Long, val timeSigChangeTime: Option[Long])
 {
   //  Timings can be added
-  def +(t: Timing) = new Timing(hiResTime + t.hiResTime)
+  def +(t: Timing) = 
+    { 
+      // The timeSigChangeTime may come from this Timing object or the later one
+      val newTimeSigChangeTime = t.timeSigChangeTime match {
+        case None => timeSigChangeTime
+        case Some(t) => Some(hiResTime+t)
+      }
+      new Timing(hiResTime + t.hiResTime, newTimeSigChangeTime)
+    }
   
   //  The later of two timings
   def max(t: Timing) = if (t.hiResTime > hiResTime) t else this
   
   //  Reduce the Timing to the lower resolution ticks
   def ticks = ((hiResTime + Timing.resolution/2) / Timing.resolution).toInt
+  
+  //  A Timer which has the current time as the timeSigChangeTime change, indicating when the time signature last changed
+  def settingTimeSigChange = new Timing(hiResTime, Some(hiResTime))
+  
+  //  How long  since the time signature last changed 
+  def timeSinceLastTimeSigChange = hiResTime - timeSigChangeTime.getOrElse(0L)
+  
+  //  How many beats (of the specified duration) since the time signature last changed
+  def beatsSinceLastTimeSigChange(duration: Duration) = timeSinceLastTimeSigChange / (duration.beatTicks * Timing.resolution)
+  
+  //  Is the time precisely at a beat of the specified duration? 
+  def isAtBeat(duration: Duration) = (timeSinceLastTimeSigChange % (duration.beatTicks*Timing.resolution)) == 0
+  
+  //  Is the time precisely at the start of a a bar of the specified number of notes of the duration? 
+  def isAtBar(number: Int, duration: Duration) = (timeSinceLastTimeSigChange % (number * duration.beatTicks * Timing.resolution)) == 0
 }
 
 object Timing
 {
-  val resolution = 1000    //  The granularity of computation within a beat
+  val resolution = 1    //  It is actually likely tyhat high resolution is not needed if 
+                        //  tempo changes are handled by tempo metamessages in the sequence
   
-  //  Construct the timing object for the number of beats and a tempo
-  def apply(duration: Duration) = new Timing( duration.beats * resolution )
+  //  Construct the timing object for the number of beats
+  def apply(duration: Duration) = new Timing( duration.beatTicks * resolution, None)
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -52,10 +76,10 @@ sealed trait Modifier
 //  At its basic, it is a Whole, Half, Quarter, Eighth ... note
 //  Durations can be added together, dotted, or split into three (for triplets)
 
-class Duration(val beats: Int, val timeSigDenom: Byte) extends Modifier
+class Duration(val beatTicks: Int, val timeSigDenom: Byte) extends Modifier
 {
-  def dot = new Duration( beats * 3 / 2, timeSigDenom)  //  Note and a half
-  def + (next: Duration) = new Duration( beats + next.beats, timeSigDenom) //  Simply added together
+  def dot = new Duration( beatTicks * 3 / 2, timeSigDenom)  //  Note and a half
+  def + (next: Duration) = new Duration( beatTicks + next.beatTicks, timeSigDenom) //  Simply added together
 }
 
 object Duration
@@ -69,7 +93,7 @@ case object Qn extends Duration(Duration.BPQN, 2)    //  Quarter note
 case object En extends Duration(Duration.BPQN/2, 3)  //  Eighth note
 case object Sn extends Duration(Duration.BPQN/4, 4)  //  Sixteenth note
 case object Tn extends Duration(Duration.BPQN/8, 5)  //  Thirty-second note
-case class Triplet(base: Duration) extends Duration(base.beats * 2 / 3, base.timeSigDenom)
+case class Triplet(base: Duration) extends Duration(base.beatTicks * 2 / 3, base.timeSigDenom)
 
 
 //-------------------------
@@ -207,7 +231,7 @@ sealed trait Music
     //  The default root context
     val context = new SequenceContext(
         sequence=sequence,                          // The sequence being constructed
-        position=Timing(0),                         // Start at the beginning
+        position=new Timing(0, Some(0)),            // Start at the beginning
         timingTrack=sequence.createTrack(),
         currentTrackName="", 
         tracks=new mutable.HashMap[String,M.Track], // An empty track mapping table
@@ -237,7 +261,7 @@ sealed trait Music
   
   //  Construct music by adding this part and another part sequentially one after the other, 
   //  e.g. as a line of melody
-  def >(a:Music) = new >(this,a)
+  def -(a:Music) = new -(this,a)
   
   //  A variant of sequential construction that adjusts Modifiers to make a Slur sound better
   def --(a:Music) = new Slur(this,a)
@@ -267,10 +291,10 @@ sealed trait Music
 }
 
 //  Helper object for a melody line of music which can be written with commas in 
-//  place of the ">" operator
+//  place of the "-" operator
 object Line
 {
-  def apply(music: Music*) = music.reduce(_>_)
+  def apply(music: Music*) = music.reduce(_-_)
 }
 
 //-------------------------
@@ -369,7 +393,7 @@ case object Rest extends Music
 
 //  Combining two pieces of music sequentially by adding the first at the current position and then the second
 //  at the position after the duration of the first
-case class > (a: Music, b: Music) extends Music
+case class - (a: Music, b: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -445,11 +469,14 @@ case class WithTimeSig( number: Byte, dur: Duration, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
+    //  The use of settingTimeSigChange causes the current position to be identified as the time at 
+    //  which the time signature changed to allow determination of bar boundaries,
+    //  which is necessary for bar line validation, pulse or swing 
     val saveTimeSig=context.timeSig
     context.writeTimeSig(number, dur, context.position)
-    val durationTiming = music.add(context.copy( timeSig=TimeSig(number, dur)))
+    val durationTiming = music.add(context.copy( timeSig=TimeSig(number, dur), position=context.position.settingTimeSigChange))
     context.writeTimeSig(saveTimeSig.number, saveTimeSig.duration, context.position+durationTiming)
-    durationTiming
+    durationTiming.settingTimeSigChange
   }
 }
 
