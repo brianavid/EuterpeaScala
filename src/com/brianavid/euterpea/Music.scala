@@ -87,12 +87,12 @@ object Duration
   val BPQN = 480    //  The granularity of note length sub-divisions
 }
 
-case object Wn extends Duration(Duration.BPQN*4, 0)  //  Whole note
-case object Hn extends Duration(Duration.BPQN*2, 1)  //  Half note
-case object Qn extends Duration(Duration.BPQN, 2)    //  Quarter note
-case object En extends Duration(Duration.BPQN/2, 3)  //  Eighth note
-case object Sn extends Duration(Duration.BPQN/4, 4)  //  Sixteenth note
-case object Tn extends Duration(Duration.BPQN/8, 5)  //  Thirty-second note
+case object Wd extends Duration(Duration.BPQN*4, 0)  //  Whole note
+case object Hd extends Duration(Duration.BPQN*2, 1)  //  Half note
+case object Qd extends Duration(Duration.BPQN, 2)    //  Quarter note
+case object Ed extends Duration(Duration.BPQN/2, 3)  //  Eighth note
+case object Sd extends Duration(Duration.BPQN/4, 4)  //  Sixteenth note
+case object Td extends Duration(Duration.BPQN/8, 5)  //  Thirty-second note
 case class Triplet(base: Duration) extends Duration(base.beatTicks * 2 / 3, base.timeSigDenom)
 
 
@@ -127,6 +127,37 @@ object Legato extends Width(1.0)              //  Notes flowing together
 //  The Transpose Modifier transposes chromatically all notes in its music up and down a number of semitones
 
 case class Transpose( num: Int) extends Modifier
+
+//  The KeySig Modifier specified the number of sharps (if +ve) or flats (if -ve) in the key signature
+
+case class KeySig( keySigSharps: Byte, isMinor: Boolean = false ) extends Modifier
+object CMaj extends KeySig(0)
+object GMaj extends KeySig(1)
+object DMaj extends KeySig(2)
+object AMaj extends KeySig(3)
+object EMaj extends KeySig(4)
+object BMaj extends KeySig(5)
+object FsMaj extends KeySig(6)
+object CsMaj extends KeySig(7)
+object BfMaj extends KeySig(-1)
+object EfMaj extends KeySig(-2)
+object AfMaj extends KeySig(-3)
+object DfMaj extends KeySig(-4)
+object GfMaj extends KeySig(-5)
+object CfMaj extends KeySig(-6)
+object FfMaj extends KeySig(-7)
+object AMin extends KeySig(0, true)
+object EMin extends KeySig(1, true)
+object BMin extends KeySig(2, true)
+object FsMin extends KeySig(3, true)
+object CsMin extends KeySig(4, true)
+object DMin extends KeySig(-1, true)
+object GMin extends KeySig(-2, true)
+object CMin extends KeySig(-3, true)
+object BfMin extends KeySig(-4, true)
+object EfMin extends KeySig(-5, true)
+object AfMin extends KeySig(-6, true)
+object DfMin extends KeySig(-7, true)
 
 //  The Ocatve Modifier transposes all notes in its music up and down a number of octaves
 
@@ -168,6 +199,8 @@ case class SequenceContext (
   val timeSig: TimeSig,                     //  The current time signature of all bars in the music
   val noteWidth: Double,                    //  The proportion of the width each note sounds within its duration
   val volume: Int = MFv.volume,             //  The volume of notes played
+  val keySigSharps: Byte = 0,               //  The key signature
+  val keySigIsMinor: Boolean = false,       //  The key signature
   val currentInstrument: Int = 1)           //  The General Midi instrument on which notes are played
 {
   //  The Timing of the current duration at the current tempo
@@ -185,6 +218,13 @@ case class SequenceContext (
   def writeTimeSig(number: Byte, dur: Duration, position: Timing) = {
     val bytearray = Array[Byte](number, dur.timeSigDenom, 24, 8)
     timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x58, bytearray, bytearray.length),position.ticks))    
+  }
+  
+  //  Write the specified Key signature to the timing track 
+  def writeKeySig(keySigSharps: Byte, keySigIsMinor: Boolean, position: Timing) = {
+    val bytearray = Array[Byte](keySigSharps, if (keySigIsMinor) 1 else 0)
+    
+    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x59, bytearray, bytearray.length),position.ticks))    
   }
   
   //  Get or create the named track, and when creating add its name to the track
@@ -238,8 +278,8 @@ sealed trait Music
         channels=new mutable.HashMap[String,Int],   // An empty Midi channel mapping table
         tempoBPM=120,                               // Default tempo
         noteWidth=DefaultWidth.noteWidth,           // Not quite legato
-        timeSig=TimeSig(4,Qn),                      // 4/4
-        duration=Qn)                                // Default notes are quarter notes
+        timeSig=TimeSig(4,Qd),                      // 4/4
+        duration=Qd)                                // Default notes are quarter notes
     
     //  Add the music by recursively adding the root
     add( context )
@@ -281,6 +321,7 @@ sealed trait Music
     case Width(width) => new WithWidth( width, this) 
     case Transpose( num: Int) => new WithTranspose( num, this)
     case Octave( num: Int) => new WithTranspose( num*12, this)
+    case KeySig( keySigSharps: Byte, isMinor: Boolean) => new WithKeySig( keySigSharps, isMinor, this)
     case Track( trackName: String) => new WithTrack( trackName, this)
     case Instrument( instrument: Int) => new WithInstrument( instrument, this)
     case _ => this
@@ -305,6 +346,7 @@ object Line
 case class Note( 
     semitones: Int,                 //  Semitones from Middle C
     display: String,                //  A string to display the note (for tracing only)
+    numSharpsToSharpen: Int = 0,    //  The number of sharps in the key signature needed to sharpen this note
     octave: Int = 0)                //  The octave in which the note plays (default starts on Middle C)
   extends Music
 {
@@ -313,6 +355,9 @@ case class Note(
   
   def  / (lyric: String) = new WithLyric(lyric, this)
   def  /: (lyric: String) = new WithLyric(lyric, this)
+  
+  //  The number of flats in the key signature needed to flatten this note
+  def numFlatsToFlatten = if (numSharpsToSharpen == 0) 0 else 8-numSharpsToSharpen
   
   //  Add the Note to the sequence at the current position with the Instrument, Duration and Volume
   //  specified in the current SequenceContext
@@ -326,14 +371,25 @@ case class Note(
     //  Get the Midi channel identified by the track name, creating it if it does not exist
     val channel = context.channels.getOrElseUpdate(context.currentTrackName, context.channels.size)
     
+    //  Get the pitch of the note in the current key signature
+    val pitchInKey = 
+    {
+      if (numSharpsToSharpen == 0) 
+        semitones    //  Not transposable (i.e. natural or already sharp or flat) 
+      else if (context.keySigSharps > 0 && context.keySigSharps >= numSharpsToSharpen)
+        semitones+1  //  Note which is sharpened by the current key signature
+      else if (context.keySigSharps < 0 && -context.keySigSharps >= numFlatsToFlatten)
+        semitones-1  //  Note which is flattened by the current key signature
+      else 
+        semitones    //  Note which the current key signature does not affect
+    }
+    
     //  The pitch at which the note plays, taking into account the octave and any transposition
-    val pitch = MiddleC + semitones + octave*12 + context.transpose
+    val pitch = MiddleC + pitchInKey + octave*12 + context.transpose
     
     //  How long does the note last (although only sounding for part of it)
     val noteTiming = context.durationTiming
         
-    //Console.println(s"${context.position} ${display}")
-    
     //  Where does the note start and end playing, taking into account the note width
     val startTicks = context.position.ticks
     val endTicks = startTicks + (noteTiming.ticks * context.noteWidth).toInt
@@ -347,36 +403,45 @@ case class Note(
 }
 
 //  Every note in all scales are individually named
+//  These include simple notes which are automatically transposable to the key signature
+//  Plus explicit sharps, flats and natural variants, which are NOT transposed 
 object Cf extends Note( -1, "Cf")
-object C extends Note( 0, "C")
+object C extends Note( 0, "C", 2)
+object Cn extends Note( 0, "Cn")
 object Cs extends Note( 1, "Cs")
 object Css extends Note( 2, "Css")
 object Dff extends Note( 0, "Dff")
 object Df extends Note( 1, "Df")
-object D extends Note( 2, "D")
+object D extends Note( 2, "D", 4)
+object Dn extends Note( 2, "Dn")
 object Ds extends Note( 3, "Ds")
 object Dss extends Note( 4, "Dss")
 object Eff extends Note( 2, "Eff")
 object Ef extends Note( 3, "Ef")
-object E extends Note( 4, "E")
+object E extends Note( 4, "E", 6)
+object En extends Note( 4, "En")
 object Es extends Note( 5, "Es")
 object Ff extends Note( 4, "Ff")
-object F extends Note( 5, "F")
+object F extends Note( 5, "F", 1)
+object Fn extends Note( 5, "Fn")
 object Fs extends Note( 6, "Fs")
 object Fss extends Note( 7, "Fss")
 object Gff extends Note( 5, "Gff")
 object Gf extends Note( 6, "Gf")
-object G extends Note( 7, "G")
+object G extends Note( 7, "G", 3)
+object Gn extends Note( 7, "Gn")
 object Gs extends Note( 8, "Gs")
 object Gss extends Note( 9, "Gss")
 object Aff extends Note( 7, "Aff")
 object Af extends Note( 8, "Af")
-object A extends Note( 9, "A")
+object A extends Note( 9, "A", 5)
+object An extends Note( 9, "An")
 object As extends Note( 10, "As")
 object Ass extends Note( 11, "Ass")
 object Bff extends Note( 9, "Bff")
 object Bf extends Note( 10, "Bf")
-object B extends Note( 11, "B")
+object B extends Note( 11, "B", 7)
+object Bn extends Note( 11, "Bn")
 object Bs extends Note( 12, "Bs")
 
 //-------------------------
@@ -501,6 +566,23 @@ case class WithTranspose(num: Int, music: Music) extends Music
   def add(context: SequenceContext) =
   {
     music.add(context.copy(transpose = context.transpose + num))
+  }
+}
+
+//-------------------------
+
+//  Add the music, with a changed key signature
+
+case class WithKeySig(keySigSharps: Byte, isMinor: Boolean, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    val saveKeySig=context.keySigSharps
+    val saveKeySigIsMinor=context.keySigIsMinor
+    context.writeKeySig(keySigSharps, isMinor, context.position)
+    val durationTiming = music.add(context.copy(keySigSharps = keySigSharps, keySigIsMinor = isMinor))
+    context.writeKeySig(saveKeySig, saveKeySigIsMinor, context.position+durationTiming)
+    durationTiming
   }
 }
 
