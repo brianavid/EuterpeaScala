@@ -35,6 +35,9 @@ case class Timing(val hiResTime: Long, val timeSigChangeTime: Option[Long])
       new Timing(hiResTime + t.hiResTime, newTimeSigChangeTime)
     }
   
+  //  Subtracting has no effect on timeSigChangeTime - used for tied notes
+  def -(t: Timing) = new Timing(hiResTime - t.hiResTime, timeSigChangeTime)
+  
   //  The later of two timings
   def max(t: Timing) = if (t.hiResTime > hiResTime) t else this
   
@@ -47,14 +50,17 @@ case class Timing(val hiResTime: Long, val timeSigChangeTime: Option[Long])
   //  How long  since the time signature last changed 
   def timeSinceLastTimeSigChange = hiResTime - timeSigChangeTime.getOrElse(0L)
   
-  //  How many beats (of the specified duration) since the time signature last changed
-  def beatsSinceLastTimeSigChange(duration: Duration) = timeSinceLastTimeSigChange / (duration.beatTicks * Timing.resolution)
+  //  How many beats (of the specified time signature duration) since the time signature last changed
+  def beatsSinceLastTimeSigChange(timeSig: TimeSig) = 
+    timeSinceLastTimeSigChange / (timeSig.duration.beatTicks * Timing.resolution)
   
-  //  Is the time precisely at a beat of the specified duration? 
-  def isAtBeat(duration: Duration) = (timeSinceLastTimeSigChange % (duration.beatTicks*Timing.resolution)) == 0
+  //  Is the time precisely at a beat of the specified time signature? 
+  def isAtBeat(timeSig: TimeSig) = 
+    (timeSinceLastTimeSigChange % (timeSig.duration.beatTicks*Timing.resolution)) == 0
   
-  //  Is the time precisely at the start of a a bar of the specified number of notes of the duration? 
-  def isAtBar(number: Int, duration: Duration) = (timeSinceLastTimeSigChange % (number * duration.beatTicks * Timing.resolution)) == 0
+  //  Is the time precisely at the start of a a bar of the specified time signature? 
+  def isAtBar(timeSig: TimeSig) = 
+    (timeSinceLastTimeSigChange % (timeSig.number * timeSig.duration.beatTicks * Timing.resolution)) == 0
 }
 
 object Timing
@@ -87,6 +93,7 @@ object Duration
   val BPQN = 480    //  The granularity of note length sub-divisions
 }
 
+case object NoDuration extends Duration(0, 0)        //  No time
 case object Wd extends Duration(Duration.BPQN*4, 0)  //  Whole note
 case object Hd extends Duration(Duration.BPQN*2, 1)  //  Half note
 case object Qd extends Duration(Duration.BPQN, 2)    //  Quarter note
@@ -196,6 +203,7 @@ case class SequenceContext (
   val transpose: Int = 0,                   //  Any specified prevailing chromatic transposition
   val tempoBPM: Int,                        //  The current tempo, in beats per minute
   val duration: Duration,                   //  The current duration of all notes in the music
+  val tiedAddition: Duration = NoDuration,  //  The duration by which the last note of the music should be lengthened 
   val timeSig: TimeSig,                     //  The current time signature of all bars in the music
   val noteWidth: Double,                    //  The proportion of the width each note sounds within its duration
   val volume: Int = MFv.volume,             //  The volume of notes played
@@ -309,6 +317,14 @@ sealed trait Music
   //  e.g. as a chord, or multiple instrument tracks
   def &(a:Music) = new &(this,a)
   
+  //  Construct music by adding this part and another part sequentially one after the other, 
+  //  requiring this position to be at a bar of the current time signature 
+  def |(a:Music) = new BarJoin(this,a)
+  
+  //  Construct music by adding this part and another part sequentially one after the other, 
+  //  requiring this position to be at a bar of the current time signature 
+  def -|-(duration: Duration) = new BarExtend(this,duration)
+  
   //  Apply a Modifier to the Music with the syntax as Music/Modifier
   //  This constructs subclass instances to represent the modification
   def / (mod: Modifier) = mod match 
@@ -391,7 +407,7 @@ case class Note(
         
     //  Where does the note start and end playing, taking into account the note width
     val startTicks = context.position.ticks
-    val endTicks = startTicks + (noteTiming.ticks * context.noteWidth).toInt
+    val endTicks = startTicks + (noteTiming.ticks * context.noteWidth).toInt + context.tiedAddition.beatTicks
     
     //  Add Midi events to start and end the note at the right pitch, volume and timing
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, pitch, context.volume),startTicks))
@@ -461,7 +477,7 @@ case class - (a: Music, b: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    val durationTiming1 = a.add(context)
+    val durationTiming1 = a.add(context.copy(tiedAddition=NoDuration))
     val durationTiming2 = b.add(context.copy(position = context.position+durationTiming1))
     
     durationTiming1 + durationTiming2
@@ -473,9 +489,12 @@ case class - (a: Music, b: Music) extends Music
 //  Combining two pieces of music sequentially, at the same time adjusting note width and volume to sound like a slur
 case class Slur(a: Music, b: Music) extends Music
 {
+  def  / (lyric: String) = new WithLyric(lyric, this)
+  def  /: (lyric: String) = new WithLyric(lyric, this)
+  
   def add(context: SequenceContext) =
   {
-    val durationTiming1 = a.add(context.copy(noteWidth=1.0))
+    val durationTiming1 = a.add(context.copy(noteWidth=1.0, tiedAddition=NoDuration))
     val durationTiming2 = b.add(context.copy(noteWidth = context.noteWidth-0.2, volume = context.volume-10, position = context.position+durationTiming1))
     
     durationTiming1 + durationTiming2
@@ -484,8 +503,49 @@ case class Slur(a: Music, b: Music) extends Music
 
 //-------------------------
 
-//  Combining two pieces of music in parallel, by adding them both at the same position
+//  Combining two pieces of music sequentially, each of which must be whole bars
+case class BarJoin(a: Music, b: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    val durationTiming1 = a.add(context.copy(tiedAddition=NoDuration))
+    val barPosition = context.position+durationTiming1
+    
+    if (!(barPosition).isAtBar(context.timeSig))
+    {
+      Console.println(s"Bar line at postition ${barPosition.ticks} is not on a bar boundary")
+    }
 
+    val durationTiming2 = b.add(context.copy(position = barPosition))
+    
+    durationTiming1 + durationTiming2
+  }
+}
+
+//-------------------------
+
+//  Extending the last note or chord of a piece of music, which must be whole bars, 
+//  by the tied addition at the start of the next bar
+//  This allows verification of bars even when a note spans a bar boundary
+case class BarExtend(music: Music, tiedAddition: Duration) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    val durationTiming = music.add(context.copy(tiedAddition=tiedAddition))
+    val barPosition = context.position+durationTiming-Timing(tiedAddition)
+    
+    if (!(barPosition).isAtBar(context.timeSig))
+    {
+      Console.println(s"Bar line at postition ${barPosition.ticks} is not on a bar boundary")
+    }
+    
+    durationTiming
+  }
+}
+
+//-------------------------
+
+//  Combining two pieces of music in parallel, by adding them both at the same position
 case class & (a: Music, b: Music) extends Music
 {
   def add(context: SequenceContext) =
