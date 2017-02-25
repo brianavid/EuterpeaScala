@@ -199,8 +199,7 @@ case class SequenceContext (
   val timeSig: TimeSig,                     //  The current time signature of all bars in the music
   val noteWidth: Double,                    //  The proportion of the width each note sounds within its duration
   val volume: Int = MFv.volume,             //  The volume of notes played
-  val keySigSharps: Byte = 0,               //  The key signature
-  val keySigIsMinor: Boolean = false,       //  The key signature
+  val keySig: KeySig = CMaj,                //  The key signature
   val currentInstrument: Int = 1)           //  The General Midi instrument on which notes are played
 {
   //  The Timing of the current duration at the current tempo
@@ -314,14 +313,14 @@ sealed trait Music
   //  This constructs subclass instances to represent the modification
   def / (mod: Modifier) = mod match 
   {
-    case (dur: Duration) => new WithBeat (dur, this)
-    case (vol: Volume) => new WithVolume(vol.volume, this)
+    case dur: Duration => new WithBeat (dur, this)
+    case vol: Volume => new WithVolume(vol.volume, this)
     case Tempo(tempo) => new WithTempo( tempo, this) 
     case TimeSig(number: Byte, dur: Duration) => new WithTimeSig( number, dur, this) 
     case Width(width) => new WithWidth( width, this) 
     case Transpose( num: Int) => new WithTranspose( num, this)
     case Octave( num: Int) => new WithTranspose( num*12, this)
-    case KeySig( keySigSharps: Byte, isMinor: Boolean) => new WithKeySig( keySigSharps, isMinor, this)
+    case keySig: KeySig => new WithKeySig( keySig, this)
     case Track( trackName: String) => new WithTrack( trackName, this)
     case Instrument( instrument: Int) => new WithInstrument( instrument, this)
     case _ => this
@@ -376,9 +375,9 @@ case class Note(
     {
       if (numSharpsToSharpen == 0) 
         semitones    //  Not transposable (i.e. natural or already sharp or flat) 
-      else if (context.keySigSharps > 0 && context.keySigSharps >= numSharpsToSharpen)
+      else if (context.keySig.keySigSharps > 0 && context.keySig.keySigSharps >= numSharpsToSharpen)
         semitones+1  //  Note which is sharpened by the current key signature
-      else if (context.keySigSharps < 0 && -context.keySigSharps >= numFlatsToFlatten)
+      else if (context.keySig.keySigSharps < 0 && -context.keySig.keySigSharps >= numFlatsToFlatten)
         semitones-1  //  Note which is flattened by the current key signature
       else 
         semitones    //  Note which the current key signature does not affect
@@ -573,15 +572,14 @@ case class WithTranspose(num: Int, music: Music) extends Music
 
 //  Add the music, with a changed key signature
 
-case class WithKeySig(keySigSharps: Byte, isMinor: Boolean, music: Music) extends Music
+case class WithKeySig(keySig: KeySig, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    val saveKeySig=context.keySigSharps
-    val saveKeySigIsMinor=context.keySigIsMinor
-    context.writeKeySig(keySigSharps, isMinor, context.position)
-    val durationTiming = music.add(context.copy(keySigSharps = keySigSharps, keySigIsMinor = isMinor))
-    context.writeKeySig(saveKeySig, saveKeySigIsMinor, context.position+durationTiming)
+    val saveKeySig=context.keySig
+    context.writeKeySig(keySig.keySigSharps, keySig.isMinor, context.position)
+    val durationTiming = music.add(context.copy(keySig = keySig))
+    context.writeKeySig(saveKeySig.keySigSharps, saveKeySig.isMinor, context.position+durationTiming)
     durationTiming
   }
 }
