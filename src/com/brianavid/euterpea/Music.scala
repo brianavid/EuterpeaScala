@@ -363,13 +363,6 @@ sealed trait Music
   def /: (mod: Modifier) = this / mod
 }
 
-//  Helper object for a melody line of music which can be written with commas in 
-//  place of the "-" operator
-object Line
-{
-  def apply(music: Music*) = music.reduce(_-_)
-}
-
 //-------------------------
 
 //  The Note is the subclass of Music that plays a sound, with the Instrument, Duration and Volume
