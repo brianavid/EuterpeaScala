@@ -170,10 +170,16 @@ object DfMin extends KeySig(-7, true)
 
 case class Octave( num: Int) extends Modifier
 
-//  The Track Modifier specifies that its music goes in the named track and so is distinct
-//  (e.g. has a different instrument) from any music on any other named track 
+//  The Track Modifier specifies that its music goes in the named track which can be viewed, printed or muted
+//  independently of any music on any other named track
 
 case class Track( trackName: String) extends Modifier
+
+//  The Channel Modifier specifies that its music goes in the named Midi channel and so is distinct
+//  (e.g. has a different instrument) from any music on any other named channel.
+//  The channel names are only used locally and are mapped into integer Midi channel numbers 
+
+case class Channel( channelName: String) extends Modifier
 
 //  The Instrument Modifier specifies the General Midi instrument on which the music should sound
 //  It can be specified as an integer value (with constants defined in the Instruments object)
@@ -197,8 +203,9 @@ case class SequenceContext (
   val sequence: M.Sequence,                 //  The sequence being constructed
   val position: Timing,                     //  The current position (hi res) where music will be added to the sequence
   val timingTrack: M.Track,
-  val currentTrackName: String,             //  The current track name 
+  val currentTrackName: String = "",        //  The current track name 
   val tracks: mutable.Map[String,M.Track],  //  The mapping of track named onto sequence tracks
+  val currentChannelName: String = "",      //  The current channel name 
   val channels: mutable.Map[String,Int],    //  The mapping of track named onto (all different) Midi channels
   val transpose: Int = 0,                   //  Any specified prevailing chromatic transposition
   val tempoBPM: Int,                        //  The current tempo, in beats per minute
@@ -245,7 +252,17 @@ case class SequenceContext (
       tracks(currentTrackName).add(new M.MidiEvent(new M.MetaMessage(0x03, bytearray, bytearray.length),position.ticks))    
     }
     tracks(currentTrackName) 
-
+  }
+  
+  //  Get or allocate the named Midi channel
+  def getChannel = 
+  {
+    if (!channels.contains(currentChannelName)) 
+    {
+      //  Allocate a new Channel number, excluding any already in use (such as Drums at 10)
+      channels(currentChannelName) = ((1 to 16).toSet -- channels.values).head
+    }
+    channels(currentChannelName) 
   }
 }
 
@@ -280,9 +297,8 @@ sealed trait Music
         sequence=sequence,                          // The sequence being constructed
         position=new Timing(0, Some(0)),            // Start at the beginning
         timingTrack=sequence.createTrack(),
-        currentTrackName="", 
         tracks=new mutable.HashMap[String,M.Track], // An empty track mapping table
-        channels=new mutable.HashMap[String,Int],   // An empty Midi channel mapping table
+        channels=mutable.HashMap("Drums" -> 10),    // A Midi channel mapping table, where Drums are pre-allocated
         tempoBPM=120,                               // Default tempo
         noteWidth=DefaultWidth.noteWidth,           // Not quite legato
         timeSig=TimeSig(4,Qd),                      // 4/4
@@ -338,6 +354,7 @@ sealed trait Music
     case Octave( num: Int) => new WithTranspose( num*12, this)
     case keySig: KeySig => new WithKeySig( keySig, this)
     case Track( trackName: String) => new WithTrack( trackName, this)
+    case Channel( channelName: String) => new WithChannel( channelName, this)
     case Instrument( instrument: Int) => new WithInstrument( instrument, this)
     case _ => this
   }
@@ -665,6 +682,18 @@ case class WithTrack( trackName: String, music: Music) extends Music
   def add(context: SequenceContext) =
   {
     music.add(context.copy(currentTrackName = trackName))
+  }
+}
+
+//-------------------------
+
+//  Add the music, with a changed current channel
+
+case class WithChannel( channelName: String, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(currentChannelName = channelName))
   }
 }
 

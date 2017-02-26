@@ -12,7 +12,7 @@ object BirdsInTheSpringBaritone {
     line1 | line2 | line3 | line4 | line5
   }
   
-  val baritonePart = Track("Baritone") /: Instrument("Vibraphone") /: Octave(-1) /: baritoneMelody
+  val baritonePart = Track("Baritone") /: Channel("Baritone") /: Instrument("Vibraphone") /: Octave(-1) /: baritoneMelody
   
   val tune = Tempo(140) /: TimeSig(3,Qd)  /: DMaj /: (baritonePart)
 }
