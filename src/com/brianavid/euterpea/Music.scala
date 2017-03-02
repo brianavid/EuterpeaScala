@@ -230,7 +230,11 @@ case class SequenceContext (
   
   //  Write the specified Time Signature to the timing track
   def writeTimeSig(number: Byte, dur: Duration, position: Timing) = {
-    val bytearray = Array[Byte](number, dur.timeSigDenom, 24, 8)
+    //  On a compound time (more than one triplet in a bar), metronome clicks are every three beats
+    val beatRate = 96 / (1 << number)
+    val clickRate = if (number % 3 == 0 && number > 3) 3 * beatRate else beatRate
+    
+    val bytearray = Array[Byte](number, dur.timeSigDenom, clickRate.toByte, 8)
     timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x58, bytearray, bytearray.length),position.ticks))    
   }
   
