@@ -105,6 +105,14 @@ trait Music
 
 //-------------------------
 
+//  
+object EmptyMusic extends Music
+{
+  def add(context: SequenceContext) =  Timing(NoDuration)
+}
+
+//-------------------------
+
 //  Combining two pieces of music sequentially by adding the first at the current position and then the second
 //  at the position after the duration of the first
 case class - (a: Music, b: Music) extends Music
