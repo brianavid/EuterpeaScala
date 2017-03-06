@@ -101,6 +101,8 @@ trait Music
   
   //  Apply a Modifier to the Music with the alternate syntax as Modifier/:Music
   def /: (mod: Modifier) = this / mod
+  
+  def * (repeat: Integer) = new Repeated(this, repeat)
 }
 
 //-------------------------
@@ -182,6 +184,23 @@ case class BarExtend(music: Music, tiedAddition: Duration) extends Music
     }
     
     durationTiming
+  }
+}
+
+//  Repeat a piece of music a fixed number of times
+case class Repeated(music: Music, repeat: Integer) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    if (repeat == 0)
+      Timing(NoDuration)
+    else
+    {
+      val durationTiming1 = music.add(context.copy(tiedAddition=NoDuration))
+      val durationTiming2 = Repeated(music, repeat-1).add(context.copy(position=context.position+durationTiming1))
+    
+      durationTiming1 + durationTiming2
+    }
   }
 }
 

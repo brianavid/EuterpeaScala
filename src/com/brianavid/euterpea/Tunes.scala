@@ -23,7 +23,7 @@ object BirdsInTheSpringBaritone
 
 object Bugs
 {
-  val tune = Tempo(100) /: AMin /: Instrument("Vibraphone") /: (A*Min - G*Maj - F*Maj - E*Maj)
+  val tune = Tempo(100) /: AMin /: Instrument("Vibraphone") /: ((A/Min - G/Maj - F/Maj - E/Maj)*3)
 }
 
 object Blues
