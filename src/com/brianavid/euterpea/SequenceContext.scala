@@ -23,6 +23,8 @@ case class SequenceContext (
   val noteWidth: Double,                    //  The proportion of the width each note sounds within its duration
   val volume: Int = MFv.volume,             //  The volume of notes played
   val keySig: KeySig = CMaj,                //  The key signature
+  val tonic: Note = C,                      //  The current tonic (usually the key)
+  val isMinor: Boolean = false,             //  Is the current key a minor?
   val currentInstrument: Int = 1)           //  The General Midi instrument on which notes are played
 {
   //  The Timing of the current duration at the current tempo

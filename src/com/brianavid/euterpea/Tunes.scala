@@ -1,11 +1,11 @@
 package com.brianavid.euterpea
 
 
-object BirdsInTheSpringBaritone {
-  
+object BirdsInTheSpringBaritone
+{
   val baritonePart = 
   {
-    val baritoneMelody = 
+    val melody = 
     {
       val line1 = "One"/: -A - "May"/:D - "Morn-"/:D | "ing"/:(D--E) - F | E - E - D | (D--C) - D
       val line2 = F - D - D | Ed/:(F - E) - D - D | D - C - D | (D--C/Hd)
@@ -15,16 +15,27 @@ object BirdsInTheSpringBaritone {
       line1 | line2 | line3 | line4 | line5
     }
   
-    Track("Baritone") /: Channel("Baritone") /: Instrument("Vibraphone") /: Octave(-1) /: baritoneMelody
+    Track("Baritone") /: Channel("Baritone") /: Instrument("Vibraphone") /: Octave(-1) /: melody
   }
   
   val tune = Tempo(140) /: TimeSig(3,Qd)  /: DMaj /: (baritonePart)
 }
 
+object Bugs
+{
+  val tune = Tempo(100) /: AMin /: Instrument("Vibraphone") /: (A*Min - G*Maj - F*Maj - E*Maj)
+}
+
+object Blues
+{
+  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c - II7.b - V7 - I)
+}
+
 object Test1 
 {
   def main(args: Array[String]) {
-    BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    BirdsInTheSpringBaritone.tune.play()
+    Bugs.tune.play()
+    //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //BirdsInTheSpringBaritone.tune.play()
   }
 }

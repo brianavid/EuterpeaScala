@@ -15,6 +15,7 @@ class Duration(
 {
   def dot = new Duration( beatTicks * 3 / 2, 0)  //  Note and a half
   def + (next: Duration) = new Duration( beatTicks + next.beatTicks, 0) //  Simply added together
+  def * (repeat: Integer) = new Duration( beatTicks * repeat, 0) //  Lengthened
 }
 
 object Duration
@@ -70,34 +71,34 @@ case class Octave( num: Int) extends Modifier
 
 //  The KeySig Modifier specified the number of sharps (if +ve) or flats (if -ve) in the key signature
 
-case class KeySig( keySigSharps: Byte, isMinor: Boolean = false ) extends Modifier
-object CMaj extends KeySig(0)
-object GMaj extends KeySig(1)
-object DMaj extends KeySig(2)
-object AMaj extends KeySig(3)
-object EMaj extends KeySig(4)
-object BMaj extends KeySig(5)
-object FsMaj extends KeySig(6)
-object CsMaj extends KeySig(7)
-object BfMaj extends KeySig(-1)
-object EfMaj extends KeySig(-2)
-object AfMaj extends KeySig(-3)
-object DfMaj extends KeySig(-4)
-object GfMaj extends KeySig(-5)
-object CfMaj extends KeySig(-6)
-object FfMaj extends KeySig(-7)
-object AMin extends KeySig(0, true)
-object EMin extends KeySig(1, true)
-object BMin extends KeySig(2, true)
-object FsMin extends KeySig(3, true)
-object CsMin extends KeySig(4, true)
-object DMin extends KeySig(-1, true)
-object GMin extends KeySig(-2, true)
-object CMin extends KeySig(-3, true)
-object BfMin extends KeySig(-4, true)
-object EfMin extends KeySig(-5, true)
-object AfMin extends KeySig(-6, true)
-object DfMin extends KeySig(-7, true)
+case class KeySig( keySigSharps: Byte, tonic: Note, isMinor: Boolean = false ) extends Modifier
+object CMaj extends KeySig(0, C)
+object GMaj extends KeySig(1, G)
+object DMaj extends KeySig(2, D)
+object AMaj extends KeySig(3, A)
+object EMaj extends KeySig(4, E)
+object BMaj extends KeySig(5, B)
+object FsMaj extends KeySig(6, Fs)
+object CsMaj extends KeySig(7, Cs)
+object BfMaj extends KeySig(-1, Bf)
+object EfMaj extends KeySig(-2, Ef)
+object AfMaj extends KeySig(-3, Af)
+object DfMaj extends KeySig(-4, Df)
+object GfMaj extends KeySig(-5, Gf)
+object CfMaj extends KeySig(-6, Cf)
+object FfMaj extends KeySig(-7, Ff)
+object AMin extends KeySig(0, A, true)
+object EMin extends KeySig(1, E, true)
+object BMin extends KeySig(2, B, true)
+object FsMin extends KeySig(3, Fs, true)
+object CsMin extends KeySig(4, Cs, true)
+object DMin extends KeySig(-1, D, true)
+object GMin extends KeySig(-2, G, true)
+object CMin extends KeySig(-3, C, true)
+object BfMin extends KeySig(-4, Bf, true)
+object EfMin extends KeySig(-5, Ef, true)
+object AfMin extends KeySig(-6, Af, true)
+object DfMin extends KeySig(-7, Df, true)
 
 //  The Track Modifier specifies that its music goes in the named track which can be viewed, printed or muted
 //  independently of any music on any other named track

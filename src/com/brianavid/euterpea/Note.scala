@@ -17,6 +17,8 @@ case class Note(
   def  / (lyric: String) = new WithLyric(lyric, this)
   def  /: (lyric: String) = new WithLyric(lyric, this)
   
+  def * (harmony: Harmony) = new Chord( Some(this), harmony)
+  
   //  The number of flats in the key signature needed to flatten this note
   def numFlatsToFlatten = if (numSharpsToSharpen == 0) 0 else 8-numSharpsToSharpen
   

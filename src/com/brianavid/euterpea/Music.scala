@@ -280,7 +280,7 @@ case class WithKeySig(keySig: KeySig, music: Music) extends Music
   {
     val saveKeySig=context.keySig
     context.writeKeySig(keySig.keySigSharps, keySig.isMinor, context.position)
-    val durationTiming = music.add(context.copy(keySig = keySig))
+    val durationTiming = music.add(context.copy(keySig = keySig, tonic=keySig.tonic, isMinor=keySig.isMinor))
     context.writeKeySig(saveKeySig.keySigSharps, saveKeySig.isMinor, context.position+durationTiming)
     durationTiming
   }
