@@ -92,7 +92,7 @@ object SequenceContext
           channels=mutable.HashMap("Drums" -> 9),    // A Midi channel mapping table, where Drums are pre-allocated
           tempoBPM=120,                               // Default tempo
           noteWidth=DefaultWidth.noteWidth,           // Not quite legato
-          timeSig=TimeSig(4,Qd),                      // 4/4
-          duration=Qd)                                // Default notes are quarter notes
+          timeSig=TimeSig(4,Quarter),                      // 4/4
+          duration=Quarter)                                // Default notes are quarter notes
 }
 

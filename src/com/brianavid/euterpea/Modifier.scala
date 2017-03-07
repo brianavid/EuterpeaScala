@@ -14,6 +14,7 @@ class Duration(
     extends Modifier
 {
   def dot = new Duration( beatTicks * 3 / 2, 0)  //  Note and a half
+  def triplet = new Duration( beatTicks * 2 / 3, 0)  //  Note and a half
   def + (next: Duration) = new Duration( beatTicks + next.beatTicks, 0) //  Simply added together
   def * (repeat: Integer) = new Duration( beatTicks * repeat, 0) //  Lengthened
 }
@@ -24,13 +25,12 @@ object Duration
 }
 
 case object NoDuration extends Duration(0, 0)        //  No time
-case object Wd extends Duration(Duration.TPQN*4, 0)  //  Whole note
-case object Hd extends Duration(Duration.TPQN*2, 1)  //  Half note
-case object Qd extends Duration(Duration.TPQN, 2)    //  Quarter note
-case object Ed extends Duration(Duration.TPQN/2, 3)  //  Eighth note
-case object Sd extends Duration(Duration.TPQN/4, 4)  //  Sixteenth note
-case object Td extends Duration(Duration.TPQN/8, 5)  //  Thirty-second note
-case class Triplet(base: Duration) extends Duration(base.beatTicks * 2 / 3, 0)
+case object Whole extends Duration(Duration.TPQN*4, 0)  //  Whole note
+case object Half extends Duration(Duration.TPQN*2, 1)  //  Half note
+case object Quarter extends Duration(Duration.TPQN, 2)    //  Quarter note
+case object Eighth extends Duration(Duration.TPQN/2, 3)  //  Eighth note
+case object Sixteenth extends Duration(Duration.TPQN/4, 4)  //  Sixteenth note
+case object Thirtysecond extends Duration(Duration.TPQN/8, 5)  //  Thirty-second note
 
 
 //-------------------------
