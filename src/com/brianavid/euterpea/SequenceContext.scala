@@ -89,7 +89,7 @@ object SequenceContext
           position=new Timing(0, Some(0)),            // Start at the beginning
           timingTrack=sequence.createTrack(),
           tracks=new mutable.HashMap[String,M.Track], // An empty track mapping table
-          channels=mutable.HashMap("Drums" -> 10),    // A Midi channel mapping table, where Drums are pre-allocated
+          channels=mutable.HashMap("Drums" -> 9),    // A Midi channel mapping table, where Drums are pre-allocated
           tempoBPM=120,                               // Default tempo
           noteWidth=DefaultWidth.noteWidth,           // Not quite legato
           timeSig=TimeSig(4,Qd),                      // 4/4

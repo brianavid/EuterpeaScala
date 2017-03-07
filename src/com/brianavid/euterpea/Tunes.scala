@@ -31,10 +31,24 @@ object Blues
   val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c - II7.b - V7 - I)
 }
 
+object Beats
+{
+  val bass = Drum(Drum.Bass_Drum_1)
+  val snare = Drum(Drum.Snare_Drum_1)
+  val openHiHat = Drum(Drum.Open_Hi_hat)
+  val closedHiHat = Drum(Drum.Closed_Hi_hat)
+  
+  val bassLine = Track("Base Drum") /: Channel("Drums") /: (bass - Rest/Hd.dot)
+  val snareLine = Track("Snare Drum") /: Channel("Drums") /: (Rest/Hd - snare - Rest)
+  val hiHatLine = Track("Hi Hats") /: Channel("Drums") /: Sd /: ((openHiHat - closedHiHat - closedHiHat - closedHiHat)*4)
+  
+  val tune = (bassLine & snareLine & hiHatLine) * 4
+}
+
 object Test1 
 {
   def main(args: Array[String]) {
-    Bugs.tune.play()
+    Beats.tune.play()
     //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //BirdsInTheSpringBaritone.tune.play()
   }

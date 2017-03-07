@@ -32,7 +32,7 @@ case class Note(
     val track = context.getTrack
     
     //  Get the Midi channel identified by the track name, creating it if it does not exist
-    val channel = context.channels.getOrElseUpdate(context.currentTrackName, context.channels.size)
+    val channel = context.channels.getOrElseUpdate(context.currentChannelName, context.channels.size)
     
     //  Get the pitch of the note in the current key signature
     val pitchInKey = 
