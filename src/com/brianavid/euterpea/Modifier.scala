@@ -4,33 +4,33 @@ sealed trait Modifier
 
 //------------------------------------------------------------------------------------------------------------
 
-//  The Duration Modifier denotes the beat of a Note or Rest.
+//  The Beat Modifier denotes the beat of a Note or Rest.
 //  At its basic, it is a Whole, Half, Quarter, Eighth ... note
-//  Durations can be added together, dotted, or split into three (for triplets)
+//  Beats can be added together, dotted, or split into three (for triplets)
 
-class Duration(
+class Beat(
     val beatTicks: Int,     //  How many ticks in the duration beat
     val timeSigDenom: Byte) //  The Midi meta encoding of the (simple object) Duration for time signatures (only)
     extends Modifier
 {
-  def dot = new Duration( beatTicks * 3 / 2, 0)  //  Note and a half
-  def triplet = new Duration( beatTicks * 2 / 3, 0)  //  Note and a half
-  def + (next: Duration) = new Duration( beatTicks + next.beatTicks, 0) //  Simply added together
-  def * (repeat: Integer) = new Duration( beatTicks * repeat, 0) //  Lengthened
+  def dot = new Beat( beatTicks * 3 / 2, 0)  //  Note and a half
+  def triplet = new Beat( beatTicks * 2 / 3, 0)  //  Note and a half
+  def + (next: Beat) = new Beat( beatTicks + next.beatTicks, 0) //  Simply added together
+  def * (repeat: Integer) = new Beat( beatTicks * repeat, 0) //  Lengthened
 }
 
-object Duration
+object Beat
 {
   val TPQN = 480    //  Ticks per Quarter Note - The granularity of note length sub-divisions
 }
 
-case object NoDuration extends Duration(0, 0)        //  No time
-case object Whole extends Duration(Duration.TPQN*4, 0)  //  Whole note
-case object Half extends Duration(Duration.TPQN*2, 1)  //  Half note
-case object Quarter extends Duration(Duration.TPQN, 2)    //  Quarter note
-case object Eighth extends Duration(Duration.TPQN/2, 3)  //  Eighth note
-case object Sixteenth extends Duration(Duration.TPQN/4, 4)  //  Sixteenth note
-case object Thirtysecond extends Duration(Duration.TPQN/8, 5)  //  Thirty-second note
+case object NoDuration extends Beat(0, 0)             //  No time
+case object Whole extends Beat(Beat.TPQN*4, 0)        //  Whole note
+case object Half extends Beat(Beat.TPQN*2, 1)         //  Half note
+case object Quarter extends Beat(Beat.TPQN, 2)        //  Quarter note
+case object Eighth extends Beat(Beat.TPQN/2, 3)       //  Eighth note
+case object Sixteenth extends Beat(Beat.TPQN/4, 4)    //  Sixteenth note
+case object Thirtysecond extends Beat(Beat.TPQN/8, 5) //  Thirty-second note
 
 
 //-------------------------
@@ -50,7 +50,7 @@ case class Tempo (bpm: Int) extends Modifier
 
 //  The TimeSig Modifier controls and varies the time signature of the music
 
-case class TimeSig (number: Byte, duration: Duration) extends Modifier
+case class TimeSig (number: Byte, duration: Beat) extends Modifier
 
 //  The Width Modifier controls the proportion of the time that a note actually 
 //  sounds within its duration 

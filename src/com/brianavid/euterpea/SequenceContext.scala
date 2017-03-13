@@ -17,8 +17,8 @@ case class SequenceContext (
   val channels: mutable.Map[String,Int],    //  The mapping of track named onto (all different) Midi channels
   val transpose: Int = 0,                   //  Any specified prevailing chromatic transposition
   val tempoBPM: Int,                        //  The current tempo, in beats per minute
-  val duration: Duration,                   //  The current duration of all notes in the music
-  val tiedAddition: Duration = NoDuration,  //  The duration by which the last note of the music should be lengthened 
+  val beat: Beat,                           //  The current beat of all notes in the music
+  val tiedAddition: Beat = NoDuration,      //  The duration by which the last note of the music should be lengthened 
   val timeSig: TimeSig,                     //  The current time signature of all bars in the music
   val noteWidth: Double,                    //  The proportion of the width each note sounds within its duration
   val volume: Int = MFv.volume,             //  The volume of notes played
@@ -28,7 +28,7 @@ case class SequenceContext (
   val currentInstrument: Int = 1)           //  The General Midi instrument on which notes are played
 {
   //  The Timing of the current duration at the current tempo
-  def durationTiming = Timing( duration)
+  def durationTiming = Timing( beat)
   
   //  Write the specified Tempo to the timing track 
   def writeTempo(bpm: Int, position: Timing) = {
@@ -39,12 +39,12 @@ case class SequenceContext (
   }
   
   //  Write the specified Time Signature to the timing track
-  def writeTimeSig(number: Byte, dur: Duration, position: Timing) = {
+  def writeTimeSig(number: Byte, beat: Beat, position: Timing) = {
     //  On a compound time (more than one triplet in a bar), metronome clicks are every three beats
     val beatRate = 96 / (1 << number)
     val clickRate = if (number % 3 == 0 && number > 3) 3 * beatRate else beatRate
     
-    val bytearray = Array[Byte](number, dur.timeSigDenom, clickRate.toByte, 8)
+    val bytearray = Array[Byte](number, beat.timeSigDenom, clickRate.toByte, 8)
     timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x58, bytearray, bytearray.length),position.ticks))    
   }
   
@@ -93,6 +93,6 @@ object SequenceContext
           tempoBPM=120,                               // Default tempo
           noteWidth=DefaultWidth.noteWidth,           // Not quite legato
           timeSig=TimeSig(4,Quarter),                      // 4/4
-          duration=Quarter)                                // Default notes are quarter notes
+          beat=Quarter)                                // Default notes are quarter notes
 }
 

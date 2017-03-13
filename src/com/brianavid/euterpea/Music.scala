@@ -42,7 +42,7 @@ trait Music
   //  the AST to a default context
   def makeSequence() = {
     //  The javax.sound.midi.Sequence object to be constructed
-    val sequence = new M.Sequence(M.Sequence.PPQ, Duration.TPQN)
+    val sequence = new M.Sequence(M.Sequence.PPQ, Beat.TPQN)
     
     //  Add the music by recursively adding the root
     add( SequenceContext(sequence) )
@@ -79,16 +79,16 @@ trait Music
   
   //  Construct music by adding this part and another part sequentially one after the other, 
   //  requiring this position to be at a bar of the current time signature 
-  def -|-(duration: Duration) = new BarExtend(this,duration)
+  def -|-(duration: Beat) = new BarExtend(this,duration)
   
   //  Apply a Modifier to the Music with the syntax as Music/Modifier
   //  This constructs subclass instances to represent the modification
   def / (mod: Modifier) = mod match 
   {
-    case dur: Duration => new WithBeat (dur, this)
+    case beat: Beat => new WithBeat (beat, this)
     case vol: Volume => new WithVolume(vol.volume, this)
     case Tempo(tempo) => new WithTempo( tempo, this) 
-    case TimeSig(number: Byte, dur: Duration) => new WithTimeSig( number, dur, this) 
+    case TimeSig(number: Byte, beat: Beat) => new WithTimeSig( number, beat, this) 
     case Width(width) => new WithWidth( width, this) 
     case Transpose( num: Int) => new WithTranspose( num, this)
     case Octave( num: Int) => new WithTranspose( num*12, this)
@@ -171,7 +171,7 @@ case class BarJoin(a: Music, b: Music) extends Music
 //  Extending the last note or chord of a piece of music, which must be whole bars, 
 //  by the tied addition at the start of the next bar
 //  This allows verification of bars even when a note spans a bar boundary
-case class BarExtend(music: Music, tiedAddition: Duration) extends Music
+case class BarExtend(music: Music, tiedAddition: Beat) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -222,11 +222,11 @@ case class & (a: Music, b: Music) extends Music
 
 //  Add the music, with a changed current duration
 
-case class WithBeat(duration: Duration, music: Music) extends Music
+case class WithBeat(beat: Beat, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    music.add(context.copy(duration=duration))
+    music.add(context.copy(beat=beat))
   }
 }
 
@@ -250,7 +250,7 @@ case class WithTempo( bpm: Int, music: Music) extends Music
 
 //  Add the music, with a changed current time signature
 
-case class WithTimeSig( number: Byte, dur: Duration, music: Music) extends Music
+case class WithTimeSig( number: Byte, beat: Beat, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -258,8 +258,8 @@ case class WithTimeSig( number: Byte, dur: Duration, music: Music) extends Music
     //  which the time signature changed to allow determination of bar boundaries,
     //  which is necessary for bar line validation, pulse or swing 
     val saveTimeSig=context.timeSig
-    context.writeTimeSig(number, dur, context.position)
-    val durationTiming = music.add(context.copy( timeSig=TimeSig(number, dur), position=context.position.settingTimeSigChange))
+    context.writeTimeSig(number, beat, context.position)
+    val durationTiming = music.add(context.copy( timeSig=TimeSig(number, beat), position=context.position.settingTimeSigChange))
     context.writeTimeSig(saveTimeSig.number, saveTimeSig.duration, context.position+durationTiming)
     durationTiming.settingTimeSigChange
   }
@@ -375,7 +375,7 @@ case class WithPulse( stressesPerBar: Int, stressVolumeIncrement: Int, music: Mu
 
 //  Add the music, with the timing altered within each bar to add a swing 
 
-case class WithSwing( duration: Duration, swing: Double, music: Music) extends Music
+case class WithSwing( duration: Beat, swing: Double, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {

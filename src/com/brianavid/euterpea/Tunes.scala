@@ -48,8 +48,8 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    Beats.tune.play()
+    //Bugs.tune.play()
     //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    //BirdsInTheSpringBaritone.tune.play()
+    BirdsInTheSpringBaritone.tune.play()
   }
 }

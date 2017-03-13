@@ -17,6 +17,9 @@ case class Timing(val ticks: Int, val timeSigChangeTime: Option[Int])
   //  Subtracting has no effect on timeSigChangeTime - used for tied notes
   def -(t: Timing) = new Timing(ticks - t.ticks, timeSigChangeTime)
   
+  //  The timing within a the last of a sequence of fixed-sized chunks
+  def % (chunk: Timing) = new Timing( ticks % chunk.ticks, None) //  Within a sequence of repeated chunks
+
   //  The later of two timings
   def max(t: Timing) = if (t.ticks > ticks) t else this
   
@@ -42,5 +45,5 @@ case class Timing(val ticks: Int, val timeSigChangeTime: Option[Int])
 object Timing
 {
   //  Construct the timing object for the number of beats
-  def apply(duration: Duration) = new Timing( duration.beatTicks, None)
+  def apply(duration: Beat) = new Timing( duration.beatTicks, None)
 }
