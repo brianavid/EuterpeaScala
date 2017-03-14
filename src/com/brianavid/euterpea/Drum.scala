@@ -5,7 +5,7 @@ case class Drum(noteNumber: Integer) extends Music
 {
   def add(context: SequenceContext) =
   {
-    val noteTiming = context.durationTiming
+    val noteTiming = context.durationTiming * context.scaleBeats / context.scaleNum
     
     //  Get the track identified by the track name, creating it if it does not exist
     val track = context.getTrack

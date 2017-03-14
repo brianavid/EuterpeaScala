@@ -17,6 +17,12 @@ case class Timing(val ticks: Int, val timeSigChangeTime: Option[Int])
   //  Subtracting has no effect on timeSigChangeTime - used for tied notes
   def -(t: Timing) = new Timing(ticks - t.ticks, timeSigChangeTime)
   
+  //  The timing of a number of notes
+  def * (number: Integer) = new Timing( ticks * number, None) //  Within a sequence of repeated chunks
+
+  //  The timing of one of a number of notes in a time interval
+  def / (number: Integer) = new Timing( ticks / number, None) //  Within a sequence of repeated chunks
+
   //  The timing within a the last of a sequence of fixed-sized chunks
   def % (chunk: Timing) = new Timing( ticks % chunk.ticks, None) //  Within a sequence of repeated chunks
 

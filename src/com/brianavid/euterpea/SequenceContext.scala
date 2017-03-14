@@ -18,6 +18,8 @@ case class SequenceContext (
   val transpose: Int = 0,                   //  Any specified prevailing chromatic transposition
   val tempoBPM: Int,                        //  The current tempo, in beats per minute
   val beat: Beat,                           //  The current beat of all notes in the music
+  val scaleNum: Integer = 1,                //  The number of notes in scaleBeats number of beats
+  val scaleBeats: Integer = 1,              //  The number of beats in which scaleNum notes play
   val tiedAddition: Beat = NoDuration,      //  The duration by which the last note of the music should be lengthened 
   val timeSig: TimeSig,                     //  The current time signature of all bars in the music
   val noteWidth: Double,                    //  The proportion of the width each note sounds within its duration

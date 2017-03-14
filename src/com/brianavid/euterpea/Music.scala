@@ -86,6 +86,7 @@ trait Music
   def / (mod: Modifier) = mod match 
   {
     case beat: Beat => new WithBeat (beat, this)
+    case BeatScale(numberOfNotes, numberOfBeats) => new WithBeatScale(numberOfNotes, numberOfBeats, this)
     case vol: Volume => new WithVolume(vol.volume, this)
     case Tempo(tempo) => new WithTempo( tempo, this) 
     case TimeSig(number: Byte, beat: Beat) => new WithTimeSig( number, beat, this) 
@@ -227,6 +228,18 @@ case class WithBeat(beat: Beat, music: Music) extends Music
   def add(context: SequenceContext) =
   {
     music.add(context.copy(beat=beat))
+  }
+}
+
+//-------------------------
+
+//  Add the music, scaling the beat for (e.g.) triplets or quintuplets
+
+case class WithBeatScale(numberOfNotes: Integer, numberOfBeats: Integer, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(scaleNum=numberOfNotes,scaleBeats=numberOfBeats))
   }
 }
 

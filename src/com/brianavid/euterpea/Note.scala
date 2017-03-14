@@ -51,7 +51,7 @@ case class Note(
     val pitch = MiddleC + pitchInKey + octave*12 + context.transpose
     
     //  How long does the note last (although only sounding for part of it)
-    val noteTiming = context.durationTiming
+    val noteTiming = context.durationTiming * context.scaleBeats / context.scaleNum
         
     //  Where does the note start and end playing, taking into account the note width
     val startTicks = context.position.ticks
@@ -115,7 +115,7 @@ case object Rest extends Music
 {
   def add(context: SequenceContext) =
   {
-    context.durationTiming
+    context.durationTiming * context.scaleBeats / context.scaleNum
   }
 }
 

@@ -1,41 +1,82 @@
 package com.brianavid.euterpea
+import language.implicitConversions
 
 sealed trait Modifier
+
+object Modifier
+{
+  //  A Beat or BeatScale Modifier can be created where a Modifier is expected simply by using an integer value
+  //  That integer can be 3 or 5 to specify a BeatScale of triplets or quintuplets
+  //  Otherwise the Beat object interprets the value as a powet of two 
+  implicit def beatModifierFromInteger(divisor: Int): Modifier = 
+  {
+    if (divisor == 3) 
+      new BeatScale(3, 2)  // Triplet
+    else if (divisor == 5) 
+      new BeatScale(5, 4)  // Quintuplet
+    else 
+      Beat.beatFromInteger(divisor)
+  }
+}
 
 //------------------------------------------------------------------------------------------------------------
 
 //  The Beat Modifier denotes the beat of a Note or Rest.
 //  At its basic, it is a Whole, Half, Quarter, Eighth ... note
-//  Beats can be added together, dotted, or split into three (for triplets)
+//  Beats can be added together, dotted, or lengthened by repetition
 
-class Beat(
-    val beatTicks: Int,     //  How many ticks in the duration beat
-    val timeSigDenom: Byte) //  The Midi meta encoding of the (simple object) Duration for time signatures (only)
-    extends Modifier
+class Beat(val beatTicks: Int) extends Modifier
 {
-  def dot = new Beat( beatTicks * 3 / 2, 0)  //  Note and a half
-  def triplet = new Beat( beatTicks * 2 / 3, 0)  //  Note and a half
-  def + (next: Beat) = new Beat( beatTicks + next.beatTicks, 0) //  Simply added together
-  def * (repeat: Integer) = new Beat( beatTicks * repeat, 0) //  Lengthened
+  def dot = new Beat( beatTicks * 3 / 2)  //  Note and a half
+  def + (next: Beat) = new Beat( beatTicks + next.beatTicks) //  Simply added together
+  def * (repeat: Integer) = new Beat( beatTicks * repeat) //  Lengthened
+  
+  //  The Midi meta encoding of the (simple object) Duration for time signatures (only)
+  def timeSigDenom = {
+    def powerOfTwo(v: Integer, power: Integer): Integer = 
+      if (v == 0) power else powerOfTwo(v/2, power+1)
+    powerOfTwo(Beat.TPQN*4/beatTicks, 1).toByte
+  }
 }
 
 object Beat
 {
   val TPQN = 480    //  Ticks per Quarter Note - The granularity of note length sub-divisions
+  
+  //  A Beat Modifier can be created where a Beat is expected simply by using an integer value
+  //  The value must be a power of two (4 = Quarter, 16 = Sixteenth, etc) 
+  implicit def beatFromInteger(divisor: Int): Beat = 
+  {
+    def isPowerOfTwo = (divisor & (divisor-1)) == 0
+    if (!isPowerOfTwo)
+    {
+      NoDuration
+    }
+    else
+      new Beat(Beat.TPQN*4/divisor)
+  }
 }
 
-case object NoDuration extends Beat(0, 0)             //  No time
-case object Whole extends Beat(Beat.TPQN*4, 0)        //  Whole note
-case object Half extends Beat(Beat.TPQN*2, 1)         //  Half note
-case object Quarter extends Beat(Beat.TPQN, 2)        //  Quarter note
-case object Eighth extends Beat(Beat.TPQN/2, 3)       //  Eighth note
-case object Sixteenth extends Beat(Beat.TPQN/4, 4)    //  Sixteenth note
-case object Thirtysecond extends Beat(Beat.TPQN/8, 5) //  Thirty-second note
+case object NoDuration extends Beat(0)             //  No time
+case object N extends Beat(Beat.TPQN*4)            //  Whole note
+case object Whole extends Beat(Beat.TPQN*4)        //  Whole note
+case object Half extends Beat(Beat.TPQN*2)         //  Half note
+case object Quarter extends Beat(Beat.TPQN)        //  Quarter note
+case object Eighth extends Beat(Beat.TPQN/2)       //  Eighth note
+case object Sixteenth extends Beat(Beat.TPQN/4)    //  Sixteenth note
+case object Thirtysecond extends Beat(Beat.TPQN/8) //  Thirty-second note
+case class Dot(beat: Beat) extends Beat( beat.beatTicks * 3 / 2)  //  Note and a half
+
+//-------------------------
+
+//  The BeatScale Modifier scales the beat to allow e.g. triplets and quintuplets  
+
+case class BeatScale(val numberOfNotes: Integer, val numberOfBeats: Integer) extends Modifier
 
 
 //-------------------------
 
-//  The Volume Modifier controls the volumes of notes
+//  The Volume Modifier controls the volumes (actually velocities) of notes
 
 class Volume(val volume: Int) extends Modifier
 case object MFv  extends Volume(64)           //  Normal (default) volume
