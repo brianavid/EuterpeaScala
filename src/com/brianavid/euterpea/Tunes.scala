@@ -52,7 +52,7 @@ object Test1
   def main(args: Array[String]) {
     Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     Beats.tune.play()
-    //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    //BirdsInTheSpringBaritone.tune.play()
+    BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    BirdsInTheSpringBaritone.tune.play()
   }
 }

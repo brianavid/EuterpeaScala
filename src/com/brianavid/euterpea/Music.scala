@@ -27,6 +27,9 @@ trait Music
   //  Add the music to the specified SequenceContext
   def add(context: SequenceContext) : Timing
   
+  //  Compute the duration of the music without adding it
+  def duration(context: SequenceContext) : Timing
+  
   //  Play the constructed javax.sound.midi.Sequence object on the system's Midi sequencer
   private def playSequence(sequence: M.Sequence) {
     val seq = MS.getSequencer
@@ -112,6 +115,7 @@ trait Music
 object EmptyMusic extends Music
 {
   def add(context: SequenceContext) =  Timing(NoDuration)
+  def duration(context: SequenceContext) =  Timing(NoDuration)
 }
 
 //-------------------------
@@ -124,6 +128,14 @@ case class - (a: Music, b: Music) extends Music
   {
     val durationTiming1 = a.add(context.copy(tiedAddition=NoDuration))
     val durationTiming2 = b.add(context.copy(position = context.position+durationTiming1))
+    
+    durationTiming1 + durationTiming2
+  }
+  
+  def duration(context: SequenceContext) =
+  {
+    val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration))
+    val durationTiming2 = b.duration(context.copy(position = context.position+durationTiming1))
     
     durationTiming1 + durationTiming2
   }
@@ -141,6 +153,14 @@ case class Slur(a: Music, b: Music) extends Music
   {
     val durationTiming1 = a.add(context.copy(noteWidth=1.0, tiedAddition=NoDuration))
     val durationTiming2 = b.add(context.copy(noteWidth = context.noteWidth-0.2, volume = context.volume-10, position = context.position+durationTiming1))
+    
+    durationTiming1 + durationTiming2
+  }
+  
+  def duration(context: SequenceContext) =
+  {
+    val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration))
+    val durationTiming2 = b.duration(context.copy(position = context.position+durationTiming1))
     
     durationTiming1 + durationTiming2
   }
@@ -165,6 +185,14 @@ case class BarJoin(a: Music, b: Music) extends Music
     
     durationTiming1 + durationTiming2
   }
+  
+  def duration(context: SequenceContext) =
+  {
+    val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration))
+    val durationTiming2 = b.duration(context.copy(position = context.position+durationTiming1))
+    
+    durationTiming1 + durationTiming2
+  }
 }
 
 //-------------------------
@@ -186,6 +214,11 @@ case class BarExtend(music: Music, tiedAddition: Beat) extends Music
     
     durationTiming
   }
+  
+  def duration(context: SequenceContext) =
+  {
+    music.duration(context.copy(tiedAddition=tiedAddition))
+  }
 }
 
 //  Repeat a piece of music a fixed number of times
@@ -199,6 +232,19 @@ case class Repeated(music: Music, repeat: Integer) extends Music
     {
       val durationTiming1 = music.add(context.copy(tiedAddition=NoDuration))
       val durationTiming2 = Repeated(music, repeat-1).add(context.copy(position=context.position+durationTiming1))
+    
+      durationTiming1 + durationTiming2
+    }
+  }
+  
+  def duration(context: SequenceContext) =
+  {
+    if (repeat == 0)
+      Timing(NoDuration)
+    else
+    {
+      val durationTiming1 = music.duration(context.copy(tiedAddition=NoDuration))
+      val durationTiming2 = Repeated(music, repeat-1).duration(context.copy(position=context.position+durationTiming1))
     
       durationTiming1 + durationTiming2
     }
@@ -217,6 +263,14 @@ case class & (a: Music, b: Music) extends Music
     
     durationTiming1 max durationTiming2  //  The duration is the duration of the longer of the two parts
   }
+
+  def duration(context: SequenceContext) =
+  {
+    val durationTiming1 = a.duration(context)
+    val durationTiming2 = b.duration(context)
+    
+    durationTiming1 max durationTiming2  //  The duration is the duration of the longer of the two parts
+  }
 }
 
 //-------------------------
@@ -229,6 +283,8 @@ case class WithBeat(beat: Beat, music: Music) extends Music
   {
     music.add(context.copy(beat=beat))
   }
+  
+  def duration(context: SequenceContext) = music.duration(context.copy(beat=beat))
 }
 
 //-------------------------
@@ -241,6 +297,8 @@ case class WithBeatScale(numberOfNotes: Integer, numberOfBeats: Integer, music: 
   {
     music.add(context.copy(scaleNum=numberOfNotes,scaleBeats=numberOfBeats))
   }
+  
+  def duration(context: SequenceContext) = music.duration(context.copy(scaleNum=numberOfNotes,scaleBeats=numberOfBeats))
 }
 
 //-------------------------
@@ -257,6 +315,8 @@ case class WithTempo( bpm: Int, music: Music) extends Music
     context.writeTempo(saveBPM, context.position+durationTiming)
     durationTiming
   }
+  
+  def duration(context: SequenceContext) = music.duration(context.copy(tempoBPM=context.tempoBPM))
 }
 
 //-------------------------
@@ -276,6 +336,8 @@ case class WithTimeSig( number: Byte, beat: Beat, music: Music) extends Music
     context.writeTimeSig(saveTimeSig.number, saveTimeSig.duration, context.position+durationTiming)
     durationTiming.settingTimeSigChange
   }
+  
+  def duration(context: SequenceContext) = music.duration(context.copy(timeSig=TimeSig(number, beat), position=context.position.settingTimeSigChange))
 }
 
 //-------------------------
@@ -288,6 +350,8 @@ case class WithWidth( noteWidth: Double, music: Music) extends Music
   {
     music.add(context.copy(noteWidth=noteWidth))
   }
+  
+  def duration(context: SequenceContext) = music.duration(context.copy(noteWidth=noteWidth))
 }
 
 //-------------------------
@@ -300,6 +364,8 @@ case class WithTranspose(num: Int, music: Music) extends Music
   {
     music.add(context.copy(transpose = context.transpose + num))
   }
+  
+  def duration(context: SequenceContext) = music.duration(context.copy(transpose = context.transpose + num))
 }
 
 //-------------------------
@@ -316,6 +382,8 @@ case class WithKeySig(keySig: KeySig, music: Music) extends Music
     context.writeKeySig(saveKeySig.keySigSharps, saveKeySig.isMinor, context.position+durationTiming)
     durationTiming
   }
+  
+  def duration(context: SequenceContext) = music.duration(context.copy(keySig = keySig, tonic=keySig.tonic, isMinor=keySig.isMinor))
 }
 
 //-------------------------
@@ -328,6 +396,8 @@ case class WithVolume(volume: Int, music: Music) extends Music
   {
     music.add(context.copy(volume=volume))
   }
+  
+  def duration(context: SequenceContext) = music.duration(context.copy(volume=volume))
 }
 
 //-------------------------
@@ -340,6 +410,8 @@ case class WithTrack( trackName: String, music: Music) extends Music
   {
     music.add(context.copy(currentTrackName = trackName))
   }
+  
+  def duration(context: SequenceContext) = music.duration(context.copy(currentTrackName = trackName))
 }
 
 //-------------------------
@@ -352,6 +424,8 @@ case class WithChannel( channelName: String, music: Music) extends Music
   {
     music.add(context.copy(currentChannelName = channelName))
   }
+  
+  def duration(context: SequenceContext) = music.duration(context.copy(currentChannelName = channelName))
 }
 
 //-------------------------
@@ -370,6 +444,8 @@ case class WithInstrument( instrument: Int, music: Music) extends Music
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, prevInstrument-1, 0), context.position.ticks+durationTiming.ticks))
     durationTiming
   }
+  
+  def duration(context: SequenceContext) = music.duration(context.copy(currentInstrument = instrument))
 }
 
 //-------------------------
@@ -382,6 +458,8 @@ case class WithPulse( stressesPerBar: Int, stressVolumeIncrement: Int, music: Mu
   {
     music.add(context.copy())
   }
+  
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 //-------------------------
@@ -394,6 +472,8 @@ case class WithSwing( duration: Beat, swing: Double, music: Music) extends Music
   {
     music.add(context.copy())
   }
+  
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 //-------------------------
@@ -410,6 +490,8 @@ case class WithLyric( lyric: String, music: Music) extends Music
     track.add(new M.MidiEvent(new M.MetaMessage(0x05, bytearray, bytearray.length),context.position.ticks))    
     music.add(context.copy())
   }
+  
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 

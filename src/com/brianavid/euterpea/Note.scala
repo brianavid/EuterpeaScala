@@ -63,6 +63,8 @@ case class Note(
     
     noteTiming
   }
+  
+  def duration(context: SequenceContext) = context.durationTiming * context.scaleBeats / context.scaleNum
 }
 
 //  Every note in all scales are individually named
@@ -117,5 +119,7 @@ case object Rest extends Music
   {
     context.durationTiming * context.scaleBeats / context.scaleNum
   }
+  
+  def duration(context: SequenceContext) = context.durationTiming * context.scaleBeats / context.scaleNum
 }
 

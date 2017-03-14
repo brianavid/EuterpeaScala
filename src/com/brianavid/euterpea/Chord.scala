@@ -73,6 +73,8 @@ case class Chord(root: Option[Note], harmony: Harmony) extends Music
     notes.foldRight(EmptyMusic: Music)(_ & _).add(context)
   }
   
+  def duration(context: SequenceContext) = context.durationTiming * context.scaleBeats / context.scaleNum
+  
   //  Modify the Chord by modifying the underlying Harmony  
   def b = Chord(root, harmony.b)
   def c = Chord(root, harmony.c)

@@ -22,8 +22,10 @@ case class Drum(noteNumber: Integer) extends Music
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, channel, noteNumber, 0),endTicks))
     
 
-      noteTiming
-    }
+    noteTiming
+  }
+  
+  def duration(context: SequenceContext) = context.durationTiming * context.scaleBeats / context.scaleNum
 }
 
 object Drum
