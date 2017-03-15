@@ -95,6 +95,7 @@ trait Music
     case TimeSig(number: Byte, beat: Beat) => new WithTimeSig( number, beat, this) 
     case Width(width) => new WithWidth( width, this) 
     case Transpose( num: Int) => new WithTranspose( num, this)
+    case Diatonic( fromChord, toChord) => new WithDiatonic( fromChord, toChord, this)
     case Octave( num: Int) => new WithTranspose( num*12, this)
     case keySig: KeySig => new WithKeySig( keySig, this)
     case Track( trackName: String) => new WithTrack( trackName, this)
@@ -351,7 +352,7 @@ case class WithWidth( noteWidth: Double, music: Music) extends Music
     music.add(context.copy(noteWidth=noteWidth))
   }
   
-  def duration(context: SequenceContext) = music.duration(context.copy(noteWidth=noteWidth))
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 //-------------------------
@@ -365,7 +366,21 @@ case class WithTranspose(num: Int, music: Music) extends Music
     music.add(context.copy(transpose = context.transpose + num))
   }
   
-  def duration(context: SequenceContext) = music.duration(context.copy(transpose = context.transpose + num))
+  def duration(context: SequenceContext) = music.duration(context)
+}
+
+//-------------------------
+
+//  Add the music, with a changed current transposition
+
+case class WithDiatonic(fromChord: Chord, toChord: Chord, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(dTrans = Some((fromChord, toChord))))
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 //-------------------------
@@ -383,7 +398,7 @@ case class WithKeySig(keySig: KeySig, music: Music) extends Music
     durationTiming
   }
   
-  def duration(context: SequenceContext) = music.duration(context.copy(keySig = keySig, tonic=keySig.tonic, isMinor=keySig.isMinor))
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 //-------------------------
@@ -397,7 +412,7 @@ case class WithVolume(volume: Int, music: Music) extends Music
     music.add(context.copy(volume=volume))
   }
   
-  def duration(context: SequenceContext) = music.duration(context.copy(volume=volume))
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 //-------------------------
@@ -411,7 +426,7 @@ case class WithTrack( trackName: String, music: Music) extends Music
     music.add(context.copy(currentTrackName = trackName))
   }
   
-  def duration(context: SequenceContext) = music.duration(context.copy(currentTrackName = trackName))
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 //-------------------------
@@ -425,7 +440,7 @@ case class WithChannel( channelName: String, music: Music) extends Music
     music.add(context.copy(currentChannelName = channelName))
   }
   
-  def duration(context: SequenceContext) = music.duration(context.copy(currentChannelName = channelName))
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 //-------------------------
@@ -445,7 +460,7 @@ case class WithInstrument( instrument: Int, music: Music) extends Music
     durationTiming
   }
   
-  def duration(context: SequenceContext) = music.duration(context.copy(currentInstrument = instrument))
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 //-------------------------

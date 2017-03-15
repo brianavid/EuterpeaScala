@@ -16,6 +16,7 @@ case class SequenceContext (
   val currentChannelName: String = "",      //  The current channel name 
   val channels: mutable.Map[String,Int],    //  The mapping of track named onto (all different) Midi channels
   val transpose: Int = 0,                   //  Any specified prevailing chromatic transposition
+  val dTrans: Option[(Chord,Chord)] = None, //  Any specified prevailing diatonic transposition
   val tempoBPM: Int,                        //  The current tempo, in beats per minute
   val beat: Beat,                           //  The current beat of all notes in the music
   val scaleNum: Integer = 1,                //  The number of notes in scaleBeats number of beats

@@ -106,6 +106,10 @@ object Legato extends Width(1.0)              //  Notes flowing together
 
 case class Transpose( num: Int) extends Modifier
 
+//  The Diatonic Modifier transposes all notes in its music from one chord position to another within the current tonic scale
+
+case class Diatonic( fromChord: Chord, toChord: Chord) extends Modifier
+
 //  The Ocatve Modifier transposes all notes in its music up and down a number of octaves
 
 case class Octave( num: Int) extends Modifier

@@ -47,8 +47,15 @@ case class Note(
         semitones    //  Note which the current key signature does not affect
     }
     
+    //  Apply any Diatonic transposition
+    val transposedPitch = context.dTrans match
+    {
+      case None => pitchInKey
+      case Some((fromChord, toChord)) => Chord.transpose(fromChord, toChord, semitones, context)
+    }
+    
     //  The pitch at which the note plays, taking into account the octave and any transposition
-    val pitch = MiddleC + pitchInKey + octave*12 + context.transpose
+    val pitch = MiddleC + transposedPitch + octave*12 + context.transpose
     
     //  How long does the note last (although only sounding for part of it)
     val noteTiming = context.durationTiming * context.scaleBeats / context.scaleNum

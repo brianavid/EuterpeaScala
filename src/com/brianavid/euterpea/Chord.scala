@@ -163,3 +163,31 @@ object VII7 extends Chord(None, Harmony(), 7, true)
 
 
 //  All other tonic-relative Chords can be constructed from these with the use of modifiers 
+
+//  --------------------------
+
+object Chord
+{
+  //  Diatonic transposition of a note (specified as semitones) from one Chord position to another
+  def transpose(fromChord: Chord, toChord: Chord, semitones: Int, context: SequenceContext): Int =
+  {
+    //  Get the appropriate (major/minor) intervals for the tonic mode
+    val intervals = if (context.isMinor) Harmony.minorIntervals else Harmony.majorIntervals
+    
+    //  Where (chromatically) in the tonic scale is the note to be transposed? 
+    val noteTonicOffset = (semitones - context.tonic.semitones) % 12
+ 
+    //  Where (diatonically) in the scale intervals is the note to be transposed?
+    val fromNoteTonicIndex = intervals.indexWhere(_ >= noteTonicOffset)
+    
+    //  And so where in the scale intervals is the note to which it will be transposed
+    //  Note that this may be less than 0 and so must be octave adjusted
+    val toNoteTonicIndex = fromNoteTonicIndex + toChord.chordPosition - fromChord.chordPosition
+    
+    //  Transpose the note by adding and subtracting the found diatonic intervals
+    if (fromNoteTonicIndex <= 0)
+      semitones - 12 + intervals(toNoteTonicIndex) - intervals(fromNoteTonicIndex + 7)
+    else
+      semitones + intervals(toNoteTonicIndex) - intervals(fromNoteTonicIndex)
+  }
+}
