@@ -9,7 +9,7 @@ case class Harmony(intervalSet: Set[Int])
   //  Although the Harmony is a set of intervals, for inversions, arpeggios etc we need them sorted low to high
   def intervals = intervalSet.toIndexedSeq.sorted
   
-  //  Invert a Harmony, my moving the N lowest notes up an octave
+  //  Invert a Harmony, by moving the N lowest notes up an octave
   def inv(i: Int) =
   {
     val (transposed, untransposed) = intervals.splitAt(i)
@@ -34,8 +34,9 @@ case class Harmony(intervalSet: Set[Int])
   def min = Harmony(intervalSet-(root+4)+(root+3))
   def sus = Harmony(intervalSet-(root+3)-(root+4)+(root+5))
   def sus2 = Harmony(intervalSet-(root+4)-(root+3)+(root+2))
-  def add7 = Harmony(intervalSet + (root+10))
-  def addMaj7 = Harmony(intervalSet + (root+11)) 
+  def add6 = Harmony(intervalSet + (root+9))
+  def min7 = Harmony(intervalSet + (root+10))
+  def maj7 = Harmony(intervalSet + (root+11))
   
   //  Transpose the Harmony up or down a semitone or an octave
   def flat = Harmony(intervalSet.map(_-1))
@@ -44,30 +45,77 @@ case class Harmony(intervalSet: Set[Int])
   def unary_+ = Harmony(intervalSet.map(_+12))
 }
 
-//object Harmony
-//{
-//  val majorIntervals = Vector(0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23)
-//  val minorIntervals = Vector(0, 2, 3, 5, 7, 8, 18, 12, 14, 15, 17, 19, 20, 22)
-//}
+//  The Harmony object defines scale intervals and chord shapes
+object Harmony
+{
+  val majorIntervals = Vector(-1, 0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23)
+  val minorIntervals = Vector(-1, 0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22)
+  def triad(root: Int): Set[Int] = Set(root, root+2, root+4)  //  I.e. 1, 3, 5 for triad(1)
+  def seventh(root: Int): Set[Int] = Set(root, root+6)        //  Add a seventh
+  
+  //  An empty harmony with no root and no intervals
+  def apply() = new Harmony(Set.empty)
+}
 
 //  Some very common Harmonies which can be applied to a Note to form a Chord 
-object Maj extends Harmony(Set(0, 4, 7))
-object Min extends Harmony(Set(0, 3, 7))
-object Maj7 extends Harmony(Set(0, 4, 7, 10))
-object Min7 extends Harmony(Set(0, 3, 7, 10))
+object Maj extends Harmony(Harmony.triad(1).map(Harmony.majorIntervals))
+object Min extends Harmony(Harmony.triad(1).map(Harmony.minorIntervals))
+object Dom7 extends Harmony(Harmony.triad(1).map(Harmony.majorIntervals) ++ Harmony.seventh(1).map(Harmony.minorIntervals))
+object Maj7 extends Harmony(Harmony.triad(1).map(Harmony.majorIntervals) ++ Harmony.seventh(1).map(Harmony.majorIntervals))
+object Min7 extends Harmony(Harmony.triad(1).map(Harmony.minorIntervals) ++ Harmony.seventh(1).map(Harmony.minorIntervals))
 
-//  A chord is a Harmony with either an explicit root note or which is relative to the current tonic 
-case class Chord(root: Option[Note], harmony: Harmony) extends Music 
+
+//  A chord is a Harmony with either an explicit root note or which is in a position relative to the current tonic 
+//  A chord contains a list of transforms that can be applied to the harmony e.g. to add and remove intervals
+case class Chord(
+    root: Option[Note],           //  An explicit root note
+    harmony: Harmony,             //  An explicit harmony
+    chordPosition: Int = 1,   //  If the root is None, the chord position relative to the current tonic 
+    addSeventh: Boolean = false,  //  Add a seventh to the chord?
+    transforms: List[Harmony => Harmony] = Nil) extends Music 
 {
-  //  Add the Chord to the current sequence so that all the notes, transposed by the Harmony intervals) 
+  //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
   //  sound at the same time.
   def add(context: SequenceContext) =
   {
-    //  What is the root of the Chord? Is it provided or the current tonic?
-    val rootNote = root.getOrElse(context.tonic); 
+    //  Do we have an explicit root note and harmony? 
+    val (rootNote, baseHarmony: Harmony) = root match
+    {
+      //  If so, the explicit root note and harmony are the ones we start from
+      case Some(n) => (n, harmony)  
+      
+      //  Otherwise use the context.tonic as the root note and construct a base harmony
+      //  from the chord position and the appropriate (major/minor) intervals for the tonic mode
+      case None => {
+        //  Get the appropriate (major/minor) intervals for the tonic mode
+        val intervals = if (context.isMinor) Harmony.minorIntervals else Harmony.majorIntervals
+        
+        //  Construct a base harmony from the chord position and tonic intervals, adding a dominant seventh if specified 
+        if (addSeventh) 
+          (context.tonic, Harmony(Harmony.triad(chordPosition).map(intervals) ++ Harmony.seventh(chordPosition).map(Harmony.minorIntervals)))
+        else
+          (context.tonic, Harmony(Harmony.triad(chordPosition).map(intervals)))
+      }
+    }
     
-    //  What notes does the Chord play? Transpose the root note up by each of the Harmony intervals
-    val notes = harmony.intervals.map(rootNote/Transpose(_))
+    //  The effective harmony is constructed from the base harmony by apply each of the chord's transforms in turn 
+    val effectiveHarmony = 
+    {
+      def addTransforms(
+          transforms: List[Harmony => Harmony]): Harmony =
+      {
+        transforms match
+        {
+          case Nil => baseHarmony
+          case t :: ts => t(addTransforms( ts))
+        }
+      }
+      
+      addTransforms(transforms)
+    }
+    
+    //  What notes does the Chord play? Transpose the root note up by each of the effective Harmony intervals
+    val notes = effectiveHarmony.intervals.map(rootNote/Transpose(_))
     
     //  Construct a Music object of each of these notes sounding at the same time
     notes.foldRight(EmptyMusic: Music)(_ & _).add(context)
@@ -75,42 +123,43 @@ case class Chord(root: Option[Note], harmony: Harmony) extends Music
   
   def duration(context: SequenceContext) = context.durationTiming * context.scaleBeats / context.scaleNum
   
-  //  Modify the Chord by modifying the underlying Harmony  
-  def b = Chord(root, harmony.b)
-  def c = Chord(root, harmony.c)
-  def d = Chord(root, harmony.d)
-  def aug = Chord(root, harmony.aug)
-  def dim = Chord(root, harmony.dim)
-  def maj = Chord(root, harmony.maj)
-  def min = Chord(root, harmony.min)
-  def sus = Chord(root, harmony.sus)
-  def sus2 = Chord(root, harmony.sus2)
-  def add7 = Chord(root, harmony.add7)
-  def addMaj7 = Chord(root, harmony.addMaj7)
-  def flat = Chord(root, harmony.flat)
-  def sharp = Chord(root, harmony.sharp)
-  def unary_- = Chord(root, -harmony)
-  def unary_+ = Chord(root, +harmony)
+  //  Modify the Chord by adding a transform which will modify the underlying Harmony as it is added  
+  def b = copy(transforms = ((h: Harmony) => h.b) :: transforms)
+  def c = copy(transforms = ((h: Harmony) => h.c) :: transforms)
+  def d = copy(transforms = ((h: Harmony) => h.d) :: transforms)
+  def aug = copy(transforms = ((h: Harmony) => h.aug) :: transforms)
+  def dim = copy(transforms = ((h: Harmony) => h.dim) :: transforms)
+  def maj = copy(transforms = ((h: Harmony) => h.maj) :: transforms)
+  def min = copy(transforms = ((h: Harmony) => h.min) :: transforms)
+  def sus = copy(transforms = ((h: Harmony) => h.sus) :: transforms)
+  def sus2 = copy(transforms = ((h: Harmony) => h.sus2) :: transforms)
+  def add6 = copy(transforms = ((h: Harmony) => h.add6) :: transforms)
+  def dom7 = copy(transforms = ((h: Harmony) => h.min7) :: transforms)
+  def min7 = copy(transforms = ((h: Harmony) => h.min7) :: transforms)
+  def maj7 = copy(transforms = ((h: Harmony) => h.maj7) :: transforms)
+  def flat = copy(transforms = ((h: Harmony) => h.flat) :: transforms)
+  def sharp = copy(transforms = ((h: Harmony) => h.sharp) :: transforms)
+  def unary_- = copy(transforms = ((h: Harmony) => -h) :: transforms)
+  def unary_+ = copy(transforms = ((h: Harmony) => +h) :: transforms)
 }
 
 //  Some basic tonic-relative Chords using Roman number notation
-object I extends Chord(None, Harmony( Set(0, 4, 7)))
-object Im extends Chord(None, Harmony( Set(0, 3, 7)))
-object II extends Chord(None, Harmony( Set(2, 5, 9)))
-object III extends Chord(None, Harmony( Set(4, 7, 11)))
-object IV extends Chord(None, Harmony( Set(5, 9, 12)))
-object V extends Chord(None, Harmony( Set(7, 11, 14)))
-object VI extends Chord(None, Harmony( Set(9, 12, 16)))
-object VII extends Chord(None, Harmony( Set(11, 14, 17)))
+object I extends Chord(None, Harmony(), 1)
+object II extends Chord(None, Harmony(), 2)
+object III extends Chord(None, Harmony(), 3)
+object IV extends Chord(None, Harmony(), 4)
+object V extends Chord(None, Harmony(), 5)
+object VI extends Chord(None, Harmony(), 6)
+object VII extends Chord(None, Harmony(), 7)
 
 //  Some tonic-relative Chords using Roman number notation, each with an added dominant seventh
-object I7 extends Chord(None, Harmony( Set(0, 4, 7, 10)))
-object Im7 extends Chord(None, Harmony( Set(0, 3, 7, 10)))
-object II7 extends Chord(None, Harmony( Set(2, 5, 9, 12)))
-object III7 extends Chord(None, Harmony( Set(4, 7, 11, 14)))
-object IV7 extends Chord(None, Harmony( Set(5, 9, 12, 15)))
-object V7 extends Chord(None, Harmony( Set(7, 11, 14, 17)))
-object VI7 extends Chord(None, Harmony( Set(9, 12, 16, 19)))
-object VII7 extends Chord(None, Harmony( Set(11, 14, 17, 21)))
+object I7 extends Chord(None, Harmony(), 1, true)
+object II7 extends Chord(None, Harmony(), 2, true)
+object III7 extends Chord(None, Harmony(), 3, true)
+object IV7 extends Chord(None, Harmony(), 4, true)
+object V7 extends Chord(None, Harmony(), 5, true)
+object VI7 extends Chord(None, Harmony(), 6, true)
+object VII7 extends Chord(None, Harmony(), 7, true)
+
 
 //  All other tonic-relative Chords can be constructed from these with the use of modifiers 

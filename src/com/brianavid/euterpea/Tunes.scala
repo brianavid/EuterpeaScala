@@ -50,9 +50,11 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    Beats.tune.play()
-    BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    BirdsInTheSpringBaritone.tune.play()
+    //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //Beats.tune.play()
+    Blues.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    Blues.tune.play()
+    //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //BirdsInTheSpringBaritone.tune.play()
   }
 }
