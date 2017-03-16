@@ -102,13 +102,16 @@ object Staccato extends Width(0.3)            //  Short and sharp
 object Marcato extends Width(0.7)             //  Notes clearly separated  
 object Legato extends Width(1.0)              //  Notes flowing together
 
-//  The Transpose Modifier transposes chromatically all notes in its music up and down a number of semitones
+//  The Transpose Modifier transposes all notes in its music either :
+//    chromatically up and down a number of semitones, or else
+//    diatonically from one chord position to another within the current tonic scale
 
-case class Transpose( num: Int) extends Modifier
-
-//  The Diatonic Modifier transposes all notes in its music from one chord position to another within the current tonic scale
-
-case class Diatonic( fromChord: Chord, toChord: Chord) extends Modifier
+case class Transpose( chromatic: Int, diatonic: Option[(Chord,Chord)]) extends Modifier
+object Transpose
+{
+  def apply(chromatic: Int) = new Transpose(chromatic, None)
+  def apply(fromChord: Chord, toChord: Chord) = new Transpose(0, Some((fromChord, toChord)))
+}
 
 //  The Ocatve Modifier transposes all notes in its music up and down a number of octaves
 

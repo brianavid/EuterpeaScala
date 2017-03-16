@@ -34,7 +34,7 @@ object Blues
 object DiatonicTest
 {
   val line = C - D - E - F - G
-  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (line - Diatonic(I, II) /: line)
+  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (line - Transpose(I, II) /: line)
 }
 
 object Beats
