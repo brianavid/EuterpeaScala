@@ -34,8 +34,8 @@ class Beat(val beatTicks: Int) extends Modifier
   //  The Midi meta encoding of the (simple object) Duration for time signatures (only)
   def timeSigDenom = {
     def powerOfTwo(v: Integer, power: Integer): Integer = 
-      if (v == 0) power else powerOfTwo(v/2, power+1)
-    powerOfTwo(Beat.TPQN*4/beatTicks, 1).toByte
+      if (v < 2) power else powerOfTwo(v/2, power+1)
+    powerOfTwo(Beat.TPQN*4/beatTicks, 0).toByte
   }
 }
 
@@ -87,7 +87,11 @@ case object PPv extends Volume(MFv.volume-20) //  Even quieter
 
 //  The Tempo Modifier controls and varies the tempo of the music
 
-case class Tempo (bpm: Int) extends Modifier
+case class Tempo (bpm: Int, toBpm: Option[Int] = None) extends Modifier
+object Tempo
+{
+  def apply (bpm: Int, toBpm: Int) = new Tempo(bpm, Some(toBpm))
+}
 
 //  The TimeSig Modifier controls and varies the time signature of the music
 

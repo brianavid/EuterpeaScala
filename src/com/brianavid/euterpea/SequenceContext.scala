@@ -44,7 +44,7 @@ case class SequenceContext (
   //  Write the specified Time Signature to the timing track
   def writeTimeSig(number: Byte, beat: Beat, position: Timing) = {
     //  On a compound time (more than one triplet in a bar), metronome clicks are every three beats
-    val beatRate = 96 / (1 << number)
+    val beatRate = Beat.TPQN * 24 / beat.beatTicks
     val clickRate = if (number % 3 == 0 && number > 3) 3 * beatRate else beatRate
     
     val bytearray = Array[Byte](number, beat.timeSigDenom, clickRate.toByte, 8)

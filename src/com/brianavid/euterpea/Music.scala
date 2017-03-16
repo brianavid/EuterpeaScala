@@ -91,7 +91,7 @@ trait Music
     case beat: Beat => new WithBeat (beat, this)
     case BeatScale(numberOfNotes, numberOfBeats) => new WithBeatScale(numberOfNotes, numberOfBeats, this)
     case vol: Volume => new WithVolume(vol.volume, this)
-    case Tempo(tempo) => new WithTempo( tempo, this) 
+    case Tempo(tempo, toBpm) => new WithTempo( tempo, toBpm, this) 
     case TimeSig(number: Byte, beat: Beat) => new WithTimeSig( number, beat, this) 
     case Width(width) => new WithWidth( width, this) 
     case Transpose( num: Int, None) => new WithTranspose( num, this)
@@ -304,15 +304,31 @@ case class WithBeatScale(numberOfNotes: Integer, numberOfBeats: Integer, music: 
 
 //-------------------------
 
-//  Add the music, with a changed current tempo
+//  Add the music, with a changed (and optionally changing) current tempo
 
-case class WithTempo( bpm: Int, music: Music) extends Music
+case class WithTempo( bpm: Int, toBpm: Option[Int], music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
     val saveBPM=context.tempoBPM
     context.writeTempo(bpm, context.position)
-    val durationTiming = music.add(context.copy(tempoBPM=context.tempoBPM))
+    //  Does the tempo change from bpm to toBpm over the duration of the music?
+    toBpm match
+    {
+      case None => 
+        ;          // No gradual Tempo change within the music (accel or rall)
+        
+      case Some(toBpmValue) =>
+        //  The Tempo changes from bpm to toBpm over the duration of the music
+        val changeDuration = music.duration(context)
+        //  We do this in a granularity of a tenth of the music
+        for (i <- 1 to 9)
+          context.writeTempo(bpm + (toBpmValue-bpm)*i/10, context.position + (changeDuration*i/10))
+    }
+    
+    //  No add the music itself
+    val durationTiming = music.add(context.copy(tempoBPM=bpm))
+    
     context.writeTempo(saveBPM, context.position+durationTiming)
     durationTiming
   }

@@ -34,7 +34,7 @@ object Blues
 object DiatonicTest
 {
   val line = C - D - E - F - G
-  val tune = Tempo(120) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (line - Transpose(I -> II) /: line)
+  val tune = line - line/Transpose(I -> II) - (line & line/Transpose(I -> III) & line/Transpose(I -> V))
 }
 
 object Beats
@@ -56,13 +56,13 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    DiatonicTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    DiatonicTest.tune.play()
+    //DiatonicTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //DiatonicTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
     //Blues.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Blues.tune.play()
-    //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    //BirdsInTheSpringBaritone.tune.play()
+    BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    BirdsInTheSpringBaritone.tune.play()
   }
 }
