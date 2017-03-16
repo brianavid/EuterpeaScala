@@ -98,6 +98,7 @@ trait Music
     case Transpose( 0, Some((fromChord, toChord))) => new WithDiatonic( fromChord, toChord, this)
     case Octave( num: Int) => new WithTranspose( num*12, this)
     case keySig: KeySig => new WithKeySig( keySig, this)
+    case Modulate(keySig) => new WithModulation( keySig, this)
     case Track( trackName: String) => new WithTrack( trackName, this)
     case Channel( channelName: String) => new WithChannel( channelName, this)
     case Instrument( instrument: Int) => new WithInstrument( instrument, this)
@@ -412,6 +413,20 @@ case class WithKeySig(keySig: KeySig, music: Music) extends Music
     val durationTiming = music.add(context.copy(keySig = keySig, tonic=keySig.tonic, isMinor=keySig.isMinor))
     context.writeKeySig(saveKeySig.keySigSharps, saveKeySig.isMinor, context.position+durationTiming)
     durationTiming
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
+}
+
+//-------------------------
+
+//  Add the music, with a changed tonic, but without a changed key signature
+
+case class WithModulation(keySig: KeySig, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(tonic=keySig.tonic, isMinor=keySig.isMinor))
   }
   
   def duration(context: SequenceContext) = music.duration(context)

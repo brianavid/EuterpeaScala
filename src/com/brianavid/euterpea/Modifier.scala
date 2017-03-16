@@ -152,6 +152,10 @@ object EfMin extends KeySig(-5, Ef, true)
 object AfMin extends KeySig(-6, Af, true)
 object DfMin extends KeySig(-7, Df, true)
 
+//  The Modulate Modifier changes the current tonic key for harmonisation without altering the the key signature
+
+case class Modulate( tonic: KeySig) extends Modifier
+
 //  The Track Modifier specifies that its music goes in the named track which can be viewed, printed or muted
 //  independently of any music on any other named track
 
