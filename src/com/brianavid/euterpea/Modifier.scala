@@ -110,7 +110,7 @@ case class Transpose( chromatic: Int, diatonic: Option[(Chord,Chord)]) extends M
 object Transpose
 {
   def apply(chromatic: Int) = new Transpose(chromatic, None)
-  def apply(fromChord: Chord, toChord: Chord) = new Transpose(0, Some((fromChord, toChord)))
+  def apply(chords: Tuple2[Chord, Chord]) = new Transpose(0, Some((chords._1, chords._2)))
 }
 
 //  The Ocatve Modifier transposes all notes in its music up and down a number of octaves
