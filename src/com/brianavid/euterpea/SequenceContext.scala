@@ -28,7 +28,8 @@ case class SequenceContext (
   val keySig: KeySig = CMaj,                //  The key signature
   val tonic: Note = C,                      //  The current tonic (usually the key)
   val isMinor: Boolean = false,             //  Is the current key a minor?
-  val currentInstrument: Int = 1)           //  The General Midi instrument on which notes are played
+  val currentInstrument: Int = 1,           //  The General Midi instrument on which notes are played
+  val dynamics: List[ContextDynamics] = Nil)//  The set of dynamics affecting the sequence
 {
   //  The Timing of the current duration at the current tempo
   def durationTiming = Timing( beat)
@@ -80,6 +81,11 @@ case class SequenceContext (
       channels(currentChannelName) = ((1 to 16).toSet -- channels.values).head
     }
     channels(currentChannelName) 
+  }
+  
+  def getDynamics = 
+  {
+    dynamics.foldLeft(PointDynamics())((p,d) => p + d.dynamics.getAtTime(position-d.startTime))
   }
 }
 

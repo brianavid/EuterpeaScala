@@ -13,12 +13,22 @@ case class Drum(noteNumber: Integer) extends Music
     //  Get the Midi channel identified by the track name, creating it if it does not exist
     val channel = context.channels.getOrElseUpdate(context.currentChannelName, context.channels.size)
     
-    //  Where does the note start and end playing, taking into account the note width
-    val startTicks = context.position.ticks
-    val endTicks = startTicks + (noteTiming.ticks * context.noteWidth).toInt + context.tiedAddition.beatTicks
+    val dynamics = context.getDynamics
+    
+    //  Where does the note start and end playing, taking into account the note width and 
+    //  any Dynamics modifiers that can affect the start time
+    
+    //  What factor of the current beat will the timing be altered by the dynamics?
+    val timingIncFactor = dynamics.timingInc - dynamics.timingJitter + (2 * dynamics.timingJitter * new scala.util.Random().nextDouble())
+    
+    //  How many ticks will the timing be altered by the dynamics?
+    val timingInc = (context.durationTiming.ticks.toDouble * timingIncFactor).toInt
+    
+    val startTicks = context.position.ticks + timingInc
+    val endTicks = startTicks + (noteTiming.ticks * (context.noteWidth + dynamics.noteWidthInc)).toInt + context.tiedAddition.beatTicks
     
     //  Add Midi events to start and end the note at the right pitch, volume and timing
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, noteNumber, context.volume),startTicks))
+    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, noteNumber, context.volume+dynamics.volumeInc),startTicks))
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, channel, noteNumber, 0),endTicks))
     
 

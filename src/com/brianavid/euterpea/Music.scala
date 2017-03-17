@@ -102,6 +102,7 @@ trait Music
     case Track( trackName: String) => new WithTrack( trackName, this)
     case Channel( channelName: String) => new WithChannel( channelName, this)
     case Instrument( instrument: Int) => new WithInstrument( instrument, this)
+    case dynamics: Dynamics => new WithDynamics(dynamics, this)
     case _ => this
   }
   
@@ -496,13 +497,13 @@ case class WithInstrument( instrument: Int, music: Music) extends Music
 
 //-------------------------
 
-//  Add the music, with the volume altered within each bar to add a stress pulse 
+//  Add the music, with the dynamics applied 
 
-case class WithPulse( stressesPerBar: Int, stressVolumeIncrement: Int, music: Music) extends Music
+case class WithDynamics( dyn: Dynamics, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    music.add(context.copy())
+    music.add(context.copy(dynamics = ContextDynamics(context.position, dyn) :: context.dynamics))
   }
   
   def duration(context: SequenceContext) = music.duration(context)
@@ -510,21 +511,7 @@ case class WithPulse( stressesPerBar: Int, stressVolumeIncrement: Int, music: Mu
 
 //-------------------------
 
-//  Add the music, with the timing altered within each bar to add a swing 
-
-case class WithSwing( duration: Beat, swing: Double, music: Music) extends Music
-{
-  def add(context: SequenceContext) =
-  {
-    music.add(context.copy())
-  }
-  
-  def duration(context: SequenceContext) = music.duration(context)
-}
-
-//-------------------------
-
-//  Add the music, which will ne a single Note, with the lyric associated with the time of the note 
+//  Add the music, which will be a single Note, with the lyric associated with the time of the note 
 
 case class WithLyric( lyric: String, music: Music) extends Music
 {

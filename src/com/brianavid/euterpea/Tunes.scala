@@ -37,6 +37,12 @@ object DiatonicTest
   val tune = line - line/Transpose(I -> II) - (line & line/Transpose(I -> III) & line/Transpose(I -> V))
 }
 
+object DynamicsTest
+{
+  val line = C - D - E - F - G - F - E - D - C
+  val tune = line/8/Dynamics.swing(8, 0.3)
+}
+
 object Beats
 {
   val bass = Drum(Drum.Bass_Drum_1)
@@ -56,13 +62,13 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    //DiatonicTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    //DiatonicTest.tune.play()
+    DynamicsTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    DynamicsTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
     //Blues.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Blues.tune.play()
-    BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    BirdsInTheSpringBaritone.tune.play()
+    //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //BirdsInTheSpringBaritone.tune.play()
   }
 }

@@ -1,7 +1,7 @@
 package com.brianavid.euterpea
 import language.implicitConversions
 
-sealed trait Modifier
+trait Modifier
 
 object Modifier
 {
