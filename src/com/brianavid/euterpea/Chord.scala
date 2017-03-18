@@ -121,7 +121,7 @@ case class Chord(
     notes.foldRight(EmptyMusic: Music)(_ & _).add(context)
   }
   
-  def duration(context: SequenceContext) = context.durationTiming * context.scaleBeats / context.scaleNum
+  def duration(context: SequenceContext) = context.durationTiming(1) * context.scaleBeats / context.scaleNum
   
   //  Modify the Chord by adding a transform which will modify the underlying Harmony as it is added  
   def b = copy(transforms = ((h: Harmony) => h.b) :: transforms)

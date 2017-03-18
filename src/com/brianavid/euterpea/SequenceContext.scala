@@ -29,10 +29,17 @@ case class SequenceContext (
   val tonic: Note = C,                      //  The current tonic (usually the key)
   val isMinor: Boolean = false,             //  Is the current key a minor?
   val currentInstrument: Int = 1,           //  The General Midi instrument on which notes are played
+  val rhythmPattern: Vector[Timing] = Vector.empty,
   val dynamics: List[ContextDynamics] = Nil)//  The set of dynamics affecting the sequence
 {
   //  The Timing of the current duration at the current tempo
-  def durationTiming = Timing( beat)
+  def durationTiming(noteCount: Int) = 
+  {
+    if (!rhythmPattern.isEmpty)
+      rhythmPattern(position.noteCount % rhythmPattern.length)
+    else
+      Timing( beat, noteCount)
+  }
   
   //  Write the specified Tempo to the timing track 
   def writeTempo(bpm: Int, position: Timing) = {
@@ -95,7 +102,7 @@ object SequenceContext
   def apply(sequence: M.Sequence) = 
     new SequenceContext(
           sequence=sequence,                          // The sequence being constructed
-          position=new Timing(0, Some(0)),            // Start at the beginning
+          position=new Timing(0, 0, Some(0)),         // Start at the beginning
           timingTrack=sequence.createTrack(),
           tracks=new mutable.HashMap[String,M.Track], // An empty track mapping table
           channels=mutable.HashMap("Drums" -> 9),    // A Midi channel mapping table, where Drums are pre-allocated

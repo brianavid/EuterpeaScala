@@ -68,7 +68,7 @@ object Test1
     //Beats.tune.play()
     //Blues.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Blues.tune.play()
-    //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    //BirdsInTheSpringBaritone.tune.play()
+    BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    BirdsInTheSpringBaritone.tune.play()
   }
 }

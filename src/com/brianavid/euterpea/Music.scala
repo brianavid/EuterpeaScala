@@ -102,6 +102,7 @@ trait Music
     case Track( trackName: String) => new WithTrack( trackName, this)
     case Channel( channelName: String) => new WithChannel( channelName, this)
     case Instrument( instrument: Int) => new WithInstrument( instrument, this)
+    case Rhythm( rhythmMusic: Music) => WithRhythm(rhythmMusic, this)
     case dynamics: Dynamics => new WithDynamics(dynamics, this)
     case _ => this
   }
@@ -109,7 +110,29 @@ trait Music
   //  Apply a Modifier to the Music with the alternate syntax as Modifier/:Music
   def /: (mod: Modifier) = this / mod
   
+  //  Repeat a piece of music a fixed number of times
   def * (repeat: Integer) = new Repeated(this, repeat)
+  
+  def rhythmTimings(context: SequenceContext) =
+  {
+    def getTimings(m: Music, context: SequenceContext) : List[Timing] =
+    {
+      //  The only things that affect rhythm are the sequence of Notes and bars and the 
+      //  Beat and BeatScale modifiers
+      //  Normally the rhythm will be a simple single note melody or drum pattern, which may
+      //  use the (unplayable) Note "?" for clarity
+      m match
+      {
+        case m1 - m2 => getTimings(m1,context) ::: getTimings(m2,context)
+        case BarJoin(m1,m2) => getTimings(m1,context) ::: getTimings(m2,context)
+        case Repeated(m1,repeat) => (1 to repeat).map(i => getTimings(m1,context)).flatten.toList
+        case WithBeat(beat, m1) => getTimings(m1,context.copy(beat=beat))
+        case WithBeatScale(numberOfNotes, numberOfBeats, m1) => getTimings(m1,context.copy(scaleNum=numberOfNotes,scaleBeats=numberOfBeats))
+        case _ => List(m.duration(context))
+      }
+    }
+    getTimings(this, context).toVector
+  }
 }
 
 //-------------------------
@@ -117,8 +140,8 @@ trait Music
 //  
 object EmptyMusic extends Music
 {
-  def add(context: SequenceContext) =  Timing(NoDuration)
-  def duration(context: SequenceContext) =  Timing(NoDuration)
+  def add(context: SequenceContext) =  Timing(NoDuration, 0)
+  def duration(context: SequenceContext) =  Timing(NoDuration, 0)
 }
 
 //-------------------------
@@ -208,7 +231,7 @@ case class BarExtend(music: Music, tiedAddition: Beat) extends Music
   def add(context: SequenceContext) =
   {
     val durationTiming = music.add(context.copy(tiedAddition=tiedAddition))
-    val barPosition = context.position+durationTiming-Timing(tiedAddition)
+    val barPosition = context.position+durationTiming-Timing(tiedAddition, 0)
     
     if (!(barPosition).isAtBar(context.timeSig))
     {
@@ -230,7 +253,7 @@ case class Repeated(music: Music, repeat: Integer) extends Music
   def add(context: SequenceContext) =
   {
     if (repeat == 0)
-      Timing(NoDuration)
+      Timing(NoDuration, 0)
     else
     {
       val durationTiming1 = music.add(context.copy(tiedAddition=NoDuration))
@@ -243,7 +266,7 @@ case class Repeated(music: Music, repeat: Integer) extends Music
   def duration(context: SequenceContext) =
   {
     if (repeat == 0)
-      Timing(NoDuration)
+      Timing(NoDuration, 0)
     else
     {
       val durationTiming1 = music.duration(context.copy(tiedAddition=NoDuration))
@@ -525,6 +548,26 @@ case class WithLyric( lyric: String, music: Music) extends Music
   }
   
   def duration(context: SequenceContext) = music.duration(context)
+}
+
+//-------------------------
+
+//  Add the music, with the duration of each Note, Drum or Rest taken in turn cyclically from  
+//  repetitions of the rhythm pattern of the rhythmMusic and not from the current Beat
+
+case class WithRhythm( rhythmMusic: Music, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    val rhythmPattern=rhythmMusic.rhythmTimings(context.copy(rhythmPattern = Vector.empty))
+    music.add(context.copy(rhythmPattern=rhythmPattern))
+  }
+  
+  def duration(context: SequenceContext) = 
+  {
+    val rhythmPattern=rhythmMusic.rhythmTimings(context.copy(rhythmPattern = Vector.empty))
+    music.duration(context.copy(rhythmPattern=rhythmPattern))
+  }
 }
 
 

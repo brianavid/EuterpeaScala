@@ -58,7 +58,7 @@ case class Note(
     val pitch = MiddleC + transposedPitch + octave*12 + context.transpose
     
     //  How long does the note last (although only sounding for part of it)
-    val noteTiming = context.durationTiming * context.scaleBeats / context.scaleNum
+    val noteTiming = context.durationTiming(1) * context.scaleBeats / context.scaleNum
         
     val dynamics = context.getDynamics
     
@@ -69,7 +69,7 @@ case class Note(
     val timingIncFactor = dynamics.timingInc - dynamics.timingJitter + (2 * dynamics.timingJitter * new scala.util.Random().nextDouble())
     
     //  How many ticks will the timing be altered by the dynamics?
-    val timingInc = (context.durationTiming.ticks.toDouble * timingIncFactor).toInt
+    val timingInc = (context.durationTiming(0).ticks.toDouble * timingIncFactor).toInt
     
     val startTicks = context.position.ticks + timingInc
     val endTicks = startTicks + (noteTiming.ticks * (context.noteWidth + dynamics.noteWidthInc)).toInt + context.tiedAddition.beatTicks
@@ -81,7 +81,7 @@ case class Note(
     noteTiming
   }
   
-  def duration(context: SequenceContext) = context.durationTiming * context.scaleBeats / context.scaleNum
+  def duration(context: SequenceContext) = context.durationTiming(1) * context.scaleBeats / context.scaleNum
 }
 
 //  Every note in all scales are individually named
@@ -126,6 +126,9 @@ object B extends Note( 11, "B", 7)
 object Bn extends Note( 11, "Bn")
 object Bs extends Note( 12, "Bs")
 
+//  The "?" Note is unplayable, but has a Beat and so can be used in rhythm patterns
+object ? extends Note(Int.MaxValue, "?")
+
 //-------------------------
 
 //  A Rest object adds nothing to the sequence, but advances the current position according to its duration and tempo
@@ -134,9 +137,9 @@ case object Rest extends Music
 {
   def add(context: SequenceContext) =
   {
-    context.durationTiming * context.scaleBeats / context.scaleNum
+    context.durationTiming(1) * context.scaleBeats / context.scaleNum
   }
   
-  def duration(context: SequenceContext) = context.durationTiming * context.scaleBeats / context.scaleNum
+  def duration(context: SequenceContext) = context.durationTiming(1) * context.scaleBeats / context.scaleNum
 }
 

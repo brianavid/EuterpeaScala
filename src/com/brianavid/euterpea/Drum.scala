@@ -5,7 +5,7 @@ case class Drum(noteNumber: Integer) extends Music
 {
   def add(context: SequenceContext) =
   {
-    val noteTiming = context.durationTiming * context.scaleBeats / context.scaleNum
+    val noteTiming = context.durationTiming(1) * context.scaleBeats / context.scaleNum
     
     //  Get the track identified by the track name, creating it if it does not exist
     val track = context.getTrack
@@ -22,7 +22,7 @@ case class Drum(noteNumber: Integer) extends Music
     val timingIncFactor = dynamics.timingInc - dynamics.timingJitter + (2 * dynamics.timingJitter * new scala.util.Random().nextDouble())
     
     //  How many ticks will the timing be altered by the dynamics?
-    val timingInc = (context.durationTiming.ticks.toDouble * timingIncFactor).toInt
+    val timingInc = (context.durationTiming(0).ticks.toDouble * timingIncFactor).toInt
     
     val startTicks = context.position.ticks + timingInc
     val endTicks = startTicks + (noteTiming.ticks * (context.noteWidth + dynamics.noteWidthInc)).toInt + context.tiedAddition.beatTicks
@@ -35,7 +35,7 @@ case class Drum(noteNumber: Integer) extends Music
     noteTiming
   }
   
-  def duration(context: SequenceContext) = context.durationTiming * context.scaleBeats / context.scaleNum
+  def duration(context: SequenceContext) = context.durationTiming(1) * context.scaleBeats / context.scaleNum
 }
 
 object Drum

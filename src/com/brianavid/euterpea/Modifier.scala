@@ -58,7 +58,6 @@ object Beat
 }
 
 case object NoDuration extends Beat(0)             //  No time
-case object N extends Beat(Beat.TPQN*4)            //  Whole note
 case object Whole extends Beat(Beat.TPQN*4)        //  Whole note
 case object Half extends Beat(Beat.TPQN*2)         //  Half note
 case object Quarter extends Beat(Beat.TPQN)        //  Quarter note
@@ -176,6 +175,10 @@ object Instrument
 {
   def apply(instrumentName: String) = new Instrument(Instruments.instrumentByName.getOrElse(instrumentName, 1))
 }
+
+//  The Rhythm Modifier adds the modified music with the rhythm of its pattern (repeated as necessary)
+
+case class Rhythm(pattern: Music) extends Modifier
 
 //  FUTURE MODIFIER CLASS DEFINITIONS GO HERE
 
