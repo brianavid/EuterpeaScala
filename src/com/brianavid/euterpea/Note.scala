@@ -82,6 +82,9 @@ case class Note(
   }
   
   def duration(context: SequenceContext) = context.durationTiming(1) * context.scaleBeats / context.scaleNum
+  
+  //  Allow integer parameter to specify the absolute octave - default is C(4) == MiddleC
+  def apply(octave: Int) = new Note(semitones, s"{display}{octave}", numSharpsToSharpen, this.octave+octave-4)
 }
 
 //  Every note in all scales are individually named

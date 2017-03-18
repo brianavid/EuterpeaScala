@@ -39,7 +39,7 @@ object DiatonicTest
 
 object DynamicsTest
 {
-  val line = C - D - E - F - G - F - E - D - C
+  val line = C - D - E - F - G - F - E - D - C(5)
   val tune = line/8/Dynamics.swing(8, 0.3)
 }
 
