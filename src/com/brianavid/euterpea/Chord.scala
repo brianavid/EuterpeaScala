@@ -64,6 +64,9 @@ object Dom7 extends Harmony(Harmony.triad(1).map(Harmony.majorIntervals) ++ Harm
 object Maj7 extends Harmony(Harmony.triad(1).map(Harmony.majorIntervals) ++ Harmony.seventh(1).map(Harmony.majorIntervals))
 object Min7 extends Harmony(Harmony.triad(1).map(Harmony.minorIntervals) ++ Harmony.seventh(1).map(Harmony.minorIntervals))
 
+case class Arpeggio( 
+    val beat: Beat, 
+    val sequence: Vector[Int])
 
 //  A chord is a Harmony with either an explicit root note or which is in a position relative to the current tonic 
 //  A chord contains a list of transforms that can be applied to the harmony e.g. to add and remove intervals
@@ -73,10 +76,15 @@ case class Chord(
     chordPosition: Int = 1,   //  If the root is None, the chord position relative to the current tonic 
     addSeventh: Boolean = false,  //  Add a seventh to the chord?
     brokenDelay: Option[Double] = None,  //  For a broken chord, the delay between the onset of each note in the chord
+    arpeggioPattern: Option[Arpeggio] = None,  //  For an arpeggio or ornament, the pattern (sequence and timing) 
     transforms: List[Harmony => Harmony] = Nil) extends Music 
-  {
+{
   //  Make the chord a broken cord, adding a fraction of a beat delay to each note in the chord
   def broken(delay: Double) = copy(brokenDelay=Some(delay))
+    
+  //  Make the chord an arpeggiated cord, 
+  def arpeggio(beat: Beat,  sequence: Int*) = copy(arpeggioPattern=Some(Arpeggio(beat, sequence.toVector)))
+  def arpeggio(a: Arpeggio) = copy(arpeggioPattern=Some(a))
     
   //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
   //  sound at the same time.
@@ -120,21 +128,43 @@ case class Chord(
     
     //  What notes does the Chord play? Transpose the root note up by each of the effective Harmony intervals
     val notes = effectiveHarmony.intervals.map(rootNote/Transpose(_))
-    
-    //  For a broken chord, each note has a delay (increasing as you go up the chord)
-    val delayedNotes = brokenDelay match
+      
+    arpeggioPattern match
     {
-      case None => notes
-      case Some(delay) => 
-        {
-          notes.zipWithIndex.map{
-            case (n:Music,i: Int) => (WithDynamics(Dynamics.delay(context.beat, delay*i), n))
-          }
+      case Some(pattern) =>
+      {
+        val patternSequenceBeatRatio = context.durationTiming(0).ticks / pattern.beat.beatTicks
+        val patternSequenceCount = pattern.sequence.length min patternSequenceBeatRatio
+        pattern.sequence.take(patternSequenceCount-1).zipWithIndex.map{
+          case (index: Int, i: Int) => 
+            notes(index).add(context.copy(beat=pattern.beat, position=context.position+Timing(pattern.beat * i, 1)))
         }
+        
+        val lastInPattern = patternSequenceCount-1
+        val remainingTiming = context.durationTiming(0).ticks - (pattern.beat.beatTicks * lastInPattern)
+        notes(pattern.sequence(patternSequenceCount-1)).add(context.copy(beat=new Beat(remainingTiming), position=context.position+Timing(pattern.beat * lastInPattern, 1)))
+
+        context.durationTiming(0) * context.scaleBeats / context.scaleNum
+      }
+      
+      case None =>
+      {
+        //  For a broken chord, each note has a delay (increasing as you go up the chord)
+        val delayedNotes = brokenDelay match
+        {
+          case None => notes
+          case Some(delay) => 
+            {
+              notes.zipWithIndex.map{
+                case (m:Music,i: Int) => (WithDynamics(Dynamics.delay(context.beat, delay*i), m))
+              }
+            }
+        }
+        
+        //  Construct a Music object of each of these notes sounding at the same time
+        delayedNotes.foldRight(EmptyMusic: Music)(_ & _).add(context)
+      }
     }
-    
-    //  Construct a Music object of each of these notes sounding at the same time
-    delayedNotes.foldRight(EmptyMusic: Music)(_ & _).add(context)
   }
   
   def duration(context: SequenceContext) = context.durationTiming(1) * context.scaleBeats / context.scaleNum

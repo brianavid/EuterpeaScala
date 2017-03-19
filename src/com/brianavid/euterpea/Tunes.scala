@@ -31,6 +31,12 @@ object Blues
   val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c.broken(0.05) - II7.b.broken(0.05) - V7.broken(0.05) - I)
 }
 
+object ArpeggioTest
+{
+  val pattern = Arpeggio(Thirtysecond,Vector(0,1,2,3,2,0))
+  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c.arpeggio(pattern) - II7.b.arpeggio(pattern) - V7.arpeggio(pattern) - I)
+}
+
 object DiatonicTest
 {
   val line = C - D - E - F - G
@@ -73,8 +79,8 @@ object Test1
     //RhythmTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
-    Blues.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    Blues.tune.play()
+    ArpeggioTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    ArpeggioTest.tune.play()
     //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //BirdsInTheSpringBaritone.tune.play()
   }
