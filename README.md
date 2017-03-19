@@ -24,6 +24,6 @@ It supports :
 - patterns for note dynamics (volume, width and timing) for phrase-based control of stress, swing, humanisation, etc 
 - note ornaments (turns, mordants, trills etc)
 - control envelopes for continuous Midi controls
-- range limitation with octave shofts to keep notes within an instrument's range
+- range limitation with octave shifts to keep notes within an instrument's range
 
 It should be seen as a work-in-progress and also as a platform to improve my understanding of Scala's capabilities.
