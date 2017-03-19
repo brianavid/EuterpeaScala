@@ -72,8 +72,12 @@ case class Chord(
     harmony: Harmony,             //  An explicit harmony
     chordPosition: Int = 1,   //  If the root is None, the chord position relative to the current tonic 
     addSeventh: Boolean = false,  //  Add a seventh to the chord?
+    brokenDelay: Option[Double] = None,  //  For a broken chord, the delay between the onset of each note in the chord
     transforms: List[Harmony => Harmony] = Nil) extends Music 
-{
+  {
+  //  Make the chord a broken cord, adding a fraction of a beat delay to each note in the chord
+  def broken(delay: Double) = copy(brokenDelay=Some(delay))
+    
   //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
   //  sound at the same time.
   def add(context: SequenceContext) =
@@ -117,8 +121,20 @@ case class Chord(
     //  What notes does the Chord play? Transpose the root note up by each of the effective Harmony intervals
     val notes = effectiveHarmony.intervals.map(rootNote/Transpose(_))
     
+    //  For a broken chord, each note has a delay (increasing as you go up the chord)
+    val delayedNotes = brokenDelay match
+    {
+      case None => notes
+      case Some(delay) => 
+        {
+          notes.zipWithIndex.map{
+            case (n:Music,i: Int) => (WithDynamics(Dynamics.delay(context.beat, delay*i), n))
+          }
+        }
+    }
+    
     //  Construct a Music object of each of these notes sounding at the same time
-    notes.foldRight(EmptyMusic: Music)(_ & _).add(context)
+    delayedNotes.foldRight(EmptyMusic: Music)(_ & _).add(context)
   }
   
   def duration(context: SequenceContext) = context.durationTiming(1) * context.scaleBeats / context.scaleNum

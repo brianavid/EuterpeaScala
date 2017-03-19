@@ -82,8 +82,12 @@ case class Dynamics(val x: TimedDynamics*) extends Modifier
     //  If the defined pattern's first TimedDynamics does not start at zero time, a zero PointDynamics value is pre-pended 
     val x0 = if (x.isEmpty || x.head.beat.beatTicks != 0) TimedDynamics(NoDuration, PointDynamics()) +: x else x
   
-    //  Use the recursive helper function to get the PointDynamics for a time within a single cyclic pattern 
-    getValues(time.ticks % duration.beatTicks, x0)
+    //  Use the recursive helper function to get the PointDynamics for a time within a single cyclic pattern
+    //  But of the patern duration is zero, then the head values are the only ones and will be applied unconditionally
+    if (duration.beatTicks == 0)
+      x0.head.values
+    else
+      getValues(time.ticks % duration.beatTicks, x0)
   }
 }
 
@@ -99,6 +103,10 @@ object Dynamics
   //  multiple of the current Beat Modifier (which may or may not be the same Beat value as here)
   def swing(beat: Beat, delayFactor: Double) = 
     Dynamics(X(beat,timingInc=delayFactor), X(beat))
+  
+  //  The delay pattern delays all notes by a fixed proportion of a specified beat
+  def delay(beat: Beat, delayFactor: Double) = 
+    Dynamics(X(NoDuration,timingInc=delayFactor))
 }
 
 //  The ContextDynamics objects are used as a List in the SequenceContext to denote currently applied 

@@ -28,7 +28,7 @@ object Bugs
 
 object Blues
 {
-  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c - II7.b - V7 - I)
+  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c.broken(0.05) - II7.b.broken(0.05) - V7.broken(0.05) - I)
 }
 
 object DiatonicTest
@@ -69,12 +69,12 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    RhythmTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    RhythmTest.tune.play()
+    //RhythmTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //RhythmTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
-    //Blues.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    //Blues.tune.play()
+    Blues.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    Blues.tune.play()
     //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //BirdsInTheSpringBaritone.tune.play()
   }
