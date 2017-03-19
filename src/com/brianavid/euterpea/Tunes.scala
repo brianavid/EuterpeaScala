@@ -43,6 +43,13 @@ object DynamicsTest
   val tune = line/8/Dynamics.swing(8, 0.3)
 }
 
+object RhythmTest
+{
+  val line = C - D - E - G - E - D - C(5) - B - A - F - A - B - C - D - E - G - E - D - C(5) - B - A - F - A - B - C
+  val rhythm = N/4 - (N-N)/8 - N*3/8/3
+  val tune = Rhythm(rhythm) /: line
+}
+
 object Beats
 {
   val bass = Drum(Drum.Bass_Drum_1)
@@ -62,13 +69,13 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    DynamicsTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    DynamicsTest.tune.play()
+    RhythmTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    RhythmTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
     //Blues.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Blues.tune.play()
-    BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    BirdsInTheSpringBaritone.tune.play()
+    //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //BirdsInTheSpringBaritone.tune.play()
   }
 }

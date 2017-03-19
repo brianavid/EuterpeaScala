@@ -129,8 +129,8 @@ object B extends Note( 11, "B", 7)
 object Bn extends Note( 11, "Bn")
 object Bs extends Note( 12, "Bs")
 
-//  The "?" Note is unplayable, but has a Beat and so can be used in rhythm patterns
-object ? extends Note(Int.MaxValue, "?")
+//  The "N" Note is unplayable, but has a Beat and so can be used in rhythm patterns
+object N extends Note(Int.MaxValue, "?")
 
 //-------------------------
 
