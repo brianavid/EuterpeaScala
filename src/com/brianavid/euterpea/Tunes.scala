@@ -28,13 +28,14 @@ object Bugs
 
 object Blues
 {
-  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c.broken(0.05) - II7.b.broken(0.05) - V7.broken(0.05) - I)
+  val broken = Broken(0.05)
+  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c/broken - II7.b/broken - V7/broken - I)
 }
 
 object ArpeggioTest
 {
-  val pattern = Arpeggio(Thirtysecond,Vector(0,1,2,3,2,0))
-  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c.arpeggio(pattern) - II7.b.arpeggio(pattern) - V7.arpeggio(pattern) - I)
+  val pattern = Arpeggio(Thirtysecond,Vector(1,2,3,4,3,1))
+  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c/pattern - II7.b/pattern - V7/pattern - I)
 }
 
 object DiatonicTest
@@ -79,6 +80,7 @@ object Test1
     //RhythmTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
+    Blues.tune.play()
     ArpeggioTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     ArpeggioTest.tune.play()
     //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")

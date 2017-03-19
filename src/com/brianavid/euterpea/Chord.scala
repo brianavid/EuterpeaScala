@@ -64,6 +64,9 @@ object Dom7 extends Harmony(Harmony.triad(1).map(Harmony.majorIntervals) ++ Harm
 object Maj7 extends Harmony(Harmony.triad(1).map(Harmony.majorIntervals) ++ Harmony.seventh(1).map(Harmony.majorIntervals))
 object Min7 extends Harmony(Harmony.triad(1).map(Harmony.minorIntervals) ++ Harmony.seventh(1).map(Harmony.minorIntervals))
 
+case class Broken( 
+    val delay: Double)
+
 case class Arpeggio( 
     val beat: Beat, 
     val sequence: Vector[Int])
@@ -80,11 +83,12 @@ case class Chord(
     transforms: List[Harmony => Harmony] = Nil) extends Music 
 {
   //  Make the chord a broken cord, adding a fraction of a beat delay to each note in the chord
-  def broken(delay: Double) = copy(brokenDelay=Some(delay))
+  def / (b: Broken) = copy(brokenDelay=Some(b.delay))
+  def /: (b: Broken) = copy(brokenDelay=Some(b.delay))
     
   //  Make the chord an arpeggiated cord, 
-  def arpeggio(beat: Beat,  sequence: Int*) = copy(arpeggioPattern=Some(Arpeggio(beat, sequence.toVector)))
-  def arpeggio(a: Arpeggio) = copy(arpeggioPattern=Some(a))
+  def / (a: Arpeggio) = copy(arpeggioPattern=Some(a))
+  def /: (a: Arpeggio) = copy(arpeggioPattern=Some(a))
     
   //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
   //  sound at the same time.
@@ -137,12 +141,19 @@ case class Chord(
         val patternSequenceCount = pattern.sequence.length min patternSequenceBeatRatio
         pattern.sequence.take(patternSequenceCount-1).zipWithIndex.map{
           case (index: Int, i: Int) => 
-            notes(index).add(context.copy(beat=pattern.beat, position=context.position+Timing(pattern.beat * i, 1)))
+            if (index <= 0 || index > notes.length)
+              Rest.add(context.copy(beat=pattern.beat, position=context.position+Timing(pattern.beat * i, 1)))
+            else
+              notes(index-1).add(context.copy(beat=pattern.beat, position=context.position+Timing(pattern.beat * i, 1)))
         }
         
         val lastInPattern = patternSequenceCount-1
         val remainingTiming = context.durationTiming(0).ticks - (pattern.beat.beatTicks * lastInPattern)
-        notes(pattern.sequence(patternSequenceCount-1)).add(context.copy(beat=new Beat(remainingTiming), position=context.position+Timing(pattern.beat * lastInPattern, 1)))
+        val index = pattern.sequence(patternSequenceCount-1)
+        if (index <= 0 || index > notes.length)
+          Rest.add(context.copy(beat=new Beat(remainingTiming), position=context.position+Timing(pattern.beat * lastInPattern, 1)))
+        else
+          notes(index-1).add(context.copy(beat=new Beat(remainingTiming), position=context.position+Timing(pattern.beat * lastInPattern, 1)))
 
         context.durationTiming(0) * context.scaleBeats / context.scaleNum
       }
