@@ -53,7 +53,7 @@ object X
 case class Dynamics(val x: TimedDynamics*) extends Modifier 
 {
   //  Get the computed PointDynamics value for a time within the repeated application of the TimedDynamics sequence
-  def getAtTime(time: Timing) = 
+  def getAtTime(time: TimeState) = 
   {
     //  Recursive helper function to get the PointDynamics at any point in the cyclic pattern
     def getValues(ticks: Int, x: Seq[TimedDynamics]): PointDynamics = 
@@ -112,6 +112,6 @@ object Dynamics
 //  The ContextDynamics objects are used as a List in the SequenceContext to denote currently applied 
 //  Dynamics cyclic patterns, starting at a specified time
 case class ContextDynamics(
-    val startTime: Timing,    //  The time at which the Dynamics pattern starts
+    val startTime: TimeState,    //  The time at which the Dynamics pattern starts
     val dynamics: Dynamics)   //  The Dynamics to apply to every Note added
 

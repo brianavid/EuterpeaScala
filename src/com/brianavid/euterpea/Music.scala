@@ -25,10 +25,10 @@ import java.io.File
 trait Music
 {
   //  Add the music to the specified SequenceContext
-  def add(context: SequenceContext) : Timing
+  def add(context: SequenceContext) : TimeState
   
   //  Compute the duration of the music without adding it
-  def duration(context: SequenceContext) : Timing
+  def duration(context: SequenceContext) : TimeState
   
   //  Play the constructed javax.sound.midi.Sequence object on the system's Midi sequencer
   private def playSequence(sequence: M.Sequence) {
@@ -115,7 +115,7 @@ trait Music
   
   def rhythmTimings(context: SequenceContext) =
   {
-    def getTimings(m: Music, context: SequenceContext) : List[Timing] =
+    def getTimings(m: Music, context: SequenceContext) : List[TimeState] =
     {
       //  The only things that affect rhythm are the sequence of Notes and bars and the 
       //  Beat and BeatScale modifiers
@@ -140,8 +140,8 @@ trait Music
 //  
 object EmptyMusic extends Music
 {
-  def add(context: SequenceContext) =  Timing(NoDuration, 0)
-  def duration(context: SequenceContext) =  Timing(NoDuration, 0)
+  def add(context: SequenceContext) =  TimeState(NoDuration, 0)
+  def duration(context: SequenceContext) =  TimeState(NoDuration, 0)
 }
 
 //-------------------------
@@ -153,7 +153,7 @@ case class - (a: Music, b: Music) extends Music
   def add(context: SequenceContext) =
   {
     val durationTiming1 = a.add(context.copy(tiedAddition=NoDuration))
-    val durationTiming2 = b.add(context.copy(position = context.position+durationTiming1))
+    val durationTiming2 = b.add(context.copy(timeState = context.timeState+durationTiming1))
     
     durationTiming1 + durationTiming2
   }
@@ -161,7 +161,7 @@ case class - (a: Music, b: Music) extends Music
   def duration(context: SequenceContext) =
   {
     val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration))
-    val durationTiming2 = b.duration(context.copy(position = context.position+durationTiming1))
+    val durationTiming2 = b.duration(context.copy(timeState = context.timeState+durationTiming1))
     
     durationTiming1 + durationTiming2
   }
@@ -178,7 +178,7 @@ case class Slur(a: Music, b: Music) extends Music
   def add(context: SequenceContext) =
   {
     val durationTiming1 = a.add(context.copy(noteWidth=1.0, tiedAddition=NoDuration))
-    val durationTiming2 = b.add(context.copy(noteWidth = context.noteWidth-0.2, volume = context.volume-10, position = context.position+durationTiming1))
+    val durationTiming2 = b.add(context.copy(noteWidth = context.noteWidth-0.2, volume = context.volume-10, timeState = context.timeState+durationTiming1))
     
     durationTiming1 + durationTiming2
   }
@@ -186,7 +186,7 @@ case class Slur(a: Music, b: Music) extends Music
   def duration(context: SequenceContext) =
   {
     val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration))
-    val durationTiming2 = b.duration(context.copy(position = context.position+durationTiming1))
+    val durationTiming2 = b.duration(context.copy(timeState = context.timeState+durationTiming1))
     
     durationTiming1 + durationTiming2
   }
@@ -200,14 +200,14 @@ case class BarJoin(a: Music, b: Music) extends Music
   def add(context: SequenceContext) =
   {
     val durationTiming1 = a.add(context.copy(tiedAddition=NoDuration))
-    val barPosition = context.position+durationTiming1
+    val barPosition = context.timeState+durationTiming1
     
     if (!(barPosition).isAtBar(context.timeSig))
     {
       Console.println(s"Bar line at postition ${barPosition.ticks} is not on a bar boundary")
     }
 
-    val durationTiming2 = b.add(context.copy(position = barPosition))
+    val durationTiming2 = b.add(context.copy(timeState = barPosition))
     
     durationTiming1 + durationTiming2
   }
@@ -215,7 +215,7 @@ case class BarJoin(a: Music, b: Music) extends Music
   def duration(context: SequenceContext) =
   {
     val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration))
-    val durationTiming2 = b.duration(context.copy(position = context.position+durationTiming1))
+    val durationTiming2 = b.duration(context.copy(timeState = context.timeState+durationTiming1))
     
     durationTiming1 + durationTiming2
   }
@@ -231,7 +231,7 @@ case class BarExtend(music: Music, tiedAddition: Beat) extends Music
   def add(context: SequenceContext) =
   {
     val durationTiming = music.add(context.copy(tiedAddition=tiedAddition))
-    val barPosition = context.position+durationTiming-Timing(tiedAddition, 0)
+    val barPosition = context.timeState+durationTiming-TimeState(tiedAddition, 0)
     
     if (!(barPosition).isAtBar(context.timeSig))
     {
@@ -253,11 +253,11 @@ case class Repeated(music: Music, repeat: Integer) extends Music
   def add(context: SequenceContext) =
   {
     if (repeat == 0)
-      Timing(NoDuration, 0)
+      TimeState(NoDuration, 0)
     else
     {
       val durationTiming1 = music.add(context.copy(tiedAddition=NoDuration))
-      val durationTiming2 = Repeated(music, repeat-1).add(context.copy(position=context.position+durationTiming1))
+      val durationTiming2 = Repeated(music, repeat-1).add(context.copy(timeState=context.timeState+durationTiming1))
     
       durationTiming1 + durationTiming2
     }
@@ -266,11 +266,11 @@ case class Repeated(music: Music, repeat: Integer) extends Music
   def duration(context: SequenceContext) =
   {
     if (repeat == 0)
-      Timing(NoDuration, 0)
+      TimeState(NoDuration, 0)
     else
     {
       val durationTiming1 = music.duration(context.copy(tiedAddition=NoDuration))
-      val durationTiming2 = Repeated(music, repeat-1).duration(context.copy(position=context.position+durationTiming1))
+      val durationTiming2 = Repeated(music, repeat-1).duration(context.copy(timeState=context.timeState+durationTiming1))
     
       durationTiming1 + durationTiming2
     }
@@ -336,7 +336,7 @@ case class WithTempo( bpm: Int, toBpm: Option[Int], music: Music) extends Music
   def add(context: SequenceContext) =
   {
     val saveBPM=context.tempoBPM
-    context.writeTempo(bpm, context.position)
+    context.writeTempo(bpm, context.timeState)
     //  Does the tempo change from bpm to toBpm over the duration of the music?
     toBpm match
     {
@@ -348,13 +348,13 @@ case class WithTempo( bpm: Int, toBpm: Option[Int], music: Music) extends Music
         val changeDuration = music.duration(context)
         //  We do this in a granularity of a tenth of the music
         for (i <- 1 to 9)
-          context.writeTempo(bpm + (toBpmValue-bpm)*i/10, context.position + (changeDuration*i/10))
+          context.writeTempo(bpm + (toBpmValue-bpm)*i/10, context.timeState + (changeDuration*i/10))
     }
     
     //  No add the music itself
     val durationTiming = music.add(context.copy(tempoBPM=bpm))
     
-    context.writeTempo(saveBPM, context.position+durationTiming)
+    context.writeTempo(saveBPM, context.timeState+durationTiming)
     durationTiming
   }
   
@@ -373,13 +373,13 @@ case class WithTimeSig( number: Byte, beat: Beat, music: Music) extends Music
     //  which the time signature changed to allow determination of bar boundaries,
     //  which is necessary for bar line validation, pulse or swing 
     val saveTimeSig=context.timeSig
-    context.writeTimeSig(number, beat, context.position)
-    val durationTiming = music.add(context.copy( timeSig=TimeSig(number, beat), position=context.position.settingTimeSigChange))
-    context.writeTimeSig(saveTimeSig.number, saveTimeSig.duration, context.position+durationTiming)
+    context.writeTimeSig(number, beat, context.timeState)
+    val durationTiming = music.add(context.copy( timeSig=TimeSig(number, beat), timeState=context.timeState.settingTimeSigChange))
+    context.writeTimeSig(saveTimeSig.number, saveTimeSig.duration, context.timeState+durationTiming)
     durationTiming.settingTimeSigChange
   }
   
-  def duration(context: SequenceContext) = music.duration(context.copy(timeSig=TimeSig(number, beat), position=context.position.settingTimeSigChange))
+  def duration(context: SequenceContext) = music.duration(context.copy(timeSig=TimeSig(number, beat), timeState=context.timeState.settingTimeSigChange))
 }
 
 //-------------------------
@@ -433,9 +433,9 @@ case class WithKeySig(keySig: KeySig, music: Music) extends Music
   def add(context: SequenceContext) =
   {
     val saveKeySig=context.keySig
-    context.writeKeySig(keySig.keySigSharps, keySig.isMinor, context.position)
+    context.writeKeySig(keySig.keySigSharps, keySig.isMinor, context.timeState)
     val durationTiming = music.add(context.copy(keySig = keySig, tonic=keySig.tonic, isMinor=keySig.isMinor))
-    context.writeKeySig(saveKeySig.keySigSharps, saveKeySig.isMinor, context.position+durationTiming)
+    context.writeKeySig(saveKeySig.keySigSharps, saveKeySig.isMinor, context.timeState+durationTiming)
     durationTiming
   }
   
@@ -509,9 +509,9 @@ case class WithInstrument( instrument: Int, music: Music) extends Music
     val track = context.getTrack
     val channel = context.channels.getOrElseUpdate(context.currentTrackName, context.channels.size)
     val prevInstrument = context.currentInstrument 
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, instrument-1, 0), context.position.ticks))
+    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, instrument-1, 0), context.timeState.ticks))
     val durationTiming = music.add(context.copy(currentInstrument = instrument))
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, prevInstrument-1, 0), context.position.ticks+durationTiming.ticks))
+    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, prevInstrument-1, 0), context.timeState.ticks+durationTiming.ticks))
     durationTiming
   }
   
@@ -526,7 +526,7 @@ case class WithDynamics( dyn: Dynamics, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    music.add(context.copy(dynamics = ContextDynamics(context.position, dyn) :: context.dynamics))
+    music.add(context.copy(dynamics = ContextDynamics(context.timeState, dyn) :: context.dynamics))
   }
   
   def duration(context: SequenceContext) = music.duration(context)
@@ -543,7 +543,7 @@ case class WithLyric( lyric: String, music: Music) extends Music
     val bytearray = lyric.getBytes
 
     val track = context.getTrack
-    track.add(new M.MidiEvent(new M.MetaMessage(0x05, bytearray, bytearray.length),context.position.ticks))    
+    track.add(new M.MidiEvent(new M.MetaMessage(0x05, bytearray, bytearray.length),context.timeState.ticks))    
     music.add(context.copy())
   }
   

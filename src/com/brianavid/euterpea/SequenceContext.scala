@@ -9,7 +9,7 @@ import scala.collection.mutable
 
 case class SequenceContext (
   val sequence: M.Sequence,                 //  The sequence being constructed
-  val position: Timing,                     //  The current position (hi res) where music will be added to the sequence
+  val timeState: TimeState,                     //  The current position (hi res) where music will be added to the sequence
   val timingTrack: M.Track,
   val currentTrackName: String = "",        //  The current track name 
   val tracks: mutable.Map[String,M.Track],  //  The mapping of track named onto sequence tracks
@@ -29,20 +29,20 @@ case class SequenceContext (
   val tonic: Note = C,                      //  The current tonic (usually the key)
   val isMinor: Boolean = false,             //  Is the current key a minor?
   val currentInstrument: Int = 1,           //  The General Midi instrument on which notes are played
-  val rhythmPattern: Vector[Timing] = Vector.empty,
+  val rhythmPattern: Vector[TimeState] = Vector.empty,
   val dynamics: List[ContextDynamics] = Nil)//  The set of dynamics affecting the sequence
 {
-  //  The Timing of the current duration at the current tempo
+  //  The TimeState of the current duration at the current tempo
   def durationTiming(noteCount: Int) = 
   {
     if (!rhythmPattern.isEmpty)
-      rhythmPattern(position.noteCount % rhythmPattern.length)
+      rhythmPattern(timeState.noteCount % rhythmPattern.length)
     else
-      Timing( beat, noteCount)
+      TimeState( beat, noteCount)
   }
   
   //  Write the specified Tempo to the timing track 
-  def writeTempo(bpm: Int, position: Timing) = {
+  def writeTempo(bpm: Int, position: TimeState) = {
     val bytearray = BigInt(60000000/bpm).toByteArray
     val pad = Array.fill[Byte](3-bytearray.length)(0)
     
@@ -50,7 +50,7 @@ case class SequenceContext (
   }
   
   //  Write the specified Time Signature to the timing track
-  def writeTimeSig(number: Byte, beat: Beat, position: Timing) = {
+  def writeTimeSig(number: Byte, beat: Beat, position: TimeState) = {
     //  On a compound time (more than one triplet in a bar), metronome clicks are every three beats
     val beatRate = Beat.TPQN * 24 / beat.beatTicks
     val clickRate = if (number % 3 == 0 && number > 3) 3 * beatRate else beatRate
@@ -60,7 +60,7 @@ case class SequenceContext (
   }
   
   //  Write the specified Key signature to the timing track 
-  def writeKeySig(keySigSharps: Byte, keySigIsMinor: Boolean, position: Timing) = {
+  def writeKeySig(keySigSharps: Byte, keySigIsMinor: Boolean, position: TimeState) = {
     val bytearray = Array[Byte](keySigSharps, if (keySigIsMinor) 1 else 0)
     
     timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x59, bytearray, bytearray.length),position.ticks))    
@@ -74,7 +74,7 @@ case class SequenceContext (
       val bytearray = currentTrackName.getBytes
 
       tracks(currentTrackName)  = sequence.createTrack()
-      tracks(currentTrackName).add(new M.MidiEvent(new M.MetaMessage(0x03, bytearray, bytearray.length),position.ticks))    
+      tracks(currentTrackName).add(new M.MidiEvent(new M.MetaMessage(0x03, bytearray, bytearray.length),timeState.ticks))    
     }
     tracks(currentTrackName) 
   }
@@ -92,7 +92,7 @@ case class SequenceContext (
   
   def getDynamics = 
   {
-    dynamics.foldLeft(PointDynamics())((p,d) => p + d.dynamics.getAtTime(position-d.startTime))
+    dynamics.foldLeft(PointDynamics())((p,d) => p + d.dynamics.getAtTime(timeState-d.startTime))
   }
 }
 
@@ -102,7 +102,7 @@ object SequenceContext
   def apply(sequence: M.Sequence) = 
     new SequenceContext(
           sequence=sequence,                          // The sequence being constructed
-          position=new Timing(0, 0, Some(0)),         // Start at the beginning
+          timeState=new TimeState(0, 0, Some(0)),         // Start at the beginning
           timingTrack=sequence.createTrack(),
           tracks=new mutable.HashMap[String,M.Track], // An empty track mapping table
           channels=mutable.HashMap("Drums" -> 9),    // A Midi channel mapping table, where Drums are pre-allocated

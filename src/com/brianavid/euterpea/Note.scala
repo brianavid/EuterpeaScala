@@ -89,7 +89,7 @@ case class Note(
     //  How many ticks will the timing be altered by the dynamics?
     val timingInc = (context.durationTiming(0).ticks.toDouble * timingIncFactor).toInt
     
-    val startTicks = context.position.ticks + timingInc
+    val startTicks = context.timeState.ticks + timingInc
     val endTicks = startTicks + (noteTiming.ticks * (context.noteWidth + dynamics.noteWidthInc)).toInt + context.tiedAddition.beatTicks
     
     //  Add Midi events to start and end the note at the right pitch, volume and timing
