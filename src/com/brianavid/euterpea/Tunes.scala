@@ -88,14 +88,14 @@ object Test1
 {
   def main(args: Array[String]) {
     //RhythmTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    //RhythmTest.tune.play()
+    RhythmTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
-    OrnamentTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    OrnamentTest.tune.play()
+    //OrnamentTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //OrnamentTest.tune.play()
     //Blues.tune.play()
     //ArpeggioTest.tune.play()
     //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    //BirdsInTheSpringBaritone.tune.play()
+    BirdsInTheSpringBaritone.tune.play()
   }
 }

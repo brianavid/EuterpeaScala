@@ -29,14 +29,14 @@ case class SequenceContext (
   val tonic: Note = C,                      //  The current tonic (usually the key)
   val isMinor: Boolean = false,             //  Is the current key a minor?
   val currentInstrument: Int = 1,           //  The General Midi instrument on which notes are played
-  val rhythmPattern: Vector[TimeState] = Vector.empty,
+  val rhythmPattern: Vector[Beat] = Vector.empty,
   val dynamics: List[ContextDynamics] = Nil)//  The set of dynamics affecting the sequence
 {
   //  The TimeState of the current duration at the current tempo
   def durationTiming(noteCount: Int) = 
   {
-    if (!rhythmPattern.isEmpty)
-      rhythmPattern(timeState.noteCount % rhythmPattern.length)
+    if (noteCount != 0 && !rhythmPattern.isEmpty)
+      TimeState( rhythmPattern(timeState.noteCount % rhythmPattern.length), noteCount)
     else
       TimeState( beat, noteCount)
   }

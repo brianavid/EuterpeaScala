@@ -115,7 +115,7 @@ trait Music
   
   def rhythmTimings(context: SequenceContext) =
   {
-    def getTimings(m: Music, context: SequenceContext) : List[TimeState] =
+    def getTimings(m: Music, context: SequenceContext) : List[Beat] =
     {
       //  The only things that affect rhythm are the sequence of Notes and bars and the 
       //  Beat and BeatScale modifiers
@@ -128,7 +128,7 @@ trait Music
         case Repeated(m1,repeat) => (1 to repeat).map(i => getTimings(m1,context)).flatten.toList
         case WithBeat(beat, m1) => getTimings(m1,context.copy(beat=beat))
         case WithBeatScale(numberOfNotes, numberOfBeats, m1) => getTimings(m1,context.copy(scaleNum=numberOfNotes,scaleBeats=numberOfBeats))
-        case _ => List(m.duration(context))
+        case _ => List(new Beat(m.duration(context).ticks))
       }
     }
     getTimings(this, context).toVector
