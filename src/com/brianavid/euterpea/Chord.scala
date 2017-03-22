@@ -270,4 +270,21 @@ object Chord
     else
       semitones + intervals(toNoteTonicIndex) - intervals(fromNoteTonicIndex)
   }
+  
+  //  Construct a Chord based on the specified Note, plus the next diatonic Note above and
+  //  the next chromatic or diatonic Note below
+  //  The Chord will be used as an Ornament and will be arpeggiated on some pattern
+  def adjacent(
+      note: Note,               //  The note for which diatonic adjacent notes are added in a Chord
+      chomaticDown: Boolean,    //  True if the adjacent "Down interval" is chromatic - i.e. a single semitone 
+      context: SequenceContext): Chord =
+  {
+    //  The next diatonic Note above the specified Note in the current tonic
+    val intervalUp = transpose(I, II, note.semitones, context) - note.semitones
+    //  The next chromatic or diatonic Note below the specified Note in the current tonic
+    val intervalDown = if (chomaticDown) -1 else transpose(I, VII, note.semitones, context) - note.semitones - 12
+    
+    //  Construct a Chord of these three notes - it will be arpeggiated on some pattern
+    new Chord( Some(note), Harmony(Set(intervalUp, 0, intervalDown)))
+  }
 }

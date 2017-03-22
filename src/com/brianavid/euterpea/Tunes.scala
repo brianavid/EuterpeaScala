@@ -44,6 +44,17 @@ object DiatonicTest
   val tune = line - line/Transpose(I -> II) - (line & line/Transpose(I -> III) & line/Transpose(I -> V))
 }
 
+object OrnamentTest
+{
+  val line1 = C - D - E - F - G/MordentUp(Thirtysecond) - Rest/2
+  val line2 = C - D - E - F - G/MordentDown(Thirtysecond) - Rest/2
+  val line3 = C - D - E - F - G/TurnDownUp(Thirtysecond) - Rest/2
+  val line4 = C - D - E - F - G/AcciaccaturaUp(Thirtysecond) - Rest/2
+  val line5 = C - D - E - F - G/AcciaccaturaDown(Thirtysecond, true) - Rest/2
+  val line6 = C - D - E - F - G/Trill(Thirtysecond) - Rest/2
+  val tune = line1 - line2 - line3 - line4 - line5 - line6
+}
+
 object DynamicsTest
 {
   val line = C - D - E - F - G - F - E - D - C(5)
@@ -80,9 +91,10 @@ object Test1
     //RhythmTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
-    Blues.tune.play()
-    ArpeggioTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    ArpeggioTest.tune.play()
+    OrnamentTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    OrnamentTest.tune.play()
+    //Blues.tune.play()
+    //ArpeggioTest.tune.play()
     //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //BirdsInTheSpringBaritone.tune.play()
   }

@@ -8,16 +8,23 @@ case class Note(
     semitones: Int,                 //  Semitones from Middle C
     display: String,                //  A string to display the note (for tracing only)
     numSharpsToSharpen: Int = 0,    //  The number of sharps in the key signature needed to sharpen this note
-    octave: Int = 0)                //  The octave in which the note plays (default starts on Middle C)
+    octave: Int = 0,                //  The octave in which the note plays (default starts on Middle C)
+    ornament: Option[Ornament] = None)
   extends Music
 {
   def unary_+ = copy(octave = octave+1)  //  The Note plays one octave higher 
   def unary_- = copy(octave = octave-1)  //  The Note plays one octave lower
   
+  //  Add a lyric string to the Note
   def  / (lyric: String) = new WithLyric(lyric, this)
   def  /: (lyric: String) = new WithLyric(lyric, this)
   
+  //  Add a harmony string to the Note to make it a Chord
   def / (harmony: Harmony) = new Chord( Some(this), harmony)
+  
+  //  Add an Ornament to the Note, so that it will play as a sequence of (diatonically or chromatically) adjacent Notes
+  def / (o: Ornament) = copy(ornament = Some(o))
+  def /: (o: Ornament) = copy(ornament = Some(o))
   
   //  The number of flats in the key signature needed to flatten this note
   def numFlatsToFlatten = if (numSharpsToSharpen == 0) 0 else 8-numSharpsToSharpen
@@ -25,6 +32,17 @@ case class Note(
   //  Add the Note to the sequence at the current position with the Instrument, Duration and Volume
   //  specified in the current SequenceContext
   def add(context: SequenceContext) =
+  {
+    //  An ornamented Note plays as a sequence of adjacent Notes determined by the Ornament
+    ornament match
+    {
+      case None => addNote(context)
+      case Some(o) => o.ornament(copy(ornament=None), context).add(context)
+    }
+  }
+  
+  //  Add an unornamented Note to the sequence at the current position with the Instrument, Duration and Volume
+  def addNote(context: SequenceContext) =
   {
     val MiddleC = 60
     
