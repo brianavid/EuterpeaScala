@@ -1,6 +1,8 @@
 package com.brianavid.euterpea
 
-//  The TimeState class is a representation of the duration and position of music
+//  The TimeState class is a representation of the state of a point of time of Music
+//  This state includes the timing (as ticks), the number of notes played (for rhythms) and the time that 
+//  the time signature last ctanged (for bar line validation)
 case class TimeState(val ticks: Int, val noteCount: Int, val timeSigChangeTime: Option[Int])
 {
   //  Timings can be added

@@ -152,7 +152,7 @@ case class Chord(
         val patternSequenceCount = sequence.length min patternSequenceBeatRatio
         
         //  For all notes up to (but not including) that patternSequenceCount limit, play each note, 
-        //  each with an ever-increasing start position based on the arpeggio beat
+        //  each with an ever-increasing start timeState based on the arpeggio beat
         sequence.take(patternSequenceCount-1).zipWithIndex.map{
           case (index: Int, i: Int) => 
             //  If the note index in the sequence is out of range (e.g. zero) add a Rest

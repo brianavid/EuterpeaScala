@@ -77,11 +77,11 @@ trait Music
   def &(a:Music) = new &(this,a)
   
   //  Construct music by adding this part and another part sequentially one after the other, 
-  //  requiring this position to be at a bar of the current time signature 
+  //  requiring this timeState timing to be at a bar boundary of the current time signature 
   def |(a:Music) = new BarJoin(this,a)
   
   //  Construct music by adding this part and another part sequentially one after the other, 
-  //  requiring this position to be at a bar of the current time signature 
+  //  requiring this timeState timing to be at a bar boundary of the current time signature 
   def -|-(duration: Beat) = new BarExtend(this,duration)
   
   //  Apply a Modifier to the Music with the syntax as Music/Modifier
@@ -146,8 +146,8 @@ object EmptyMusic extends Music
 
 //-------------------------
 
-//  Combining two pieces of music sequentially by adding the first at the current position and then the second
-//  at the position after the duration of the first
+//  Combining two pieces of music sequentially by adding the first at the current timeState and then the second
+//  at the timeState after the duration of the first
 case class - (a: Music, b: Music) extends Music
 {
   def add(context: SequenceContext) =
@@ -279,7 +279,7 @@ case class Repeated(music: Music, repeat: Integer) extends Music
 
 //-------------------------
 
-//  Combining two pieces of music in parallel, by adding them both at the same position
+//  Combining two pieces of music in parallel, by adding them both at the same timeState
 case class & (a: Music, b: Music) extends Music
 {
   def add(context: SequenceContext) =
@@ -369,9 +369,9 @@ case class WithTimeSig( number: Byte, beat: Beat, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    //  The use of settingTimeSigChange causes the current position to be identified as the time at 
+    //  The use of settingTimeSigChange causes the current timeState to be identified as the time at 
     //  which the time signature changed to allow determination of bar boundaries,
-    //  which is necessary for bar line validation, pulse or swing 
+    //  which is necessary for bar line validation, and interpretation of Dynamics 
     val saveTimeSig=context.timeSig
     context.writeTimeSig(number, beat, context.timeState)
     val durationTiming = music.add(context.copy( timeSig=TimeSig(number, beat), timeState=context.timeState.settingTimeSigChange))

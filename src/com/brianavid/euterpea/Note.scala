@@ -29,7 +29,7 @@ case class Note(
   //  The number of flats in the key signature needed to flatten this note
   def numFlatsToFlatten = if (numSharpsToSharpen == 0) 0 else 8-numSharpsToSharpen
   
-  //  Add the Note to the sequence at the current position with the Instrument, Duration and Volume
+  //  Add the Note to the sequence at the current timeState with the Instrument, Beat duration and Volume
   //  specified in the current SequenceContext
   def add(context: SequenceContext) =
   {
@@ -41,7 +41,7 @@ case class Note(
     }
   }
   
-  //  Add an unornamented Note to the sequence at the current position with the Instrument, Duration and Volume
+  //  Add an unornamented Note to the sequence at the current timeState with the Instrument, Beat duration and Volume
   def addNote(context: SequenceContext) =
   {
     val MiddleC = 60
@@ -152,7 +152,7 @@ object N extends Note(Int.MaxValue, "?")
 
 //-------------------------
 
-//  A Rest object adds nothing to the sequence, but advances the current position according to its duration and tempo
+//  A Rest object adds nothing to the sequence, but advances the current timeState according to its Beat
 
 case object Rest extends Music
 {

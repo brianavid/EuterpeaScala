@@ -9,8 +9,8 @@ import scala.collection.mutable
 
 case class SequenceContext (
   val sequence: M.Sequence,                 //  The sequence being constructed
-  val timeState: TimeState,                     //  The current position (hi res) where music will be added to the sequence
-  val timingTrack: M.Track,
+  val timeState: TimeState,                 //  The current state (including position in ticks) where music will be added to the sequence
+  val timingTrack: M.Track,                 //  The first track of the sequence to which tempo and time signature changes will be added
   val currentTrackName: String = "",        //  The current track name 
   val tracks: mutable.Map[String,M.Track],  //  The mapping of track named onto sequence tracks
   val currentChannelName: String = "",      //  The current channel name 
@@ -42,28 +42,28 @@ case class SequenceContext (
   }
   
   //  Write the specified Tempo to the timing track 
-  def writeTempo(bpm: Int, position: TimeState) = {
+  def writeTempo(bpm: Int, timeState: TimeState) = {
     val bytearray = BigInt(60000000/bpm).toByteArray
     val pad = Array.fill[Byte](3-bytearray.length)(0)
     
-    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x51, pad++bytearray, 3),position.ticks))    
+    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x51, pad++bytearray, 3),timeState.ticks))    
   }
   
   //  Write the specified Time Signature to the timing track
-  def writeTimeSig(number: Byte, beat: Beat, position: TimeState) = {
+  def writeTimeSig(number: Byte, beat: Beat, timeState: TimeState) = {
     //  On a compound time (more than one triplet in a bar), metronome clicks are every three beats
     val beatRate = Beat.TPQN * 24 / beat.beatTicks
     val clickRate = if (number % 3 == 0 && number > 3) 3 * beatRate else beatRate
     
     val bytearray = Array[Byte](number, beat.timeSigDenom, clickRate.toByte, 8)
-    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x58, bytearray, bytearray.length),position.ticks))    
+    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x58, bytearray, bytearray.length),timeState.ticks))    
   }
   
   //  Write the specified Key signature to the timing track 
-  def writeKeySig(keySigSharps: Byte, keySigIsMinor: Boolean, position: TimeState) = {
+  def writeKeySig(keySigSharps: Byte, keySigIsMinor: Boolean, timeState: TimeState) = {
     val bytearray = Array[Byte](keySigSharps, if (keySigIsMinor) 1 else 0)
     
-    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x59, bytearray, bytearray.length),position.ticks))    
+    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x59, bytearray, bytearray.length), timeState.ticks))    
   }
   
   //  Get or create the named track, and when creating add its name to the track
@@ -74,7 +74,7 @@ case class SequenceContext (
       val bytearray = currentTrackName.getBytes
 
       tracks(currentTrackName)  = sequence.createTrack()
-      tracks(currentTrackName).add(new M.MidiEvent(new M.MetaMessage(0x03, bytearray, bytearray.length),timeState.ticks))    
+      tracks(currentTrackName).add(new M.MidiEvent(new M.MetaMessage(0x03, bytearray, bytearray.length), timeState.ticks))    
     }
     tracks(currentTrackName) 
   }
