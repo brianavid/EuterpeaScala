@@ -68,6 +68,12 @@ object RhythmTest
   val tune = Rhythm(rhythm) /: line
 }
 
+object VolumeTest
+{
+  val line = Volume.MP /: Crescendo3 /:(C - D - E - G - E - D - C(5)) - Volume.FF /: Diminuendo3 /: (B - A - F - A - B - C) - D - E - G - E - D - C(5) - B - A - F - A - B - C
+  val tune = line
+}
+
 object Beats
 {
   val bass = Drum(Drum.Bass_Drum_1)
@@ -87,8 +93,8 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    //RhythmTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    RhythmTest.tune.play()
+    VolumeTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    VolumeTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
     //OrnamentTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
@@ -96,6 +102,6 @@ object Test1
     //Blues.tune.play()
     //ArpeggioTest.tune.play()
     //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    BirdsInTheSpringBaritone.tune.play()
+    //BirdsInTheSpringBaritone.tune.play()
   }
 }

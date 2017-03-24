@@ -107,6 +107,10 @@ object Dynamics
   //  The delay pattern delays all notes by a fixed proportion of a specified beat
   def delay(beat: Beat, delayFactor: Double) = 
     Dynamics(X(NoDuration,timingInc=delayFactor))
+  
+  //  The cresc(endo) or dim(uendo) pattern 
+  def volume(duration: Beat, volumeInc: Int) = 
+    Dynamics(X(NoDuration,volumeInc=0), X(duration,volumeInc=volumeInc))
 }
 
 //  The ContextDynamics objects are used as a List in the SequenceContext to denote currently applied 

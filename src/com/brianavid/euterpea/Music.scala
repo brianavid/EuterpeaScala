@@ -91,6 +91,7 @@ trait Music
     case beat: Beat => new WithBeat (beat, this)
     case BeatScale(numberOfNotes, numberOfBeats) => new WithBeatScale(numberOfNotes, numberOfBeats, this)
     case vol: Volume => new WithVolume(vol.volume, this)
+    case volChange: VolumeChange => new WithVolumeChange(volChange.volumeInc, this)
     case Tempo(tempo, toBpm) => new WithTempo( tempo, toBpm, this) 
     case TimeSig(number: Byte, beat: Beat) => new WithTimeSig( number, beat, this) 
     case Width(width) => new WithWidth( width, this) 
@@ -375,7 +376,7 @@ case class WithTimeSig( number: Byte, beat: Beat, music: Music) extends Music
     val saveTimeSig=context.timeSig
     context.writeTimeSig(number, beat, context.timeState)
     val durationTiming = music.add(context.copy( timeSig=TimeSig(number, beat), timeState=context.timeState.settingTimeSigChange))
-    context.writeTimeSig(saveTimeSig.number, saveTimeSig.duration, context.timeState+durationTiming)
+    context.writeTimeSig(saveTimeSig.number, saveTimeSig.beat, context.timeState+durationTiming)
     durationTiming.settingTimeSigChange
   }
   
@@ -465,6 +466,21 @@ case class WithVolume(volume: Int, music: Music) extends Music
   def add(context: SequenceContext) =
   {
     music.add(context.copy(volume=volume))
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
+}
+
+//-------------------------
+
+//  Add the music, with a changing note volume across the duration of the music
+
+case class WithVolumeChange(volumeInc: Int, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    val dur = duration(context)
+    WithDynamics(Dynamics.volume(new Beat(dur.ticks), volumeInc),music).add(context)
   }
   
   def duration(context: SequenceContext) = music.duration(context)

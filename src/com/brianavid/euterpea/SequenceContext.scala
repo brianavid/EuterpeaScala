@@ -24,7 +24,7 @@ case class SequenceContext (
   val tiedAddition: Beat = NoDuration,      //  The duration by which the last note of the music should be lengthened 
   val timeSig: TimeSig,                     //  The current time signature of all bars in the music
   val noteWidth: Double,                    //  The proportion of the width each note sounds within its duration
-  val volume: Int = MFv.volume,             //  The volume of notes played
+  val volume: Int = Volume.MF.volume,       //  The volume of notes played
   val keySig: KeySig = CMaj,                //  The key signature
   val tonic: Note = C,                      //  The current tonic (usually the key)
   val isMinor: Boolean = false,             //  Is the current key a minor?
