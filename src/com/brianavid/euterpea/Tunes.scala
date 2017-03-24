@@ -74,6 +74,13 @@ object VolumeTest
   val tune = line
 }
 
+object ContinuousControllerTest
+{
+  val modulation = Controller(Controller.Modulation_Wheel)
+  val line = C - D - E - G - modulation(0) - E - D - C(5) - B - modulation(100) - A - F - A - B - C - modulation(127)
+  val tune = line
+}
+
 object Beats
 {
   val bass = Drum(Drum.Bass_Drum_1)
@@ -93,8 +100,8 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    VolumeTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    VolumeTest.tune.play()
+    ContinuousControllerTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //ContinuousControllerTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
     //OrnamentTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")

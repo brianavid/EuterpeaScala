@@ -102,7 +102,7 @@ object SequenceContext
   def apply(sequence: M.Sequence) = 
     new SequenceContext(
           sequence=sequence,                          // The sequence being constructed
-          timeState=new TimeState(0, 0, Some(0)),         // Start at the beginning
+          timeState=new TimeState(0, 0, Some(0), ControlValues.empty),         // Start at the beginning
           timingTrack=sequence.createTrack(),
           tracks=new mutable.HashMap[String,M.Track], // An empty track mapping table
           channels=mutable.HashMap("Drums" -> 9),    // A Midi channel mapping table, where Drums are pre-allocated

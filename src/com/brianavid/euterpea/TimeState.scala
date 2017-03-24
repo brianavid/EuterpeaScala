@@ -10,7 +10,8 @@ package com.brianavid.euterpea
 case class TimeState(
     val ticks: Int, 
     val noteCount: Int, 
-    val timeSigChangeTime: Option[Int])
+    val timeSigChangeTime: Option[Int],
+    val controls: ControlValues)
 {
   //  Timings can be added
   def +(t: TimeState) = 
@@ -20,23 +21,23 @@ case class TimeState(
         case None => timeSigChangeTime
         case Some(t) => Some(ticks+t)
       }
-      new TimeState(ticks + t.ticks, noteCount+t.noteCount, newTimeSigChangeTime)
+      new TimeState(ticks + t.ticks, noteCount+t.noteCount, newTimeSigChangeTime, controls.merge(t.controls))
     }
   
   //  Subtracting has no effect on timeSigChangeTime - used for tied notes
-  def -(t: TimeState) = new TimeState(ticks - t.ticks, noteCount-t.noteCount, timeSigChangeTime)
+  def -(t: TimeState) = new TimeState(ticks - t.ticks, noteCount-t.noteCount, timeSigChangeTime, controls)
   
   //  The timing of a number of notes
-  def * (number: Integer) = new TimeState( ticks * number, noteCount * number, None) //  Within a sequence of repeated chunks
+  def * (number: Integer) = new TimeState( ticks * number, noteCount * number, None, controls) //  Within a sequence of repeated chunks
 
   //  The timing of one of a number of notes in a time interval
-  def / (number: Integer) = new TimeState( ticks / number, 1, None) //  Within a sequence of repeated chunks
+  def / (number: Integer) = new TimeState( ticks / number, 1, None, controls) //  Within a sequence of repeated chunks
 
   //  The timing within a the last of a sequence of fixed-sized chunks - used for Dynamics
-  def % (chunk: TimeState) = new TimeState( ticks % chunk.ticks, 0, None) //  Within a sequence of repeated chunks
+  def % (chunk: TimeState) = new TimeState( ticks % chunk.ticks, 0, None, controls) //  Within a sequence of repeated chunks
 
   //  The later of two TimeStates
-  def max(t: TimeState) = if (t.ticks > ticks) t else this
+  def max(t: TimeState) = (if (t.ticks > ticks) t else this).copy(controls = controls.merge(t.controls))
   
   //  A copy of the TimeState which additionally has the current time as the timeSigChangeTime change, 
   //  indicating when the time signature last changed
@@ -61,5 +62,5 @@ case class TimeState(
 object TimeState
 {
   //  Construct the TimeState object for the beat and number of notes
-  def apply(beat: Beat, noteCount: Int) = new TimeState( beat.beatTicks, noteCount, None)
+  def apply(beat: Beat, noteCount: Int) = new TimeState( beat.beatTicks, noteCount, None, ControlValues.empty)
 }
