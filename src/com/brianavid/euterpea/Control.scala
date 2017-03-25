@@ -155,3 +155,9 @@ case class Control(controlId: Int, value: Int) extends Music
   
   def duration(context: SequenceContext) = TimeState(NoDuration,0)
 }
+
+object Control
+{
+  val MinValue = 0
+  val MaxValue = 127
+}

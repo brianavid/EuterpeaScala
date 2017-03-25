@@ -66,6 +66,8 @@ case class Dot(beat: Beat) extends Beat(beat.beatTicks * 3 / 2) //  Note and a h
 //  The BeatScale Modifier scales the beat to allow e.g. triplets and quintuplets  
 
 case class BeatScale(val numberOfNotes: Integer, val numberOfBeats: Integer) extends Modifier
+object Dot extends BeatScale(2,3)
+object DotDot extends BeatScale(4,7)
 
 //-------------------------
 
@@ -74,6 +76,8 @@ case class BeatScale(val numberOfNotes: Integer, val numberOfBeats: Integer) ext
 case class Volume(val volume: Int) extends Modifier
 object Volume
 {
+  val MinVolume = 0
+  val MaxVolume = 127
   val DefaultVolume = 68
   val VolumeInc = 15
   

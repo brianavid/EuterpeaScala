@@ -10,7 +10,7 @@ object BirdsInTheSpringBaritone
       val line1 = "One"/: -A - "May"/:D - "Morn-"/:D | "ing"/:(D--E) - F | E - E - D | (D--C) - D
       val line2 = F - D - D | (F - E)/8 - D - D | D - C - D | (D--C/2)
       val line3 = Rest/2 - (C - D)/8 | D - -B - D | D/2 - D | -B - C - C | D/2 - Rest 
-      val line4 = Rest/Dot(1) | Rest - -A - -A | (D - D)/8 - C - -B | (C--D) - E
+      val line4 = Rest/2/Dot | Rest - -A - -A | (D - D)/8 - C - -B | (C--D) - E
       val line5 = (F - F)/8 - D - G | (F--D)/8 - -B - C | D - (E--D)/8 - C | D/2 - Rest
       line1 | line2 | line3 | line4 | line5
     }
@@ -100,7 +100,7 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    ContinuousControllerTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //ContinuousControllerTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //ContinuousControllerTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
@@ -108,7 +108,7 @@ object Test1
     //OrnamentTest.tune.play()
     //Blues.tune.play()
     //ArpeggioTest.tune.play()
-    //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //BirdsInTheSpringBaritone.tune.play()
   }
 }
