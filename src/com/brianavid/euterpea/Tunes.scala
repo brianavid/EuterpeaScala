@@ -55,6 +55,12 @@ object OrnamentTest
   val tune = line1 - line2 - line3 - line4 - line5 - line6
 }
 
+object PitchBendTest
+{
+  val pichBend = PitchBend(0) - Rest - PitchBend(0) - Rest - PitchBend(1.0) - Rest - PitchBend(0) - Rest
+  val tune = Legato /: (C - D - E - F - (G/1 & pichBend))
+}
+
 object DynamicsTest
 {
   val line = C - D - E - F - G - F - E - D - C(5)
@@ -100,13 +106,13 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    //VolumeTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    //VolumeTest.tune.play()
+    PitchBendTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    PitchBendTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
     //OrnamentTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //OrnamentTest.tune.play()
-    Blues.tune.play()
+    //Blues.tune.play()
     //ArpeggioTest.tune.play()
     //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //BirdsInTheSpringBaritone.tune.play()

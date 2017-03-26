@@ -50,11 +50,14 @@ object ControlValues
 case class Controller(controlId: Int)
 {
   def apply(value: Int) = new Control( controlId, value)
+  def apply(proportion: Double) = new Control( controlId, (Control.MaxValue * proportion).toInt)
 }
 
 //  Midi controller IDs are defined by the Midi spec
 object Controller
 {
+  val Pitch_Bend_Pdeudo_ControlId = -1
+  
   val Bank_Select = 0	
   val Modulation_Wheel = 1	
   val Breath_Controller = 2	
@@ -100,6 +103,16 @@ object Controller
   def isOnOf(controlId: Int) = controlId >= Sustain_Pedal_On_Off && controlId <= Legato_Footswitch
 }
 
+//  PitchBend is a pseudo-Controller, that generated a different Midi message
+object PitchBend
+{
+  def apply(value: Int) = new Control( Controller.Pitch_Bend_Pdeudo_ControlId, value)
+  def apply(proportion: Double) = new Control( Controller.Pitch_Bend_Pdeudo_ControlId, (MaxValue * proportion).toInt)
+  val MinValue = -0x1FFF
+  val MaxValue = 0x1FFF
+  val MaxRange = 0x4000
+}
+
 //  The Control class is Music, which has no duration. When added, it interpolates values into the sequence 
 //  from the most recently set ControlPoint (for the control ID and channel) linearly to the currently set value
 //  across the time period from when that previous ControlPoint was set
@@ -113,13 +126,21 @@ case class Control(controlId: Int, value: Int) extends Music
     //  Get the Midi channel identified by the track name, creating it if it does not exist
     val channel = context.channels.getOrElseUpdate(context.currentChannelName, context.channels.size)
     
-    //  Helper function to add a single CONTROL_CHANGE Midi event at a time
+    //  Helper function to add a single Midi event at a time
+    //  Except in the ease of the PitchBend pseudo-Controller, the Midi Message is CONTROL_CHANGE for the controlId
+    //  For PitchBend, the Midi message PITCH_BEND with a high-resolution parameter 
     def addControllerMessage(value: Int, ticks: Int) =
     {
-      track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.CONTROL_CHANGE, channel, controlId, value), ticks))
+      if (controlId == Controller.Pitch_Bend_Pdeudo_ControlId)
+      {
+        val normalizedValue = value + 0x2000
+        track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PITCH_BEND, channel, normalizedValue % 0x80, normalizedValue / 0x80), ticks))
+      }
+      else
+        track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.CONTROL_CHANGE, channel, controlId, value), ticks))
     }
     
-    //  They ControlValues key for the control ID and channel
+    //  The ControlValues key for the control ID and channel
     val controlValuesKey = ControlValues.makeKey(controlId, channel)
     
     //  On-off controls have no interpolation
@@ -134,12 +155,17 @@ case class Control(controlId: Int, value: Int) extends Music
         {
           //  Interpolate across all control values from that previously set until the new value 
           val valueDiffAbs = Math.abs(value-previousValue)
+          var lastTicks = previousTicks
           for (i <- 1 until valueDiffAbs)
           {
             val interTicks = (previousTicks * (valueDiffAbs-i) + context.timeState.ticks * i) / valueDiffAbs
             val interValue = (previousValue * (valueDiffAbs-i) + value * i) / valueDiffAbs
 
-            addControllerMessage(interValue, interTicks)
+            if (interTicks != lastTicks)
+            {
+              addControllerMessage(interValue, interTicks)
+              lastTicks = interTicks
+            }
           }
         }
       }
@@ -158,6 +184,7 @@ case class Control(controlId: Int, value: Int) extends Music
 
 object Control
 {
+  def apply (controlId: Int, proportion: Double) = new Control(controlId, (MaxValue * proportion).toInt)
   val MinValue = 0
   val MaxValue = 127
 }
