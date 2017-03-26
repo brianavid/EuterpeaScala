@@ -74,38 +74,35 @@ object DotDot extends BeatScale(4,7)
 //  The Volume Modifier controls the volumes (actually velocities) of notes
 
 case class Volume(val volume: Int) extends Modifier
+{
+  def -> (toVolume: Volume) = new VolumeChange(this, toVolume)
+}
 object Volume
 {
   val MinVolume = 0
   val MaxVolume = 127
   val DefaultVolume = 68
   val VolumeInc = 15
-  
-  val MF = Volume(DefaultVolume)                //  Normal (default) volume
-  val MP = Volume(DefaultVolume - VolumeInc)    //  A biq quieter than normal volume
-  val F = Volume(DefaultVolume + VolumeInc)     //  Louder (Forte)
-  val FF = Volume(DefaultVolume + VolumeInc*2)  //  Even louder
-  val FFF = Volume(DefaultVolume + VolumeInc*3)  //  Even louder still
-  val P = Volume(DefaultVolume - VolumeInc*2)     //  Quieter (piano)
-  val PP = Volume(DefaultVolume - VolumeInc*3)  //  Even quieter
-  val PPP = Volume(DefaultVolume - VolumeInc*4)  //  Even quieter still
 }
+object Vmf extends Volume(Volume.DefaultVolume)                       //  Normal (default) volume
+object Vmp extends Volume(Volume.DefaultVolume  - Volume.VolumeInc)   //  A biq quieter than normal volume
+object Vf extends Volume(Volume.DefaultVolume + Volume.VolumeInc)     //  Louder (forte)
+object Vff extends Volume(Volume.DefaultVolume + Volume.VolumeInc*2)  //  Even louder
+object Vfff extends Volume(Volume.DefaultVolume + Volume.VolumeInc*3) //  Even louder still
+object Vp extends Volume(Volume.DefaultVolume - Volume.VolumeInc)     //  Quieter (piano)
+object Vpp extends Volume(Volume.DefaultVolume - Volume.VolumeInc*2)  //  Even quieter
+object Vppp extends Volume(Volume.DefaultVolume - Volume.VolumeInc*3) //  Even quieter still
 
 //  The VolumeChange Modifier increases or decreases Volume gradually over the duration of the music
 
-case class VolumeChange(val volumeInc: Int) extends Modifier
-object Crescendo extends VolumeChange(Volume.VolumeInc)
-object Diminuendo extends VolumeChange(-Volume.VolumeInc)
-object Crescendo2 extends VolumeChange(Volume.VolumeInc*2)
-object Diminuendo2 extends VolumeChange(-Volume.VolumeInc*2)
-object Crescendo3 extends VolumeChange(Volume.VolumeInc*3)
-object Diminuendo3 extends VolumeChange(-Volume.VolumeInc*3)
+case class VolumeChange(val fromVolume: Volume, val toVolume: Volume) extends Modifier
 
 //  The Tempo Modifier controls and varies the tempo of the music
 
 case class Tempo(bpm: Int, toBpm: Option[Int] = None) extends Modifier
 object Tempo {
   def apply(bpm: Int, toBpm: Int) = new Tempo(bpm, Some(toBpm))
+  def apply(tempos: Tuple2[Int,Int]) = new Tempo(tempos._1, Some(tempos._2))
 }
 
 //  The TimeSig Modifier controls and varies the time signature of the music

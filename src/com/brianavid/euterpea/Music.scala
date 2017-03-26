@@ -91,7 +91,8 @@ trait Music
     case beat: Beat => new WithBeat (beat, this)
     case BeatScale(numberOfNotes, numberOfBeats) => new WithBeatScale(numberOfNotes, numberOfBeats, this)
     case vol: Volume => new WithVolume(vol.volume, this)
-    case volChange: VolumeChange => new WithVolumeChange(volChange.volumeInc, this)
+    case volChange: VolumeChange => new WithVolumeChange(volChange.toVolume.volume-volChange.fromVolume.volume, 
+                                                         new WithVolume(volChange.fromVolume.volume, this))
     case Tempo(tempo, toBpm) => new WithTempo( tempo, toBpm, this) 
     case TimeSig(number: Byte, beat: Beat) => new WithTimeSig( number, beat, this) 
     case Width(width) => new WithWidth( width, this) 

@@ -29,7 +29,7 @@ object Bugs
 object Blues
 {
   val broken = Broken(0.05)
-  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c/broken - II7.b/broken - V7/broken - I)
+  val tune = Tempo(30 -> 90) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c/broken - II7.b/broken - V7/broken - I)
 }
 
 object ArpeggioTest
@@ -70,7 +70,7 @@ object RhythmTest
 
 object VolumeTest
 {
-  val line = Volume.MP /: Crescendo3 /:(C - D - E - G - E - D - C(5)) - Volume.FF /: Diminuendo3 /: (B - A - F - A - B - C) - D - E - G - E - D - C(5) - B - A - F - A - B - C
+  val line = (Vmp -> Vff) /:(C - D - E - G - E - D - C(5)) - (Vff -> Vmf) /: (B - A - F - A - B - C) - D - E - G - E - D - C(5) - B - A - F - A - B - C
   val tune = line
 }
 
@@ -100,15 +100,15 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    //ContinuousControllerTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    //ContinuousControllerTest.tune.play()
+    //VolumeTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //VolumeTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
     //OrnamentTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //OrnamentTest.tune.play()
-    //Blues.tune.play()
+    Blues.tune.play()
     //ArpeggioTest.tune.play()
-    BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    //BirdsInTheSpringBaritone.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //BirdsInTheSpringBaritone.tune.play()
   }
 }
