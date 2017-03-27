@@ -106,6 +106,7 @@ trait Music
     case Instrument( instrument: Int) => new WithInstrument( instrument, this)
     case Rhythm( rhythmMusic: Music) => WithRhythm(rhythmMusic, this)
     case dynamics: Dynamics => new WithDynamics(dynamics, this)
+    case Range(rangeLow: Note,rangeHigh: Note) => new WithRange(rangeLow, rangeHigh, this)
     case _ => this
   }
   
@@ -585,6 +586,20 @@ case class WithRhythm( rhythmMusic: Music, music: Music) extends Music
     val rhythmPattern=rhythmMusic.rhythmTimings(context.copy(rhythmPattern = Vector.empty))
     music.duration(context.copy(rhythmPattern=rhythmPattern))
   }
+}
+
+//-------------------------
+
+//  Add the music, constraining all notes to the specified range of Notes
+
+case class WithRange( rangeLow: Note, rangeHigh: Note, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(rangeLow=rangeLow,rangeHigh=rangeHigh))
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 

@@ -12,6 +12,9 @@ case class Note(
     ornament: Option[Ornament] = None)
   extends Music
 {
+  val MiddleC = 60
+  def absoluteSemitones = MiddleC + semitones + octave*12
+  
   def unary_+ = copy(octave = octave+1)  //  The Note plays one octave higher 
   def unary_- = copy(octave = octave-1)  //  The Note plays one octave lower
   
@@ -44,8 +47,6 @@ case class Note(
   //  Add an unornamented Note to the sequence at the current timeState with the Instrument, Beat duration and Volume
   def addNote(context: SequenceContext) =
   {
-    val MiddleC = 60
-    
     //  Get the track identified by the track name, creating it if it does not exist
     val track = context.getTrack
     
@@ -75,6 +76,21 @@ case class Note(
     //  The pitch at which the note plays, taking into account the octave and any transposition
     val pitch = MiddleC + transposedPitch + octave*12 + context.transpose
     
+    //  The pitch limited by any Range Modifier
+    val pitchRangeOctaveAdjustment = 
+      if (context.rangeHigh.semitones != N.semitones && pitch > context.rangeHigh.absoluteSemitones) 
+        (context.rangeHigh.absoluteSemitones - pitch - 11) / 12
+      else if (context.rangeLow.semitones != N.semitones && pitch < context.rangeLow.absoluteSemitones) 
+        (context.rangeLow.absoluteSemitones - pitch + 11) / 12
+      else 
+        0
+    val pitchInRange = pitch + pitchRangeOctaveAdjustment*12
+    
+    //if (pitchRangeOctaveAdjustment != 0)
+    //{
+    //  Console.println(s"Limit $display=$pitch between ${context.rangeLow.display}=${context.rangeLow.absoluteSemitones}..${context.rangeHigh.display}=${context.rangeHigh.absoluteSemitones} to $pitchInRange")
+    //}
+    
     //  How long does the note last (although only sounding for part of it)
     val noteTiming = context.durationTiming(1) * context.scaleBeats / context.scaleNum
         
@@ -93,8 +109,8 @@ case class Note(
     val endTicks = startTicks + (noteTiming.ticks * (context.noteWidth + dynamics.noteWidthInc)).toInt + context.tiedAddition.beatTicks
     
     //  Add Midi events to start and end the note at the right pitch, volume and timing
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, pitch, context.volume+dynamics.volumeInc),startTicks))
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, channel, pitch, 0),endTicks))
+    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, pitchInRange, context.volume+dynamics.volumeInc), startTicks))
+    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, channel, pitchInRange, 0), endTicks))
     
     noteTiming
   }
@@ -102,7 +118,7 @@ case class Note(
   def duration(context: SequenceContext) = context.durationTiming(1) * context.scaleBeats / context.scaleNum
   
   //  Allow integer parameter to specify the absolute octave - default is C(4) == MiddleC
-  def apply(octave: Int) = new Note(semitones, s"{display}{octave}", numSharpsToSharpen, this.octave+octave-4)
+  def apply(octave: Int) = new Note(semitones, s"$display($octave)", numSharpsToSharpen, this.octave+octave-4)
 }
 
 //  Every note in all scales are individually named
@@ -148,7 +164,7 @@ object Bn extends Note( 11, "Bn")
 object Bs extends Note( 12, "Bs")
 
 //  The "N" Note is unplayable, but has a Beat and so can be used in rhythm patterns
-object N extends Note(Int.MaxValue, "?")
+object N extends Note(Int.MaxValue, "N")
 
 //-------------------------
 

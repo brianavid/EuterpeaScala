@@ -80,6 +80,12 @@ object VolumeTest
   val tune = line
 }
 
+object RangeTest
+{
+  val line = Range(C(5), C(6)) /: (C - D - E - G - E - D - C(5)) - (B - A - F - A - B - C) - Range(C(2), C(3)) /: (D - E - G - E - D - C(5) - B - A - F - A - B - C)
+  val tune = line
+}
+
 object ContinuousControllerTest
 {
   val modulation = Controller(Controller.Modulation_Wheel)
@@ -106,8 +112,8 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    PitchBendTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    PitchBendTest.tune.play()
+    RangeTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    RangeTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
     //OrnamentTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")

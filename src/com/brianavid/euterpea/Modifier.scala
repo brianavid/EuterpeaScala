@@ -191,5 +191,9 @@ object Instrument {
 
 case class Rhythm(pattern: Music) extends Modifier
 
+//  The Range class specified a low and high Note to which all notes will be constrained by changing octaves
+
+case class Range(low: Note, high: Note) extends Modifier
+
 //  FUTURE MODIFIER CLASS DEFINITIONS GO HERE
 

@@ -30,7 +30,9 @@ case class SequenceContext (
   val isMinor: Boolean = false,             //  Is the current key a minor?
   val currentInstrument: Int = 1,           //  The General Midi instrument on which notes are played
   val rhythmPattern: Vector[Beat] = Vector.empty,
-  val dynamics: List[ContextDynamics] = Nil)//  The set of dynamics affecting the sequence
+  val dynamics: List[ContextDynamics] = Nil,//  The set of dynamics affecting the sequence
+  val rangeLow: Note = N,                   //  The lowest Note to be used - octave-shifting as needed 
+  val rangeHigh: Note = N)                  //  The highest Note to be used - octave-shifting as needed
 {
   //  The TimeState of the current duration at the current tempo
   def durationTiming(noteCount: Int) = 
