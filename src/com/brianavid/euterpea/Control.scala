@@ -4,8 +4,10 @@ import javax.sound.{midi => M}
 //  Control values are music objects which have no duration, but which alter the value of a 
 //  Midi continuous controller on a channel
 
-//  A ControlPoint is the value of a controller at a specific point of time (the thicks) when it was last set
-case class ControlPoint(ticks: Int, value: Int)
+//  A ControlPoint is the value of a controller at a specific point of 
+//  time (the ticks) when it was last set.
+//  The smooth parameter (0.0 .. 1.0) smooths out transitions between control points 
+case class ControlPoint(ticks: Int, value: Int, smooth: Double = 0.0)
 
 //  ControlValues are a mapping of a key (derived from the channel and controller number) to the most 
 //  recently set ControlPoint
@@ -25,11 +27,11 @@ case class ControlValues(values: Map[String, ControlPoint] = Map.empty)
   def merge(that: ControlValues): ControlValues =
   {
     val existing = 
-      for ((key, value1 @ ControlPoint(ticks1, _)) <- values) yield
+      for ((key, value1 @ ControlPoint(ticks1, _, _)) <- values) yield
         that.get(key) match
         {
           case None => key -> value1
-          case Some(value2 @ ControlPoint(ticks2, _)) =>
+          case Some(value2 @ ControlPoint(ticks2, _, _)) =>
             key -> (if (ticks1 > ticks2) value1 else value2)
         }
     val added = 
@@ -49,8 +51,8 @@ object ControlValues
 //  A Controller can be used to construct Control objects for given Midi control ID
 case class Controller(controlId: Int)
 {
-  def apply(value: Int) = new Control( controlId, value)
-  def apply(proportion: Double) = new Control( controlId, (Control.MaxValue * proportion).toInt)
+  def apply(value: Int, smooth: Double = 0.0) = new Control( controlId, value, smooth)
+  def apply(proportion: Double, smooth: Double) = new Control( controlId, (Control.MaxValue * proportion).toInt, smooth)
 }
 
 //  Midi controller IDs are defined by the Midi spec
@@ -103,8 +105,10 @@ object Controller
   def isOnOf(controlId: Int) = controlId >= Sustain_Pedal_On_Off && controlId <= Legato_Footswitch
 }
 
-//  A PitchBend envelop segment, of the duration of the beat, ending at a level of proportion (-1.0 .. +1.0)
-case class P(beat: Beat, proportion: Double)
+//  A PitchBend envelop segment, of the duration of the beat, ending at a 
+//  level of proportion (-1.0 .. +1.0), and with a specified smoothness in 
+//  transition to adjacent segments
+case class P(beat: Beat, proportion: Double, smooth: Double = 0.0)
 
 //  PitchBend is a pseudo-Controller, that generates a different Midi message
 //  In addition to the single-point, no-duration Control values, PitchBend also supports
@@ -116,11 +120,15 @@ object PitchBend
   val MaxRange = 0x4000
   
   //  It also has a helper constructor that builds the entire envelope from a Seq of segments
-  def apply(initialProportion: Double, points: P*) =
+  def apply(initialProportion: Double, points: P*): Music = 
+    apply(initialProportion, 0.0, points: _*)
+  
+  //  It also has a helper constructor that builds the entire envelope from a Seq of segments
+  def apply(initialProportion: Double, initialSmooth: Double, points: P*): Music =
   {
-    val proportion = initialProportion min -1.0 max 1.0
+    val proportion = initialProportion max -1.0 min 1.0
     val pitchBend = new Controller(Controller.Pitch_Bend_Pdeudo_ControlId)
-    val initial: Music = pitchBend((MaxValue * proportion).toInt)
+    val initial: Music = pitchBend((MaxValue * proportion).toInt, initialSmooth)
     
     if (points.length == 0)
       //  With no PitchBend envelope segments, the initial Control value is all there is
@@ -129,12 +137,12 @@ object PitchBend
     {
       //  Function to construct the Music for a PitchBend envelope segment
       //  This comprises the pair of a Rest of the sengment's beat duration and the 
-      //  control value proportion 
+      //  control value proportion and smoothness 
       def controlAfterTime(p: P) : Music =
       {
-        val proportion = p.proportion min -1.0 max 1.0
+        val proportion = p.proportion max -1.0 min 1.0
         val afterTime: Music = WithBeat(p.beat, Rest)
-        val control: Music = pitchBend((MaxValue * proportion).toInt)
+        val control: Music = pitchBend((MaxValue * proportion).toInt, p.smooth)
         afterTime - control
       }
       
@@ -145,9 +153,12 @@ object PitchBend
 }
 
 //  The Control class is Music, which has no duration. When added, it interpolates values into the sequence 
-//  from the most recently set ControlPoint (for the control ID and channel) linearly to the currently set value
+//  from the most recently set ControlPoint (for the control ID and channel) to the currently set value
 //  across the time period from when that previous ControlPoint was set
-case class Control(controlId: Int, value: Int) extends Music 
+//  The interpolation is linear when smooth has its default 0.0 value.
+//  For a larger smooth value (up to 1.0) a Bezier interpolation is used with a "pull" towards
+//  the horizontal, which makes transitions less abrupt
+case class Control(controlId: Int, value: Int, smooth: Double = 0.0) extends Music 
 {
   def add(context: SequenceContext) =
   {
@@ -175,6 +186,61 @@ case class Control(controlId: Int, value: Int) extends Music
     //  The ControlValues key for the control ID and channel
     val controlValuesKey = ControlValues.makeKey(controlId, channel)
     
+    //  Interpolate between the two values over the times, taking into account the two 
+    //  smoothness values on the control points
+    def interpolate(fromTicks: Int, fromValue: Int, fromSmooth: Double,
+                    toTicks: Int, toValue: Int, toSmooth: Double)
+    {
+      val ticksDiff = toTicks-fromTicks
+      var lastValue = fromValue
+      var lastTicks = fromTicks
+      
+      //  Zero smoothness uses linear interpolation
+      if (fromSmooth == 0.0 && toSmooth == 0.0)
+      {
+        //  Interpolate across all control values from that previously set until the new value 
+        for (i <- 1 until ticksDiff)
+        {
+          val interTicks = (fromTicks * (ticksDiff-i) + toTicks * i) / ticksDiff
+          val interValue = (fromValue * (ticksDiff-i) + toValue * i) / ticksDiff
+  
+          if (interValue != lastValue)
+          {
+            addControllerMessage(interValue, interTicks)
+            lastValue = interValue
+          }
+        }
+      }
+      else
+      {
+        //  Non-zero smoothness uses a cubic Bezier interpolation with two Bezier control points 
+        //  at the same values (fromValue & toValue), but at times up to half way between the two 
+        //  interpolated points
+        val t1 = fromTicks + (fromSmooth * ticksDiff).toInt / 2
+        val t2 = toTicks - (toSmooth * ticksDiff).toInt / 2
+        
+        val numberOfBezierPoints = ticksDiff*2
+        for (i <- 1 until numberOfBezierPoints)
+        {
+          val t = 1.0 * i / numberOfBezierPoints
+          val interTicks = ((1.0 - t) * (1.0 - t) * (1.0 - t) * fromTicks +
+                            3.0 * t * (1.0 - t) * (1.0 - t) * t1 +
+                            3.0 * t * t * (1.0 - t) * t2 +
+                            t * t * t * toTicks).toInt
+          val interValue = ((1.0 - t) * (1.0 - t) * (1.0 - t) * fromValue +
+                            3.0 * t * (1.0 - t) * (1.0 - t) * fromValue +
+                            3.0 * t * t * (1.0 - t) * toValue +
+                            t * t * t * toValue).toInt
+          if (interValue != lastValue && interTicks != lastTicks)
+          {
+            addControllerMessage(interValue, interTicks)
+            lastValue = interValue
+            lastTicks = interTicks
+          }
+        }
+      }
+    }
+    
     //  On-off controls have no interpolation
     if (!Controller.isOnOf(controlId))
     {
@@ -183,21 +249,12 @@ case class Control(controlId: Int, value: Int) extends Music
       {
         case None => () //  No previous value, so no interpolation
         
-        case Some(ControlPoint(previousTicks, previousValue)) => 
+        case Some(ControlPoint(previousTicks, previousValue, previousSmooth)) => 
         {
-          //  Interpolate across all control values from that previously set until the new value 
-          val ticksDiff = context.timeState.ticks-previousTicks
-          var lastValue = previousValue
-          for (i <- 1 until ticksDiff)
+          //  With no value change, there need be no interpolation
+          if (value != previousValue)
           {
-            val interTicks = (previousTicks * (ticksDiff-i) + context.timeState.ticks * i) / ticksDiff
-            val interValue = (previousValue * (ticksDiff-i) + value * i) / ticksDiff
-
-            if (interValue != lastValue)
-            {
-              addControllerMessage(interValue, interTicks)
-              lastValue = interValue
-            }
+            interpolate(previousTicks, previousValue, previousSmooth, context.timeState.ticks, value, smooth);
           }
         }
       }
@@ -207,7 +264,7 @@ case class Control(controlId: Int, value: Int) extends Music
     addControllerMessage(value, context.timeState.ticks)
     
     //  The TimeState now records the most recent explicit change of that Control ID
-    TimeState(0, 0, None, context.timeState.controls.updated(controlValuesKey, ControlPoint(context.timeState.ticks, value)))
+    TimeState(0, 0, None, context.timeState.controls.updated(controlValuesKey, ControlPoint(context.timeState.ticks, value, smooth)))
   }
   
   
@@ -216,7 +273,7 @@ case class Control(controlId: Int, value: Int) extends Music
 
 object Control
 {
-  def apply (controlId: Int, proportion: Double) = new Control(controlId, (MaxValue * proportion).toInt)
+  def apply (controlId: Int, proportion: Double, smooth: Double) = new Control(controlId, (MaxValue * proportion).toInt, smooth)
   val MinValue = 0
   val MaxValue = 127
 }
