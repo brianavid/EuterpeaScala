@@ -103,14 +103,45 @@ object Controller
   def isOnOf(controlId: Int) = controlId >= Sustain_Pedal_On_Off && controlId <= Legato_Footswitch
 }
 
-//  PitchBend is a pseudo-Controller, that generated a different Midi message
+//  A PitchBend envelop segment, of the duration of the beat, ending at a level of proportion (-1.0 .. +1.0)
+case class P(beat: Beat, proportion: Double)
+
+//  PitchBend is a pseudo-Controller, that generates a different Midi message
+//  In addition to the single-point, no-duration Control values, PitchBend also supports
+//  specification of the envelope as a sequence of line segments with duration
 object PitchBend
 {
-  def apply(value: Int) = new Control( Controller.Pitch_Bend_Pdeudo_ControlId, value)
-  def apply(proportion: Double) = new Control( Controller.Pitch_Bend_Pdeudo_ControlId, (MaxValue * proportion).toInt)
   val MinValue = -0x1FFF
   val MaxValue = 0x1FFF
   val MaxRange = 0x4000
+  
+  //  It also has a helper constructor that builds the entire envelope from a Seq of segments
+  def apply(initialProportion: Double, points: P*) =
+  {
+    val proportion = initialProportion min -1.0 max 1.0
+    val pitchBend = new Controller(Controller.Pitch_Bend_Pdeudo_ControlId)
+    val initial: Music = pitchBend((MaxValue * proportion).toInt)
+    
+    if (points.length == 0)
+      //  With no PitchBend envelope segments, the initial Control value is all there is
+      initial
+    else
+    {
+      //  Function to construct the Music for a PitchBend envelope segment
+      //  This comprises the pair of a Rest of the sengment's beat duration and the 
+      //  control value proportion 
+      def controlAfterTime(p: P) : Music =
+      {
+        val proportion = p.proportion min -1.0 max 1.0
+        val afterTime: Music = WithBeat(p.beat, Rest)
+        val control: Music = pitchBend((MaxValue * proportion).toInt)
+        afterTime - control
+      }
+      
+      //  Append a sequence of PitchBend envelope segments to the initial control value
+      points.map(controlAfterTime(_)).foldLeft(initial)((a,b) => a - b)
+    }
+  }
 }
 
 //  The Control class is Music, which has no duration. When added, it interpolates values into the sequence 
@@ -134,6 +165,7 @@ case class Control(controlId: Int, value: Int) extends Music
       if (controlId == Controller.Pitch_Bend_Pdeudo_ControlId)
       {
         val normalizedValue = value + 0x2000
+        //Console.println(s"$ticks: PITCH_BEND($channel) $normalizedValue")
         track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PITCH_BEND, channel, normalizedValue % 0x80, normalizedValue / 0x80), ticks))
       }
       else
@@ -154,17 +186,17 @@ case class Control(controlId: Int, value: Int) extends Music
         case Some(ControlPoint(previousTicks, previousValue)) => 
         {
           //  Interpolate across all control values from that previously set until the new value 
-          val valueDiffAbs = Math.abs(value-previousValue)
-          var lastTicks = previousTicks
-          for (i <- 1 until valueDiffAbs)
+          val ticksDiff = context.timeState.ticks-previousTicks
+          var lastValue = previousValue
+          for (i <- 1 until ticksDiff)
           {
-            val interTicks = (previousTicks * (valueDiffAbs-i) + context.timeState.ticks * i) / valueDiffAbs
-            val interValue = (previousValue * (valueDiffAbs-i) + value * i) / valueDiffAbs
+            val interTicks = (previousTicks * (ticksDiff-i) + context.timeState.ticks * i) / ticksDiff
+            val interValue = (previousValue * (ticksDiff-i) + value * i) / ticksDiff
 
-            if (interTicks != lastTicks)
+            if (interValue != lastValue)
             {
               addControllerMessage(interValue, interTicks)
-              lastTicks = interTicks
+              lastValue = interValue
             }
           }
         }

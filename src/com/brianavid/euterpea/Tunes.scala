@@ -57,7 +57,7 @@ object OrnamentTest
 
 object PitchBendTest
 {
-  val pichBend = PitchBend(0) - Rest - PitchBend(0) - Rest - PitchBend(1.0) - Rest - PitchBend(0) - Rest
+  val pichBend = PitchBend(0, P(Quarter,0), P(Quarter,1.0), P(Quarter,0), P(Quarter,0))
   val tune = Legato /: (C - D - E - F - (G/1 & pichBend))
 }
 
@@ -112,8 +112,8 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    RangeTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    RangeTest.tune.play()
+    PitchBendTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    PitchBendTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
     //OrnamentTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
