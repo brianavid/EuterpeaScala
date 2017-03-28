@@ -86,7 +86,7 @@ trait Music
   
   //  Apply a Modifier to the Music with the syntax as Music/Modifier
   //  This constructs subclass instances to represent the modification
-  def / (mod: Modifier) = mod match 
+  def / (mod: Modifier): Music = mod match 
   {
     case beat: Beat => new WithBeat (beat, this)
     case BeatScale(numberOfNotes, numberOfBeats) => new WithBeatScale(numberOfNotes, numberOfBeats, this)
@@ -111,9 +111,16 @@ trait Music
   }
   
   //  Apply a Modifier to the Music with the alternate syntax as Modifier/:Music
-  def /: (mod: Modifier) = this / mod
+  def /: (mod: Modifier): Music = this / mod
   
-  //  Repeat a piece of music a fixed number of times
+  //  A sequence (e.g. a List) of Modifiers can be used as a Modifier
+  def / (mods: Seq[Modifier]): Music = 
+    mods.foldLeft(this)((music, mod) => music/mod)
+ 
+  //  Apply a Modifier sequence to the Music with the alternate syntax as Seq[Modifier]/:Music
+  def /: (mods: Seq[Modifier]): Music = this / mods
+ 
+//  Repeat a piece of music a fixed number of times
   def * (repeat: Integer) = new Repeated(this, repeat)
   
   def rhythmTimings(context: SequenceContext) =

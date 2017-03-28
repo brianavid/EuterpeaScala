@@ -35,7 +35,8 @@ object Blues
 object ArpeggioTest
 {
   val pattern = Arpeggio(Thirtysecond,Vector(1,2,3,4,3,1))
-  val tune = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) /: (I7.c/pattern - II7.b/pattern - V7/pattern - I)
+  val modifiers = List(Tempo(60), CMaj, Instrument("Vibraphone"), Octave(-1)) 
+  val tune = modifiers /: (I7.c/pattern - II7.b/pattern - V7/pattern - I)
 }
 
 object DiatonicTest
@@ -112,8 +113,8 @@ object Beats
 object Test1 
 {
   def main(args: Array[String]) {
-    PitchBendTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    PitchBendTest.tune.play()
+    ArpeggioTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    ArpeggioTest.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
     //OrnamentTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
