@@ -113,7 +113,7 @@ case class TimeSig(number: Byte, beat: Beat) extends Modifier
 //  sounds within its duration 
 
 case class Width(noteWidth: Double) extends Modifier
-object DefaultWidth extends Width(0.9)
+object DefaultWidth extends Width(0.95)
 object Staccato extends Width(0.3) //  Short and sharp
 object Marcato extends Width(0.7) //  Notes clearly separated  
 object Legato extends Width(1.0) //  Notes flowing together

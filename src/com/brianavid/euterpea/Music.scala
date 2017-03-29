@@ -379,12 +379,21 @@ case class WithTimeSig( number: Byte, beat: Beat, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
+    if (!(context.timeState).isAtBar(context.timeSig))
+    {
+      Console.println(s"TimeSig change at postition ${context.timeState.ticks} is not on a bar boundary")
+    }
     //  The use of settingTimeSigChange causes the current timeState to be identified as the time at 
     //  which the time signature changed to allow determination of bar boundaries,
     //  which is necessary for bar line validation, and interpretation of Dynamics 
     val saveTimeSig=context.timeSig
+    val newTimeSig = TimeSig(number, beat)
     context.writeTimeSig(number, beat, context.timeState)
-    val durationTiming = music.add(context.copy( timeSig=TimeSig(number, beat), timeState=context.timeState.settingTimeSigChange))
+    val durationTiming = music.add(context.copy( timeSig=newTimeSig, timeState=context.timeState.settingTimeSigChange))
+    if (!(durationTiming).isAtBar(newTimeSig))
+    {
+      Console.println(s"TimeSig change at postition ${context.timeState.ticks+durationTiming.ticks} is not on a bar boundary")
+    }
     context.writeTimeSig(saveTimeSig.number, saveTimeSig.beat, context.timeState+durationTiming)
     durationTiming.settingTimeSigChange
   }
