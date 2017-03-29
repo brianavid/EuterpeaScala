@@ -82,7 +82,7 @@ trait Music
   
   //  Construct music by adding this part and another part sequentially one after the other, 
   //  requiring this timeState timing to be at a bar boundary of the current time signature 
-  def -|-(duration: Beat) = new BarExtend(this,duration)
+  def |+(duration: Beat) = new BarExtend(this,duration)
   
   //  Apply a Modifier to the Music with the syntax as Music/Modifier
   //  This constructs subclass instances to represent the modification
