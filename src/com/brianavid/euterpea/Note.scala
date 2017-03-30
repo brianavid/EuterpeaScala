@@ -106,7 +106,7 @@ case class Note(
     val timingInc = (context.durationTiming(0).ticks.toDouble * timingIncFactor).toInt
     
     val startTicks = context.timeState.ticks + timingInc
-    val endTicks = startTicks + (noteTiming.ticks * (context.noteWidth + dynamics.noteWidthInc)).toInt
+    val endTicks = startTicks + (noteTiming.ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt
     
     //  Add Midi events to start and end the note at the right pitch, volume and timing
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, pitchInRange, context.volume+dynamics.volumeInc), startTicks))

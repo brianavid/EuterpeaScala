@@ -119,7 +119,7 @@ object DocTune extends Function0[Music]
     val bottomLine = (F * 6 - E * 6 - D * 6)/8 - C/2/Dot
     TimeSig(6,8) /: (topLine & bottomLine)
   }
-  val tune3 = Legato /: (C - D - E - G +|+4 - E - D - C +|+1)
+  val tune3 = C - D - E - G +|+4 - E - D - C +|+1
   def apply(): Music = tune3
 }
 

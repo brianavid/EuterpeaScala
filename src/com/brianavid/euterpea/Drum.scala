@@ -25,7 +25,7 @@ case class Drum(noteNumber: Integer) extends Music
     val timingInc = (context.durationTiming(0).ticks.toDouble * timingIncFactor).toInt
     
     val startTicks = context.timeState.ticks + timingInc
-    val endTicks = startTicks + (noteTiming.ticks * (context.noteWidth + dynamics.noteWidthInc)).toInt + context.tiedAddition.beatTicks
+    val endTicks = startTicks + (noteTiming.ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt + context.tiedAddition.beatTicks
     
     //  Add Midi events to start and end the note at the right pitch, volume and timing
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, noteNumber, context.volume+dynamics.volumeInc),startTicks))

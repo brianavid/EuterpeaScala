@@ -97,8 +97,13 @@ case class SequenceContext (
   
   def getDynamics = 
   {
-    dynamics.foldLeft(PointDynamics())((p,d) => p + d.dynamics.getAtTime(timeState-d.startTime))
+    if (strict)
+      PointDynamics()
+    else
+      dynamics.foldLeft(PointDynamics())((p,d) => p + d.dynamics.getAtTime(timeState-d.startTime))
   }
+  
+  def getNoteWidth = if (strict) 1.0 else noteWidth
 }
 
 object SequenceContext
@@ -113,7 +118,7 @@ object SequenceContext
           tracks=new mutable.HashMap[String,M.Track], // An empty track mapping table
           channels=mutable.HashMap("Drums" -> 9),    // A Midi channel mapping table, where Drums are pre-allocated
           tempoBPM=120,                               // Default tempo
-          noteWidth=DefaultWidth.noteWidth,           // Not quite legato
+          noteWidth=(if (strict) Legato else DefaultWidth).noteWidth,           // Not quite legato
           timeSig=TimeSig(4,Quarter),                      // 4/4
           beat=Quarter)                                // Default notes are quarter notes
 }
