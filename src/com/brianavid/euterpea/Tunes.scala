@@ -110,11 +110,24 @@ object Beats
   val tune = (bassLine & snareLine & hiHatLine) * 4
 }
 
+object DocTune
+{
+  val tune1 = (E - D - C/2) * 2 - (G - (F - F)/8 - E/2) * 2
+  val topLine = (E - D - C/2) * 2 - (G - (F - F)/8 - E/2) * 2
+  val tune2 = {
+    val topLine = (G * 12 - B * 6)/8 - +C/2/Dot
+    val bottomLine = (F * 6 - E * 6 - D * 6)/8 - C/2/Dot
+    TimeSig(6,8) /: (topLine & bottomLine)
+  }
+  val tune3 = Legato /: (C - D - E - G +|+4 - E - D - C +|+1)
+  val tune = tune3
+}
+
 object Test1 
 {
   def main(args: Array[String]) {
-    PitchBendTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
-    PitchBendTest.tune.play()
+    DocTune.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
+    DocTune.tune.play()
     //Beats.tune.writeMidiFile("""D:\Desktop\Tune.mid""")
     //Beats.tune.play()
     //OrnamentTest.tune.writeMidiFile("""D:\Desktop\Tune.mid""")

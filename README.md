@@ -1,5 +1,5 @@
 # EuterpeaScala
-A Scala project loosely modeled on the Yale Haskell Euterpea* project (Haskell School of Music), 
+A Scala project loosely modelled on the Yale Haskell Euterpea* project (Haskell School of Music), 
 from where I have stolen the name. 
 
 *Euterpe was the ancient Greek muse of music - the less well known sister of Terpsichore, muse of dance.
@@ -12,7 +12,7 @@ while allowing a rich set of musical capability and performance.
 
 It supports :
 - multiple tracks, multiple instruments, multiple channels
-- both melodic and drum instruments, with a full range of note piches and beat lengths
+- both melodic and drum instruments, with a full range of note pitches and beat lengths
 - lyrics
 - arbitrary changes of tempo, time signature, key signature and modulation
 - notation for bar boundaries which aids validation of correct transcription
@@ -23,7 +23,7 @@ It supports :
 - transposition - both chromatic and diatonic
 - patterns for note dynamics (volume, width and timing) for phrase-based control of stress, swing, humanisation, etc 
 - note ornaments (turns, mordants, trills etc)
-- control envelopes for continuous Midi controls
+- control envelopes for continuous Midi controls and pitch bending
 - range limitation with octave shifts to keep notes within an instrument's range
 
 It should be seen as a work-in-progress and also as a platform to improve my understanding of Scala's capabilities.

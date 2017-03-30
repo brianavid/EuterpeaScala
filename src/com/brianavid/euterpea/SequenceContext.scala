@@ -39,6 +39,8 @@ case class SequenceContext (
   {
     if (noteCount != 0 && !rhythmPattern.isEmpty)
       TimeState( rhythmPattern(timeState.noteCount % rhythmPattern.length), noteCount)
+    else if (noteCount != 0)
+      TimeState( beat+tiedAddition, noteCount)
     else
       TimeState( beat, noteCount)
   }
