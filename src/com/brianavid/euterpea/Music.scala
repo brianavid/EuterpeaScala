@@ -43,25 +43,25 @@ trait Music
   
   //  Make a javax.sound.midi.Sequence object from the Music structure by adding the root of
   //  the AST to a default context
-  def makeSequence() = {
+  def makeSequence(strict: Boolean) = {
     //  The javax.sound.midi.Sequence object to be constructed
     val sequence = new M.Sequence(M.Sequence.PPQ, Beat.TPQN)
     
     //  Add the music by recursively adding the root
-    add( SequenceContext(sequence) )
+    add( SequenceContext(sequence, strict) )
     
     sequence    
   }
   
   //  Play the music on the system's Midi sequencer
   def play() : Unit = {
-    val sequence = makeSequence()
+    val sequence = makeSequence(false)
     playSequence(sequence)
   }
   
   //  Save the music as aMidit file
-  def writeMidiFile(path: String) : Unit = {
-    val sequence = makeSequence()
+  def writeMidiFile(path: String, strict: Boolean = false) : Unit = {
+    val sequence = makeSequence(strict)
     MS.write(sequence, 1, new File(path))
   }
   

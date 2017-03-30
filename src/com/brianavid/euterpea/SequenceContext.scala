@@ -9,6 +9,7 @@ import scala.collection.mutable
 
 case class SequenceContext (
   val sequence: M.Sequence,                 //  The sequence being constructed
+  val strict: Boolean,                      //  Use strict (no dynamics) timing for printing
   val timeState: TimeState,                 //  The current state (including position in ticks) where music will be added to the sequence
   val timingTrack: M.Track,                 //  The first track of the sequence to which tempo and time signature changes will be added
   val currentTrackName: String = "",        //  The current track name 
@@ -103,9 +104,10 @@ case class SequenceContext (
 object SequenceContext
 {
   //  The root SequenceContext for the sequence
-  def apply(sequence: M.Sequence) = 
+  def apply(sequence: M.Sequence, strict: Boolean) = 
     new SequenceContext(
           sequence=sequence,                          // The sequence being constructed
+          strict=strict,
           timeState=new TimeState(0, 0, Some(0), ControlValues.empty),         // Start at the beginning
           timingTrack=sequence.createTrack(),
           tracks=new mutable.HashMap[String,M.Track], // An empty track mapping table
