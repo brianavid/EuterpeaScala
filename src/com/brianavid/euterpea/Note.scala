@@ -20,6 +20,7 @@ case class Note(
   
   //  Add a harmony string to the Note to make it a Chord
   def / (harmony: Harmony) = new Chord( Some(this), harmony)
+  def /: (harmony: Harmony) = new Chord( Some(this), harmony)
   
   //  Add an Ornament to the Note, so that it will play as a sequence of (diatonically or chromatically) adjacent Notes
   def / (o: Ornament) = copy(ornament = Some(o))

@@ -97,7 +97,7 @@ object Dynamics
   //  The pulse pattern adds the strength value to the volume of any Note 
   //  defined to be added precisely on the specified Beat
   def pulse(beat: Beat, strength: Int) = 
-    Dynamics(X(NoDuration,volumeInc=strength), X(NoDuration,volumeInc=0), X(beat))
+    Dynamics(X(NoDuration,volumeInc=strength), X(NoDuration), X(beat))
   
   //  The swing pattern delays the start of every other Beat by the specified delayFactor as a
   //  multiple of the current Beat Modifier (which may or may not be the same Beat value as here)
@@ -105,12 +105,12 @@ object Dynamics
     Dynamics(X(beat,timingInc=delayFactor), X(beat))
   
   //  The delay pattern delays all notes by a fixed proportion of a specified beat
-  def delay(beat: Beat, delayFactor: Double) = 
+  def delay(delayFactor: Double) = 
     Dynamics(X(NoDuration,timingInc=delayFactor))
   
-  //  The cresc(endo) or dim(uendo) pattern 
-  def volume(duration: Beat, volumeInc: Int) = 
-    Dynamics(X(NoDuration,volumeInc=0), X(duration,volumeInc=volumeInc))
+  //  The cresc(endo) or dim(uendo) pattern used for VolumeChange
+  def volume(beat: Beat, volumeInc: Int) = 
+    Dynamics(X(NoDuration,volumeInc=0), X(beat,volumeInc=volumeInc))
 }
 
 //  The ContextDynamics objects are used as a List in the SequenceContext to denote currently applied 

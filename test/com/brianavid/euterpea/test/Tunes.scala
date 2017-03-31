@@ -15,10 +15,10 @@ object BirdsInTheSpringBaritone extends Function0[Music]
       line1 | line2 | line3 | line4 | line5
     }
   
-    Track("Baritone") /: Channel("Baritone") /: Instrument("Vibraphone") /: Octave(-1) /: melody
+    Track("Baritone") /: Channel("Baritone") /: Instrument("Vibraphone") /: Octave(-1)  /:melody
   }
   
-  def apply(): Music = Tempo(140) /: TimeSig(3,4)  /: DMaj /: (baritonePart)
+  def apply(): Music = Tempo(140) /: TimeSig(3,4)  /: DMaj /: Dynamics.pulse(Quarter*3, 15) /: (baritonePart)
 }
 
 object Bugs extends Function0[Music]
@@ -121,7 +121,15 @@ object DocTune extends Function0[Music]
   }
   val tune3 = C - D - E - G +|+4 - E - D - C +|+1
   val threeBlindMice = E/"Three" - D/"blind" - C/2/"mice"
-  def apply(): Music = threeBlindMice
+  val tune4 = A/Min - G/Maj - F/Maj - E/Maj
+  val tune5 = I7.c - II7.b - V7 - I
+  val tune7 = {
+    val pattern = Arpeggio(Thirtysecond,Vector(1,2,3,4,3,1))
+    I7.c/pattern - II7.b/pattern - V7/pattern - I
+  }
+  val tune8 = Transpose(I -> II) /: (C - D - E - F - G)
+  val tune9 = (Vmp -> Vff) /:(C - D - E - G - E - D - C(5)) - (Vff -> Vmf) /: (B - A - F - A - B - C)
+  def apply(): Music = tune9
 }
 
 object Tunes 
@@ -165,7 +173,7 @@ object Tunes
       args(0) match {
         case "play" => tune.play
         case "save" => tune.writeMidiFile(args(2))
-        case "strict" => tune.writeMidiFile(args(2), true)
+        case "strict" => tune.writeMidiFile(args(2), true); tune.play
         case _ => usage()
       }
     }

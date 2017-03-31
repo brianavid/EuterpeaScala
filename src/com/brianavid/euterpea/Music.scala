@@ -186,7 +186,7 @@ case class Slur(a: Music, b: Music) extends Music
   def add(context: SequenceContext) =
   {
     val durationTiming1 = a.add(context.copy(noteWidth=1.0, tiedAddition=NoDuration))
-    val durationTiming2 = b.add(context.copy(noteWidth = context.noteWidth-0.2, volume = context.volume-10, timeState = context.timeState+durationTiming1))
+    val durationTiming2 = b.add(context.copy(noteWidth = context.noteWidth*0.7, volume = context.volume-Volume.VolumeInc, timeState = context.timeState+durationTiming1))
     
     durationTiming1 + durationTiming2
   }

@@ -186,7 +186,7 @@ case class Chord(
           case Some(Broken(delay)) => 
             {
               notes.zipWithIndex.map{
-                case (m:Music,i: Int) => (WithDynamics(Dynamics.delay(context.beat, delay*i), m))
+                case (m:Music,i: Int) => (WithDynamics(Dynamics.delay(delay*i), m))
               }
             }
         }
