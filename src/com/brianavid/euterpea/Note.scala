@@ -18,10 +18,6 @@ case class Note(
   def unary_+ = copy(octave = octave+1)  //  The Note plays one octave higher 
   def unary_- = copy(octave = octave-1)  //  The Note plays one octave lower
   
-  //  Add a lyric string to the Note
-  def  / (lyric: String) = new WithLyric(lyric, this)
-  def  /: (lyric: String) = new WithLyric(lyric, this)
-  
   //  Add a harmony string to the Note to make it a Chord
   def / (harmony: Harmony) = new Chord( Some(this), harmony)
   

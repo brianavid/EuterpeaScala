@@ -107,6 +107,7 @@ trait Music
     case Rhythm( rhythmMusic: Music) => WithRhythm(rhythmMusic, this)
     case dynamics: Dynamics => new WithDynamics(dynamics, this)
     case Range(rangeLow: Note,rangeHigh: Note) => new WithRange(rangeLow, rangeHigh, this)
+    case Lyric(lyric) => new WithLyric(lyric, this)
     case _ => this
   }
   
@@ -182,9 +183,6 @@ case class - (a: Music, b: Music) extends Music
 //  Combining two pieces of music sequentially, at the same time adjusting note width and volume to sound like a slur
 case class Slur(a: Music, b: Music) extends Music
 {
-  def  / (lyric: String) = new WithLyric(lyric, this)
-  def  /: (lyric: String) = new WithLyric(lyric, this)
-  
   def add(context: SequenceContext) =
   {
     val durationTiming1 = a.add(context.copy(noteWidth=1.0, tiedAddition=NoDuration))

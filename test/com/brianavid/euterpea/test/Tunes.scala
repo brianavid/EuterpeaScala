@@ -120,7 +120,8 @@ object DocTune extends Function0[Music]
     TimeSig(6,8) /: (topLine & bottomLine)
   }
   val tune3 = C - D - E - G +|+4 - E - D - C +|+1
-  def apply(): Music = tune3
+  val threeBlindMice = E/"Three" - D/"blind" - C/2/"mice"
+  def apply(): Music = threeBlindMice
 }
 
 object Tunes 

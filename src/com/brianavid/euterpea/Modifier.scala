@@ -16,6 +16,10 @@ object Modifier {
       else
         Beat.beatFromInteger(divisor)
     }
+  
+  //  A Lyric modifier can be created where a Modifier is expected simply by using a string value 
+  implicit def lyticModifierFromInteger(lyric: String): Modifier =
+    Lyric(lyric)
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -191,9 +195,13 @@ object Instrument {
 
 case class Rhythm(pattern: Music) extends Modifier
 
-//  The Range class specified a low and high Note to which all notes will be constrained by changing octaves
+//  The Range class specifies a low and high Note to which all notes will be constrained by changing octaves
 
 case class Range(low: Note, high: Note) extends Modifier
+
+//  The Lyric class specifies a lyric in the current track at the current position
+
+case class Lyric(lyric: String) extends Modifier
 
 //  FUTURE MODIFIER CLASS DEFINITIONS GO HERE
 
