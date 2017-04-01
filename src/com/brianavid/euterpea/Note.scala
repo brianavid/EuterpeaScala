@@ -100,7 +100,7 @@ case class Note(
     val timingIncFactor = dynamics.timingInc - dynamics.timingJitter + (2 * dynamics.timingJitter * new scala.util.Random().nextDouble())
     
     //  How many ticks will the timing be altered by the dynamics?
-    val timingInc = (context.durationTiming(0).ticks.toDouble * timingIncFactor).toInt
+    val timingInc = (Quarter.beatTicks.toDouble * timingIncFactor).toInt
     
     val startTicks = context.timeState.ticks + timingInc
     val endTicks = startTicks + (noteTiming.ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt

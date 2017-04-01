@@ -9,9 +9,9 @@ package com.brianavid.euterpea
 case class PointDynamics (
     val volumeInc: Int = 0,          //  The amount by which the volume is increased
     val noteWidthInc: Double = 0.0,  //  The amount by which the note width is increased
-    val timingInc: Double = 0.0,     //  The proportion of the current beat length by which the 
+    val timingInc: Double = 0.0,     //  The proportion of  a Quarter beat by which the 
                                      //  start of the Note is delayed 
-    val timingJitter: Double = 0.0)  //  The limit of an additional random proportion of the current 
+    val timingJitter: Double = 0.0)  //  The limit of an additional random proportion of a Quarter  
                                      //  beat length by which the start of the Note is delayed
 {
   //  PointDynamics (e.g. from different Dynamics Modifiers) can and will be added together
@@ -100,11 +100,11 @@ object Dynamics
     Dynamics(X(NoDuration,volumeInc=strength), X(NoDuration), X(beat))
   
   //  The swing pattern delays the start of every other Beat by the specified delayFactor as a
-  //  multiple of the current Beat Modifier (which may or may not be the same Beat value as here)
+  //  multiple of a Quarter note
   def swing(beat: Beat, delayFactor: Double) = 
     Dynamics(X(beat,timingInc=delayFactor), X(beat))
   
-  //  The delay pattern delays all notes by a fixed proportion of a specified beat
+  //  The delay pattern delays all notes by a fixed proportion of a Quarter beat
   def delay(delayFactor: Double) = 
     Dynamics(X(NoDuration,timingInc=delayFactor))
   

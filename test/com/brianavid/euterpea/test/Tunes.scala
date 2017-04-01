@@ -65,7 +65,7 @@ object PitchBendTest extends Function0[Music]
 object DynamicsTest extends Function0[Music]
 {
   val line = C - D - E - F - G - F - E - D - C(5)
-  def apply(): Music = line/8/Dynamics.swing(8, 0.3)
+  def apply(): Music = line/8/Dynamics.swing(8, 0.167)
 }
 
 object RhythmTest extends Function0[Music]
