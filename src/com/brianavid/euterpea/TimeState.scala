@@ -37,6 +37,10 @@ case class TimeState(
           }
       }
       
+      //  Errors in t have their positions offset (recursively) by the current timeState duration
+      //  And the errors of the new timeState are the union of those of the two added timeState
+      val combinedErrors = errors ++ t.errors.map(e => e.copy(position=e.position+this))
+      
       val newTimeState = new TimeState(
           ticks + t.ticks, 
           noteCount+t.noteCount, 
@@ -44,7 +48,7 @@ case class TimeState(
           newTimeSigChangeTime, 
           controls.merge(t.controls), 
           newBarsAtTimeSigChange, 
-          errors ++ t.errors.map(e => e.copy(position=e.position+this)))
+          combinedErrors)
       newTimeState
     }
   
@@ -60,9 +64,12 @@ case class TimeState(
   //  The timing within a the last of a sequence of fixed-sized chunks - used for Dynamics
   def % (chunk: TimeState) = copy( ticks=ticks%chunk.ticks, noteCount=0) //  Within a sequence of repeated chunks
 
-  //  The later of two TimeStates
-  def max(t: TimeState) = (if (t.ticks > ticks) t else this).
-    copy(controls=controls.merge(t.controls), errors=errors ++ t.errors.map(e => e.copy(position=e.position+this)))
+  //  The later of two TimeStates, merging control and errors
+  def max(t: TimeState) = 
+    {
+      val later = if (t.ticks > ticks) t else this
+      later.copy(controls=controls.merge(t.controls), errors=errors ++ t.errors)
+    }
   
   //  A copy of the TimeState which additionally has the current time as the timeSigChangeTime change, 
   //  indicating when the time signature last changed
