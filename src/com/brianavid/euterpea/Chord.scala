@@ -157,10 +157,10 @@ case class Chord(
           case (index: Int, i: Int) => 
             //  If the note index in the sequence is out of range (e.g. zero) add a Rest
             if (index <= 0 || index > notes.length)
-              Rest.add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * i, 1)))
+              Rest.add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
             else
               //  Otherwise play the indexed note from those in the chord (indexed low-to-high, 1-based)
-              notes(index-1).add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * i, 1)))
+              notes(index-1).add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
         }
         
         //  For the last note in the pattern, also play it with an appropriate delay,
@@ -169,9 +169,9 @@ case class Chord(
         val remainingTiming = context.durationTiming(0).ticks - (beat.beatTicks * lastInPattern)
         val index = sequence(patternSequenceCount-1)
         if (index <= 0 || index > notes.length)
-          Rest.add(context.copy(beat=new Beat(remainingTiming), timeState=context.timeState+TimeState(beat * lastInPattern, 1)))
+          Rest.add(context.copy(beat=new Beat(remainingTiming), timeState=context.timeState+TimeState(beat * lastInPattern, 1, context.timeSig)))
         else
-          notes(index-1).add(context.copy(beat=new Beat(remainingTiming), timeState=context.timeState+TimeState(beat * lastInPattern, 1)))
+          notes(index-1).add(context.copy(beat=new Beat(remainingTiming), timeState=context.timeState+TimeState(beat * lastInPattern, 1, context.timeSig)))
 
         //  The length of the arpeggiated Chord remains the same as though not arpeggiated
         context.durationTiming(0) * context.scaleBeats / context.scaleNum

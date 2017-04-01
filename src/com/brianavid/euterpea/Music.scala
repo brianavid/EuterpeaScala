@@ -48,21 +48,32 @@ trait Music
     val sequence = new M.Sequence(M.Sequence.PPQ, Beat.TPQN)
     
     //  Add the music by recursively adding the root
-    add( SequenceContext(sequence, strict) )
+    val context = SequenceContext(sequence, strict)
+    val timeState = add( context )
     
-    sequence    
+    (sequence, timeState.errors)    
+  }
+  
+  //  Check the music is well-formed
+  def check(): Seq[Error] = {
+    val (sequence, errors) = makeSequence(false)
+    errors
   }
   
   //  Play the music on the system's Midi sequencer
-  def play() : Unit = {
-    val sequence = makeSequence(false)
-    playSequence(sequence)
+  def play(): Seq[Error] = {
+    val (sequence, errors) = makeSequence(false)
+    if (errors.length == 0)
+      playSequence(sequence)
+    errors
   }
   
-  //  Save the music as aMidit file
-  def writeMidiFile(path: String, strict: Boolean = false) : Unit = {
-    val sequence = makeSequence(strict)
-    MS.write(sequence, 1, new File(path))
+  //  Save the music as a Midi file, with the "strict" option to prevent timing and width changes 
+  def save(path: String, strict: Boolean = false): Seq[Error] = {
+    val (sequence, errors) = makeSequence(false)
+    if (errors.length == 0)
+      MS.write(sequence, 1, new File(path))
+    errors
   }
   
   //  Construct music by adding this part and another part sequentially one after the other, 
@@ -151,8 +162,8 @@ trait Music
 //  
 object EmptyMusic extends Music
 {
-  def add(context: SequenceContext) =  TimeState(NoDuration, 0)
-  def duration(context: SequenceContext) =  TimeState(NoDuration, 0)
+  def add(context: SequenceContext) =  TimeState(NoDuration)
+  def duration(context: SequenceContext) =  TimeState(NoDuration)
 }
 
 //-------------------------
@@ -210,14 +221,16 @@ case class BarJoin(a: Music, b: Music) extends Music
     val durationTiming1 = a.add(context.copy(tiedAddition=NoDuration))
     val barPosition = context.timeState+durationTiming1
     
-    if (!(barPosition).isAtBar(context.timeSig))
+    val checkedDurationTiming = if (!(barPosition).isAtBar(context.timeSig))
     {
-      Console.println(s"Bar line at postition ${barPosition.ticks} is not on a bar boundary")
+      durationTiming1.error("Bar line is not on a bar boundary")
     }
+    else
+      durationTiming1
 
-    val durationTiming2 = b.add(context.copy(timeState = barPosition))
+    val durationTiming2 = b.add(context.copy(timeState = context.timeState+checkedDurationTiming))
     
-    durationTiming1 + durationTiming2
+    checkedDurationTiming + durationTiming2
   }
   
   def duration(context: SequenceContext) =
@@ -239,14 +252,16 @@ case class BarExtend(music: Music, tiedAddition: Beat) extends Music
   def add(context: SequenceContext) =
   {
     val durationTiming = music.add(context.copy(tiedAddition=tiedAddition))
-    val barPosition = context.timeState+durationTiming-TimeState(tiedAddition, 0)
+    val barPosition = context.timeState+durationTiming-TimeState(tiedAddition)
     
-    if (!(barPosition).isAtBar(context.timeSig))
+    val checkedDurationTiming = if (!(barPosition).isAtBar(context.timeSig))
     {
-      Console.println(s"Bar line at postition ${barPosition.ticks} is not on a bar boundary")
+      durationTiming.error("Bar line is not on a bar boundary")
     }
+    else
+      durationTiming
     
-    durationTiming
+    checkedDurationTiming
   }
   
   def duration(context: SequenceContext) =
@@ -261,7 +276,7 @@ case class Repeated(music: Music, repeat: Integer) extends Music
   def add(context: SequenceContext) =
   {
     if (repeat == 0)
-      TimeState(NoDuration, 0)
+      TimeState(NoDuration)
     else
     {
       val durationTiming1 = music.add(context.copy(tiedAddition=NoDuration))
@@ -274,7 +289,7 @@ case class Repeated(music: Music, repeat: Integer) extends Music
   def duration(context: SequenceContext) =
   {
     if (repeat == 0)
-      TimeState(NoDuration, 0)
+      TimeState(NoDuration)
     else
     {
       val durationTiming1 = music.duration(context.copy(tiedAddition=NoDuration))
@@ -377,26 +392,33 @@ case class WithTimeSig( number: Byte, beat: Beat, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    if (!(context.timeState).isAtBar(context.timeSig))
-    {
-      Console.println(s"TimeSig change at postition ${context.timeState.ticks} is not on a bar boundary")
-    }
     //  The use of settingTimeSigChange causes the current timeState to be identified as the time at 
     //  which the time signature changed to allow determination of bar boundaries,
     //  which is necessary for bar line validation, and interpretation of Dynamics 
+    val preTimeState = context.timeState
     val saveTimeSig=context.timeSig
     val newTimeSig = TimeSig(number, beat)
     context.writeTimeSig(number, beat, context.timeState)
-    val durationTiming = music.add(context.copy( timeSig=newTimeSig, timeState=context.timeState.settingTimeSigChange))
-    if (!(durationTiming).isAtBar(newTimeSig))
-    {
-      Console.println(s"TimeSig change at postition ${context.timeState.ticks+durationTiming.ticks} is not on a bar boundary")
-    }
+    val durationTiming = music.add(context.copy( timeSig=newTimeSig, timeState=context.timeState.settingTimeSigChange(saveTimeSig)))
+    val checkedDuration = 
+      if (!(context.timeState).isAtBar(context.timeSig))
+      {
+        durationTiming.error(s"TimeSig change is not on a bar boundary")
+      } 
+      else if (!(durationTiming).isAtBar(newTimeSig))
+      {
+        durationTiming.error(s"TimeSig change is not on a bar boundary")
+      }
+      else durationTiming
     context.writeTimeSig(saveTimeSig.number, saveTimeSig.beat, context.timeState+durationTiming)
-    durationTiming.settingTimeSigChange
+    checkedDuration.settingTimeSigChange(newTimeSig)
   }
   
-  def duration(context: SequenceContext) = music.duration(context.copy(timeSig=TimeSig(number, beat), timeState=context.timeState.settingTimeSigChange))
+  def duration(context: SequenceContext) = 
+  {
+    val newTimeSig = TimeSig(number, beat)
+    music.duration(context.copy(timeSig=newTimeSig, timeState=context.timeState.settingTimeSigChange(newTimeSig)))
+  }
 }
 
 //-------------------------

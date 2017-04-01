@@ -39,11 +39,11 @@ case class SequenceContext (
   def durationTiming(noteCount: Int) = 
   {
     if (noteCount != 0 && !rhythmPattern.isEmpty)
-      TimeState( rhythmPattern(timeState.noteCount % rhythmPattern.length), noteCount)
-    else if (noteCount != 0)
-      TimeState( beat+tiedAddition, noteCount)
-    else
-      TimeState( beat, noteCount)
+        TimeState( rhythmPattern(timeState.noteCount % rhythmPattern.length), noteCount, timeSig)
+      else if (noteCount != 0)
+        TimeState( beat+tiedAddition, noteCount, timeSig)
+      else
+        TimeState( beat, noteCount, timeSig)
   }
   
   //  Write the specified Tempo to the timing track 
@@ -110,16 +110,19 @@ object SequenceContext
 {
   //  The root SequenceContext for the sequence
   def apply(sequence: M.Sequence, strict: Boolean) = 
+  {
+    val timeSig=TimeSig(4,Quarter)                    // 4/4
     new SequenceContext(
           sequence=sequence,                          // The sequence being constructed
           strict=strict,
-          timeState=new TimeState(0, 0, Some(0), ControlValues.empty),         // Start at the beginning
+          timeState=TimeState.empty(timeSig),         // Start at the beginning
           timingTrack=sequence.createTrack(),
           tracks=new mutable.HashMap[String,M.Track], // An empty track mapping table
           channels=mutable.HashMap("Drums" -> 9),    // A Midi channel mapping table, where Drums are pre-allocated
           tempoBPM=120,                               // Default tempo
           noteWidth=(if (strict) Legato else DefaultWidth).noteWidth,           // Not quite legato
-          timeSig=TimeSig(4,Quarter),                      // 4/4
+          timeSig=timeSig,                      
           beat=Quarter)                                // Default notes are quarter notes
+  }
 }
 

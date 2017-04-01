@@ -1,5 +1,8 @@
 package com.brianavid.euterpea
 
+//  TimStates contain a list of Errors accumulated during the processing of the Music up to that point
+case class Error(position: TimeState, message: String)
+
 //  The TimeState class is a representation of the state of a point of time of Music,
 //  encompassing those aspects which move forward with time through the sequence,
 //  independently of the nested structure by which it was constructed.
@@ -7,41 +10,69 @@ package com.brianavid.euterpea
 //    -  the time position within the sequence (as ticks)
 //    -  the number of notes played (used for cyclic rhythm patterns)
 //    -  the time that the time signature last changed (for bar line validation)
+//    -  the list of errors accumulated up the that point in the music
 case class TimeState(
-    val ticks: Int, 
-    val noteCount: Int, 
-    val timeSigChangeTime: Option[Int],
-    val controls: ControlValues)
+    ticks: Int, 
+    noteCount: Int , 
+    currentTimeSig: TimeSig,
+    timeSigChangeTime: Option[Int],
+    controls: ControlValues,
+    barsAtTimeSigChange: Option[Int],
+    errors: List[Error])
 {
   //  Timings can be added
-  def +(t: TimeState) = 
+  def +(t: TimeState): TimeState = 
     { 
       // The timeSigChangeTime may come from this TimeState object or the later one
       val newTimeSigChangeTime = t.timeSigChangeTime match {
         case None => timeSigChangeTime
-        case Some(t) => Some(ticks+t)
+        case Some(timeSigChangeTimeTicks) => Some(ticks+timeSigChangeTimeTicks)
       }
-      new TimeState(ticks + t.ticks, noteCount+t.noteCount, newTimeSigChangeTime, controls.merge(t.controls))
+      // The barsAtTimeSigChange may come from this TimeState object or the later one
+      val newBarsAtTimeSigChange = t.barsAtTimeSigChange match {
+        case None => barsAtTimeSigChange
+        case Some(timeSigChangeTimeBars) => 
+          {
+            Some(barsCount(currentTimeSig)+timeSigChangeTimeBars)
+          }
+      }
+      
+      val newTimeState = new TimeState(
+          ticks + t.ticks, 
+          noteCount+t.noteCount, 
+          t.currentTimeSig,
+          newTimeSigChangeTime, 
+          controls.merge(t.controls), 
+          newBarsAtTimeSigChange, 
+          errors ++ t.errors.map(e => e.copy(position=e.position+this)))
+      newTimeState
     }
   
   //  Subtracting has no effect on timeSigChangeTime - used for tied notes
-  def -(t: TimeState) = new TimeState(ticks - t.ticks, noteCount-t.noteCount, timeSigChangeTime, controls)
+  def -(t: TimeState) = copy(ticks=ticks - t.ticks, noteCount=noteCount-t.noteCount)
   
   //  The timing of a number of notes
-  def * (number: Integer) = new TimeState( ticks * number, noteCount * number, None, controls) //  Within a sequence of repeated chunks
+  def * (number: Integer) = copy(ticks=ticks*number, noteCount=noteCount*number) //  Within a sequence of repeated chunks
 
   //  The timing of one of a number of notes in a time interval
-  def / (number: Integer) = new TimeState( ticks / number, 1, None, controls) //  Within a sequence of repeated chunks
+  def / (number: Integer) = copy( ticks=ticks/number, noteCount=1) //  Within a sequence of repeated chunks
 
   //  The timing within a the last of a sequence of fixed-sized chunks - used for Dynamics
-  def % (chunk: TimeState) = new TimeState( ticks % chunk.ticks, 0, None, controls) //  Within a sequence of repeated chunks
+  def % (chunk: TimeState) = copy( ticks=ticks%chunk.ticks, noteCount=0) //  Within a sequence of repeated chunks
 
   //  The later of two TimeStates
-  def max(t: TimeState) = (if (t.ticks > ticks) t else this).copy(controls = controls.merge(t.controls))
+  def max(t: TimeState) = (if (t.ticks > ticks) t else this).
+    copy(controls=controls.merge(t.controls), errors=errors ++ t.errors.map(e => e.copy(position=e.position+this)))
   
   //  A copy of the TimeState which additionally has the current time as the timeSigChangeTime change, 
   //  indicating when the time signature last changed
-  def settingTimeSigChange = copy(timeSigChangeTime = Some(ticks))
+  def settingTimeSigChange(timeSig: TimeSig) = copy(currentTimeSig=timeSig, timeSigChangeTime=Some(ticks), barsAtTimeSigChange=Some(barsCount(timeSig)))
+  
+  //  A copy of the TimeState which additionally adds an error mssage at the current position
+  def error(message: String) = 
+    {
+    copy(errors=Error(this, message) :: errors)
+    }
   
   //  How long since the time signature last changed 
   def timeSinceLastTimeSigChange = ticks - timeSigChangeTime.getOrElse(0)
@@ -50,6 +81,14 @@ case class TimeState(
   def beatsSinceLastTimeSigChange(timeSig: TimeSig) = 
     timeSinceLastTimeSigChange / timeSig.beat.beatTicks
   
+  //  How many bars (of the specified time signature duration) since the time signature last changed
+  def barsSinceLastTimeSigChange(timeSig: TimeSig) = 
+    timeSinceLastTimeSigChange / (timeSig.number * timeSig.beat.beatTicks)
+  
+  //  How many bars are at in the music up to the current position
+  def barsCount(timeSig: TimeSig) = 
+    barsAtTimeSigChange.getOrElse(0) + barsSinceLastTimeSigChange(timeSig)
+  
   //  Is the time precisely at a beat of the specified time signature? 
   def isAtBeat(timeSig: TimeSig) = 
     (timeSinceLastTimeSigChange % timeSig.beat.beatTicks) == 0
@@ -57,10 +96,22 @@ case class TimeState(
   //  Is the time precisely at the start of a a bar of the specified time signature? 
   def isAtBar(timeSig: TimeSig) = 
     (timeSinceLastTimeSigChange % (timeSig.number * timeSig.beat.beatTicks)) == 0
+    
+  def display = 
+  {
+    val bars = barsCount(currentTimeSig) + 1
+    val ticksInbar = timeSinceLastTimeSigChange % (currentTimeSig.number * currentTimeSig.beat.beatTicks)
+    val beatInBar = ticksInbar / currentTimeSig.beat.beatTicks + 1
+    val ticksInBeat = timeSinceLastTimeSigChange % currentTimeSig.beat.beatTicks
+    s"$bars:$beatInBar:$ticksInBeat"
+  }
 }
 
 object TimeState
 {
   //  Construct the TimeState object for the beat and number of notes
-  def apply(beat: Beat, noteCount: Int) = new TimeState( beat.beatTicks, noteCount, None, ControlValues.empty)
+  def apply(beat: Beat) = new TimeState( beat.beatTicks, 0, TimeSig(0,NoDuration), None, ControlValues.empty, None, Nil)
+  def apply(beat: Beat, noteCount: Int, timeSig: TimeSig) = new TimeState( beat.beatTicks, noteCount, timeSig, None, ControlValues.empty, None, Nil)
+  def empty(timeSig: TimeSig) = new TimeState(0, 0, timeSig, Some(0), ControlValues.empty, Some(0), Nil)
+//  def empty = new TimeState(0, 0, None, Some(0), ControlValues.empty, Some(0), Nil)
 }

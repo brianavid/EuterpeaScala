@@ -152,29 +152,43 @@ object Tunes
   val tunes: Map[String,Function0[Music]] = tunesList.toMap
   
   def main(args: Array[String]) {
-    def usage() = {
+    def usage(): Seq[Error] = {
       Console.println("Tunes (play|save|strict) <tune> [<path>]")
       for (tuneName <- tunes.keys.toVector.sorted) Console.println(s"\t$tuneName")
+      Nil
     }
-    if (args.length <= 1)
+    def display(errors: Seq[Error]) = {
+      for (error <- errors) Console.println(s"${error.position.display} : ${error.message}")
+      Nil
+    }
+    val numArgsRequired = List("check" -> 0, "all" -> 0, "play" -> 1, "save" -> 2, "strict" -> 2).toMap 
+    if (args.length < 1 || !numArgsRequired.contains(args(0)) || args.length < numArgsRequired(args(0)))
     {
       usage()
     }
-    else if (args.length <= 2 && args(0) != "play")
-    {
-      usage()
-    }
-    else if (!tunes.contains(args(1))) {
-      usage()
-    }
-    else
-    {
-      val tune = tunes(args(1))()
-      args(0) match {
-        case "play" => tune.play
-        case "save" => tune.writeMidiFile(args(2))
-        case "strict" => tune.writeMidiFile(args(2), true); tune.play
-        case _ => usage()
+    else args(0) match {
+      case "check" =>
+        for ((name,tune) <- tunesList) 
+        {
+          Console.println(name)
+          display(tune().check)
+        }
+      case "all" =>
+        for ((name,tune) <- tunesList) 
+        {
+          Console.println(name)
+          display(tune().play())
+        }
+      case _ =>
+      {
+        val tune = tunes(args(1))()
+        val errors = args(0) match {
+          case "play" => tune.play
+          case "save" => tune.save(args(2))
+          case "strict" => tune.save(args(2), true); tune.play
+          case _ => usage()
+        }
+        display(errors)
       }
     }
   }

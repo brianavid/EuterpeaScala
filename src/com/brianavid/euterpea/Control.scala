@@ -176,7 +176,6 @@ case class Control(controlId: Int, value: Int, smooth: Double = 0.0) extends Mus
       if (controlId == Controller.Pitch_Bend_Pdeudo_ControlId)
       {
         val normalizedValue = value + 0x2000
-        //Console.println(s"$ticks: PITCH_BEND($channel) $normalizedValue")
         track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PITCH_BEND, channel, normalizedValue % 0x80, normalizedValue / 0x80), ticks))
       }
       else
@@ -264,11 +263,11 @@ case class Control(controlId: Int, value: Int, smooth: Double = 0.0) extends Mus
     addControllerMessage(value, context.timeState.ticks)
     
     //  The TimeState now records the most recent explicit change of that Control ID
-    TimeState(0, 0, None, context.timeState.controls.updated(controlValuesKey, ControlPoint(context.timeState.ticks, value, smooth)))
+    TimeState.empty(context.timeSig).copy(controls=context.timeState.controls.updated(controlValuesKey, ControlPoint(context.timeState.ticks, value, smooth)))
   }
   
   
-  def duration(context: SequenceContext) = TimeState(NoDuration,0)
+  def duration(context: SequenceContext) = TimeState(NoDuration,0, context.timeSig)
 }
 
 object Control

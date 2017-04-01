@@ -83,11 +83,6 @@ case class Note(
         0
     val pitchInRange = pitch + pitchRangeOctaveAdjustment*12
     
-    //if (pitchRangeOctaveAdjustment != 0)
-    //{
-    //  Console.println(s"Limit $display=$pitch between ${context.rangeLow.display}=${context.rangeLow.absoluteSemitones}..${context.rangeHigh.display}=${context.rangeHigh.absoluteSemitones} to $pitchInRange")
-    //}
-    
     //  How long does the note last (although only sounding for part of it)
     val noteTiming = context.durationTiming(1) * context.scaleBeats / context.scaleNum
         
