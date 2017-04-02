@@ -84,7 +84,10 @@ case class Note(
     val pitchInRange = pitch + pitchRangeOctaveAdjustment*12
     
     //  How long does the note last (although only sounding for part of it)
-    val noteTiming = context.durationTiming(1) * context.scaleBeats / context.scaleNum
+    val rhythmRest = context.rhythmRest
+    
+    //  How long does the note last (although only sounding for part of it)
+    val noteTiming = (context.durationTiming(1) + rhythmRest) * context.scaleBeats / context.scaleNum
         
     val dynamics = context.getDynamics
     
@@ -97,8 +100,8 @@ case class Note(
     //  How many ticks will the timing be altered by the dynamics?
     val timingInc = (Quarter.beatTicks.toDouble * timingIncFactor).toInt
     
-    val startTicks = context.timeState.ticks + timingInc
-    val endTicks = startTicks + (noteTiming.ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt
+    val startTicks = (context.timeState + rhythmRest).ticks + timingInc
+    val endTicks = startTicks + ((noteTiming - rhythmRest).ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt
     
     //  Add Midi events to start and end the note at the right pitch, volume and timing
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, pitchInRange, context.volume+dynamics.volumeInc), startTicks))

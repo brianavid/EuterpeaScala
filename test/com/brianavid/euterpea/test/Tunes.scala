@@ -131,8 +131,8 @@ object DocTune extends Function0[Music]
   val tune9 = (Vmp -> Vff) /:(C - D - E - G - E - D - C(5)) - (Vff -> Vmf) /: (B - A - F - A - B - C)
   val tune10 = 
   {
-    val r = N/8*4 - N/2
-    CMin /: Rhythm(r) /: (Rest - G*3 - E - Rest - F*3 - D)
+    val r = (Rest - N*3)/8 - N/2
+    CMin /: Rhythm(r) /: (G*3 - E - F*3 - D)
   }
   def apply(): Music = tune10
 }

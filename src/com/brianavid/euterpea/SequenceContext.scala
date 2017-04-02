@@ -30,7 +30,7 @@ private[euterpea] case class SequenceContext (
   val tonic: Note = C,                      //  The current tonic (usually the key)
   val isMinor: Boolean = false,             //  Is the current key a minor?
   val currentInstrument: Int = 1,           //  The General Midi instrument on which notes are played
-  val rhythmPattern: Vector[Beat] = Vector.empty,
+  val rhythmPattern: Vector[(Beat,Beat)] = Vector.empty,
   val dynamics: List[ContextDynamics] = Nil,//  The set of dynamics affecting the sequence
   val rangeLow: Note = N,                   //  The lowest Note to be used - octave-shifting as needed 
   val rangeHigh: Note = N)                  //  The highest Note to be used - octave-shifting as needed
@@ -39,11 +39,19 @@ private[euterpea] case class SequenceContext (
   def durationTiming(noteCount: Int) = 
   {
     if (noteCount != 0 && !rhythmPattern.isEmpty)
-        TimeState( rhythmPattern(timeState.noteCount % rhythmPattern.length), noteCount, timeSig)
+        TimeState( rhythmPattern(timeState.noteCount % rhythmPattern.length)._1, noteCount, timeSig)
       else if (noteCount != 0)
         TimeState( beat+tiedAddition, noteCount, timeSig)
       else
         TimeState( beat, noteCount, timeSig)
+  }
+  
+  def rhythmRest =
+  {
+    if (!rhythmPattern.isEmpty)
+      TimeState( rhythmPattern(timeState.noteCount % rhythmPattern.length)._2, 0, timeSig)
+    else
+      TimeState.empty(timeSig)
   }
   
   //  Write the specified Tempo to the timing track 

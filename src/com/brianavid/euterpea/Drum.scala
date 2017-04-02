@@ -5,7 +5,10 @@ case class Drum(noteNumber: Integer) extends Music
 {
   def add(context: SequenceContext) =
   {
-    val noteTiming = context.durationTiming(1) * context.scaleBeats / context.scaleNum
+    val rhythmRest = context.rhythmRest
+    
+    //  How long does the note last (although only sounding for part of it)
+    val noteTiming = (context.durationTiming(1) + rhythmRest) * context.scaleBeats / context.scaleNum
     
     //  Get the track identified by the track name, creating it if it does not exist
     val track = context.getTrack
@@ -24,8 +27,8 @@ case class Drum(noteNumber: Integer) extends Music
     //  How many ticks will the timing be altered by the dynamics?
     val timingInc = (Quarter.beatTicks.toDouble * timingIncFactor).toInt
     
-    val startTicks = context.timeState.ticks + timingInc
-    val endTicks = startTicks + (noteTiming.ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt
+    val startTicks = (context.timeState + rhythmRest).ticks + timingInc
+    val endTicks = startTicks + ((noteTiming - rhythmRest).ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt
     
     //  Add Midi events to start and end the note at the right pitch, volume and timing
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, noteNumber, context.volume+dynamics.volumeInc),startTicks))
