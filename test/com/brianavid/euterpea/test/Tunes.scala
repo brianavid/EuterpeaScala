@@ -129,7 +129,12 @@ object DocTune extends Function0[Music]
   }
   val tune8 = Transpose(I -> II) /: (C - D - E - F - G)
   val tune9 = (Vmp -> Vff) /:(C - D - E - G - E - D - C(5)) - (Vff -> Vmf) /: (B - A - F - A - B - C)
-  def apply(): Music = tune9
+  val tune10 = 
+  {
+    val r = N/8*4 - N/2
+    CMin /: Rhythm(r) /: (Rest - G*3 - E - Rest - F*3 - D)
+  }
+  def apply(): Music = tune10
 }
 
 object Tunes 
@@ -152,13 +157,13 @@ object Tunes
   val tunes: Map[String,Function0[Music]] = tunesList.toMap
   
   def main(args: Array[String]) {
-    def usage(): Seq[Error] = {
+    def usage(): Seq[(String,String)] = {
       Console.println("Tunes (play|save|strict) <tune> [<path>]")
       for (tuneName <- tunes.keys.toVector.sorted) Console.println(s"\t$tuneName")
       Nil
     }
-    def display(errors: Seq[Error]) = {
-      for (error <- errors) Console.println(s"${error.position.display} : ${error.message}")
+    def display(errors: Seq[(String,String)]) = {
+      for (error <- errors) Console.println(s"${error._1} : ${error._2}")
       Nil
     }
     val numArgsRequired = List("check" -> 0, "all" -> 0, "play" -> 1, "save" -> 2, "strict" -> 2).toMap 

@@ -55,25 +55,25 @@ trait Music
   }
   
   //  Check the music is well-formed
-  def check(): Seq[Error] = {
+  def check(): Seq[(String,String)] = {
     val (sequence, errors) = makeSequence(false)
-    errors
+    errors.map(e => (e.position.display, e.message))
   }
   
   //  Play the music on the system's Midi sequencer
-  def play(): Seq[Error] = {
+  def play(): Seq[(String,String)] = {
     val (sequence, errors) = makeSequence(false)
     if (errors.length == 0)
       playSequence(sequence)
-    errors
+    errors.map(e => (e.position.display, e.message))
   }
   
   //  Save the music as a Midi file, with the "strict" option to prevent timing and width changes 
-  def save(path: String, strict: Boolean = false): Seq[Error] = {
+  def save(path: String, strict: Boolean = false): Seq[(String,String)] = {
     val (sequence, errors) = makeSequence(false)
     if (errors.length == 0)
       MS.write(sequence, 1, new File(path))
-    errors
+    errors.map(e => (e.position.display, e.message))
   }
   
   //  Construct music by adding this part and another part sequentially one after the other, 

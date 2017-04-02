@@ -7,7 +7,7 @@ import scala.collection.mutable
 //  This transformation uses a SequenceContext object to specify prevailing modifier-specified 
 //  state, which is passed around (and changed when necessary) through the processing of the Music AST 
 
-case class SequenceContext (
+private[euterpea] case class SequenceContext (
   val sequence: M.Sequence,                 //  The sequence being constructed
   val strict: Boolean,                      //  Use strict (no dynamics) timing for printing
   val timeState: TimeState,                 //  The current state (including position in ticks) where music will be added to the sequence
@@ -106,7 +106,7 @@ case class SequenceContext (
   def getNoteWidth = if (strict) 1.0 else noteWidth
 }
 
-object SequenceContext
+private[euterpea] object SequenceContext
 {
   //  The root SequenceContext for the sequence
   def apply(sequence: M.Sequence, strict: Boolean) = 

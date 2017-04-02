@@ -1,7 +1,7 @@
 package com.brianavid.euterpea
 
 //  TimStates contain a list of Errors accumulated during the processing of the Music up to that point
-case class Error(position: TimeState, message: String)
+private[euterpea] case class Error(position: TimeState, message: String)
 
 //  The TimeState class is a representation of the state of a point of time of Music,
 //  encompassing those aspects which move forward with time through the sequence,
@@ -11,7 +11,7 @@ case class Error(position: TimeState, message: String)
 //    -  the number of notes played (used for cyclic rhythm patterns)
 //    -  the time that the time signature last changed (for bar line validation)
 //    -  the list of errors accumulated up the that point in the music
-case class TimeState(
+private[euterpea] case class TimeState(
     ticks: Int, 
     noteCount: Int , 
     currentTimeSig: TimeSig,
@@ -114,7 +114,7 @@ case class TimeState(
   }
 }
 
-object TimeState
+private[euterpea] object TimeState
 {
   //  Construct the TimeState object for the beat and number of notes
   def apply(beat: Beat) = new TimeState( beat.beatTicks, 0, TimeSig(0,NoDuration), None, ControlValues.empty, None, Nil)
