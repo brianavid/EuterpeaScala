@@ -78,7 +78,7 @@ case class Arpeggio(
 
 //  A chord is a Harmony with either an explicit root note or which is in a position relative to the current tonic 
 //  A chord contains a list of transforms that can be applied to the harmony e.g. to add and remove intervals
-case class Chord(
+private[euterpea] case class Chord(
     root: Option[Note],           //  An explicit root note
     harmony: Harmony,             //  An explicit harmony
     chordPosition: Int = 1,   //  If the root is None, the chord position relative to the current tonic 
@@ -246,7 +246,7 @@ object VII7 extends Chord(None, Harmony(), 7, true)
 
 //  --------------------------
 
-object Chord
+private[euterpea] object Chord
 {
   //  Diatonic transposition of a note (specified as semitones) from one Chord position to another
   def transpose(fromChord: Chord, toChord: Chord, semitones: Int, context: SequenceContext): Int =

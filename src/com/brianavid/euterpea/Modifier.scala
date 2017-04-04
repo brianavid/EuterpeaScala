@@ -99,7 +99,7 @@ object Vppp extends Volume(Volume.DefaultVolume - Volume.VolumeInc*3) //  Even q
 
 //  The VolumeChange Modifier increases or decreases Volume gradually over the duration of the music
 
-case class VolumeChange(val fromVolume: Volume, val toVolume: Volume) extends Modifier
+private[euterpea] case class VolumeChange(val fromVolume: Volume, val toVolume: Volume) extends Modifier
 
 //  The Tempo Modifier controls and varies the tempo of the music
 

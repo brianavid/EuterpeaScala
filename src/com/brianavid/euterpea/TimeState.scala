@@ -119,6 +119,5 @@ private[euterpea] object TimeState
   //  Construct the TimeState object for the beat and number of notes
   def apply(beat: Beat) = new TimeState( beat.beatTicks, 0, TimeSig(0,NoDuration), None, ControlValues.empty, None, Nil)
   def apply(beat: Beat, noteCount: Int, timeSig: TimeSig) = new TimeState( beat.beatTicks, noteCount, timeSig, None, ControlValues.empty, None, Nil)
-  def empty(timeSig: TimeSig) = new TimeState(0, 0, timeSig, Some(0), ControlValues.empty, Some(0), Nil)
-//  def empty = new TimeState(0, 0, None, Some(0), ControlValues.empty, Some(0), Nil)
+  def empty(timeSig: TimeSig) = new TimeState(0, 0, timeSig, None, ControlValues.empty, Some(0), Nil)
 }

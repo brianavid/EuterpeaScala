@@ -58,7 +58,7 @@ case class Controller(controlId: Int)
 //  Midi controller IDs are defined by the Midi spec
 object Controller
 {
-  val Pitch_Bend_Pdeudo_ControlId = -1
+  val Pitch_Bend_Pseudo_Control = -1
   
   val Bank_Select = 0	
   val Modulation_Wheel = 1	
@@ -127,7 +127,7 @@ object PitchBend
   def apply(initialProportion: Double, initialSmooth: Double, points: P*): Music =
   {
     val proportion = initialProportion max -1.0 min 1.0
-    val pitchBend = new Controller(Controller.Pitch_Bend_Pdeudo_ControlId)
+    val pitchBend = new Controller(Controller.Pitch_Bend_Pseudo_Control)
     val initial: Music = pitchBend((MaxValue * proportion).toInt, initialSmooth)
     
     if (points.length == 0)
@@ -173,7 +173,7 @@ case class Control(controlId: Int, value: Int, smooth: Double = 0.0) extends Mus
     //  For PitchBend, the Midi message PITCH_BEND with a high-resolution parameter 
     def addControllerMessage(value: Int, ticks: Int) =
     {
-      if (controlId == Controller.Pitch_Bend_Pdeudo_ControlId)
+      if (controlId == Controller.Pitch_Bend_Pseudo_Control)
       {
         val normalizedValue = value + 0x2000
         track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PITCH_BEND, channel, normalizedValue % 0x80, normalizedValue / 0x80), ticks))

@@ -6,7 +6,7 @@ package com.brianavid.euterpea
 //  Class PointDynamics represents the changes to a Note at any point in time, used either when
 //  defining Dynamics patterns or when finding the set of Dynamics adjustments in force at the 
 //  time a note is added to the sequence
-case class PointDynamics (
+private[euterpea] case class PointDynamics (
     val volumeInc: Int = 0,          //  The amount by which the volume is increased
     val noteWidthInc: Double = 0.0,  //  The amount by which the note width is increased
     val timingInc: Double = 0.0,     //  The proportion of  a Quarter beat by which the 
@@ -31,7 +31,7 @@ case class PointDynamics (
 
 //  Class TimedDynamics, defines a cyclic sequence of PointDynamics, each defining the Beat 
 //  after the previous one and the new PointDynamics values to which the Dynamics change
-case class TimedDynamics(
+private[euterpea] case class TimedDynamics(
     val beat: Beat,
     val values: PointDynamics)
 
@@ -115,7 +115,7 @@ object Dynamics
 
 //  The ContextDynamics objects are used as a List in the SequenceContext to denote currently applied 
 //  Dynamics cyclic patterns, starting at a specified time
-case class ContextDynamics(
+private[euterpea] case class ContextDynamics(
     val startTime: TimeState,    //  The time at which the Dynamics pattern starts
     val dynamics: Dynamics)   //  The Dynamics to apply to every Note added
 

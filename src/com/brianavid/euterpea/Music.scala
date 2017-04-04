@@ -225,7 +225,7 @@ case class Slur(a: Music, b: Music) extends Music
 //-------------------------
 
 //  Combining two pieces of music sequentially, each of which must be whole bars
-case class BarJoin(a: Music, b: Music) extends Music
+private[euterpea] case class BarJoin(a: Music, b: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -282,7 +282,7 @@ case class BarExtend(music: Music, tiedAddition: Beat) extends Music
 }
 
 //  Repeat a piece of music a fixed number of times
-case class Repeated(music: Music, repeat: Integer) extends Music
+private[euterpea] case class Repeated(music: Music, repeat: Integer) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -314,7 +314,7 @@ case class Repeated(music: Music, repeat: Integer) extends Music
 //-------------------------
 
 //  Combining two pieces of music in parallel, by adding them both at the same timeState
-case class & (a: Music, b: Music) extends Music
+private[euterpea] case class & (a: Music, b: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -337,7 +337,7 @@ case class & (a: Music, b: Music) extends Music
 
 //  Add the music, with a changed current duration
 
-case class WithBeat(beat: Beat, music: Music) extends Music
+private[euterpea] case class WithBeat(beat: Beat, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -351,7 +351,7 @@ case class WithBeat(beat: Beat, music: Music) extends Music
 
 //  Add the music, scaling the beat for (e.g.) triplets or quintuplets
 
-case class WithBeatScale(numberOfNotes: Integer, numberOfBeats: Integer, music: Music) extends Music
+private[euterpea] case class WithBeatScale(numberOfNotes: Integer, numberOfBeats: Integer, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -365,7 +365,7 @@ case class WithBeatScale(numberOfNotes: Integer, numberOfBeats: Integer, music: 
 
 //  Add the music, with a changed (and optionally changing) current tempo
 
-case class WithTempo( bpm: Int, toBpm: Option[Int], music: Music) extends Music
+private[euterpea] case class WithTempo( bpm: Int, toBpm: Option[Int], music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -399,7 +399,7 @@ case class WithTempo( bpm: Int, toBpm: Option[Int], music: Music) extends Music
 
 //  Add the music, with a changed current time signature
 
-case class WithTimeSig( number: Byte, beat: Beat, music: Music) extends Music
+private[euterpea] case class WithTimeSig( number: Byte, beat: Beat, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -436,7 +436,7 @@ case class WithTimeSig( number: Byte, beat: Beat, music: Music) extends Music
 
 //  Add the music, with a changed current noteWidth
 
-case class WithWidth( noteWidth: Double, music: Music) extends Music 
+private[euterpea] case class WithWidth( noteWidth: Double, music: Music) extends Music 
 {
   def add(context: SequenceContext) =
   {
@@ -450,7 +450,7 @@ case class WithWidth( noteWidth: Double, music: Music) extends Music
 
 //  Add the music, with a changed current transposition
 
-case class WithTranspose(num: Int, music: Music) extends Music
+private[euterpea] case class WithTranspose(num: Int, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -464,7 +464,7 @@ case class WithTranspose(num: Int, music: Music) extends Music
 
 //  Add the music, with a changed current transposition
 
-case class WithDiatonic(fromChord: Chord, toChord: Chord, music: Music) extends Music
+private[euterpea] case class WithDiatonic(fromChord: Chord, toChord: Chord, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -478,7 +478,7 @@ case class WithDiatonic(fromChord: Chord, toChord: Chord, music: Music) extends 
 
 //  Add the music, with a changed key signature
 
-case class WithKeySig(keySig: KeySig, music: Music) extends Music
+private[euterpea] case class WithKeySig(keySig: KeySig, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -496,7 +496,7 @@ case class WithKeySig(keySig: KeySig, music: Music) extends Music
 
 //  Add the music, with a changed tonic, but without a changed key signature
 
-case class WithModulation(keySig: KeySig, music: Music) extends Music
+private[euterpea] case class WithModulation(keySig: KeySig, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -510,7 +510,7 @@ case class WithModulation(keySig: KeySig, music: Music) extends Music
 
 //  Add the music, with a changed current note volume
 
-case class WithVolume(volume: Int, music: Music) extends Music
+private[euterpea] case class WithVolume(volume: Int, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -524,7 +524,7 @@ case class WithVolume(volume: Int, music: Music) extends Music
 
 //  Add the music, with a changing note volume across the duration of the music
 
-case class WithVolumeChange(volumeInc: Int, music: Music) extends Music
+private[euterpea] case class WithVolumeChange(volumeInc: Int, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -539,7 +539,7 @@ case class WithVolumeChange(volumeInc: Int, music: Music) extends Music
 
 //  Add the music, with a changed current track name, which may or may not already exist in the tune
 
-case class WithTrack( trackName: String, music: Music) extends Music
+private[euterpea] case class WithTrack( trackName: String, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -553,7 +553,7 @@ case class WithTrack( trackName: String, music: Music) extends Music
 
 //  Add the music, with a changed current channel
 
-case class WithChannel( channelName: String, music: Music) extends Music
+private[euterpea] case class WithChannel( channelName: String, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -567,7 +567,7 @@ case class WithChannel( channelName: String, music: Music) extends Music
 
 //  Add the music, with a changed current instrument number (from the General Midi set of instruments
 
-case class WithInstrument( instrument: Int, music: Music) extends Music
+private[euterpea] case class WithInstrument( instrument: Int, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -587,7 +587,7 @@ case class WithInstrument( instrument: Int, music: Music) extends Music
 
 //  Add the music, with the dynamics applied 
 
-case class WithDynamics( dyn: Dynamics, music: Music) extends Music
+private[euterpea] case class WithDynamics( dyn: Dynamics, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -601,7 +601,7 @@ case class WithDynamics( dyn: Dynamics, music: Music) extends Music
 
 //  Add the music, which will be a single Note, with the lyric associated with the time of the note 
 
-case class WithLyric( lyric: String, music: Music) extends Music
+private[euterpea] case class WithLyric( lyric: String, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -620,7 +620,7 @@ case class WithLyric( lyric: String, music: Music) extends Music
 //  Add the music, with the duration of each Note, Drum or Rest taken in turn cyclically from  
 //  repetitions of the rhythm pattern of the rhythmMusic and not from the current Beat
 
-case class WithRhythm( rhythmMusic: Music, music: Music) extends Music
+private[euterpea] case class WithRhythm( rhythmMusic: Music, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
@@ -639,7 +639,7 @@ case class WithRhythm( rhythmMusic: Music, music: Music) extends Music
 
 //  Add the music, constraining all notes to the specified range of Notes
 
-case class WithRange( rangeLow: Note, rangeHigh: Note, music: Music) extends Music
+private[euterpea] case class WithRange( rangeLow: Note, rangeHigh: Note, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
