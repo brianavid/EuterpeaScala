@@ -19,16 +19,28 @@ abstract class Ornament
   
 }
 
-//  Instance of an Ornament for a Turn, starting Up, then Down
+//  Instance of an Ornament for a Turn, starting going Down, then Up
 case class TurnDownUp(beat: Beat, chomaticDown: Boolean = false) extends Ornament
 {
-  val arpeggio = Arpeggio(beat, Vector(Home, Down, Up, Home))
+  val arpeggio = Arpeggio(beat, Vector(Home, Down, Home, Up, Home))
 }
 
-//  Instance of an Ornament for a Turn, starting Down, then Up
+//  Instance of an Ornament for a Turn, starting going Up, then Down
 case class TurnUpDown(beat: Beat, chomaticDown: Boolean = false) extends Ornament
 {
-  val arpeggio = Arpeggio(beat, Vector(Home, Up, Down, Home))
+  val arpeggio = Arpeggio(beat, Vector(Home, Up, Home, Down, Home))
+}
+
+//  Instance of an Ornament for a Turn, starting Down, then going Up
+case class TurnUp(beat: Beat, chomaticDown: Boolean = false) extends Ornament
+{
+  val arpeggio = Arpeggio(beat, Vector(Down, Home, Up, Home))
+}
+
+//  Instance of an Ornament for a Turn, starting Up, then going Down
+case class TurnDown(beat: Beat, chomaticDown: Boolean = false) extends Ornament
+{
+  val arpeggio = Arpeggio(beat, Vector(Up, Home, Down, Home))
 }
 
 //  Instance of an Ornament for a Mordent using the upper Note
