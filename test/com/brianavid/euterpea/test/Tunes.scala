@@ -35,14 +35,14 @@ object Blues extends Function0[Music]
 object ArpeggioTest extends Function0[Music]
 {
   val pattern = Arpeggio(Thirtysecond,1,2,3,4,3,(1,2,3))
-  val modifiers = List(Tempo(60), CMaj, Instrument("Vibraphone"), Octave(-1)) 
+  val modifiers = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) 
   def apply(): Music = modifiers /: ((I7.c - II7.b - V7)/pattern - I)
 }
 
 object CompTest extends Function0[Music]
 {
   val pattern = Arpeggio(Sixteenth,1,(2,3,4),(1,3),(2,3,4))
-  val modifiers = List(Tempo(60), CMaj, Instrument("Vibraphone")) 
+  val modifiers = Tempo(60) /: CMaj /: Instrument("Vibraphone")
   def apply(): Music = modifiers /: ((I7.c - II7.b - V7 - I)/pattern)
 }
 

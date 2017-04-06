@@ -2,6 +2,11 @@ package com.brianavid.euterpea
 import language.implicitConversions
 
 trait Modifier
+{
+  //  Two Modifier values combined with / or /: is a Modifiers value
+  def / (that: Modifier): Modifiers = new Modifiers(List(that, this))
+  def /: (that: Modifier): Modifiers = this / that
+}
 
 object Modifier {
   //  A Beat or BeatScale Modifier can be created where a Modifier is expected simply by using an integer value
@@ -18,8 +23,19 @@ object Modifier {
     }
   
   //  A Lyric modifier can be created where a Modifier is expected simply by using a string value 
-  implicit def lyticModifierFromInteger(lyric: String): Modifier =
+  implicit def lyricModifierFromInteger(lyric: String): Modifier =
     Lyric(lyric)
+}
+
+
+//------------------------------------------------------------------------------------------------------------
+
+//  Two or more Modifiers values as a Modifiers is also a Modifier, acting as the combination of all contained modifiers
+case class Modifiers (modifiers: List[Modifier]) extends Modifier
+{
+  //  A Modifiers value and a Modifier value combined with / or /: is a (longer) Modifiers value
+  override def / (that: Modifier): Modifiers = new Modifiers(that :: modifiers)
+  override def /: (that: Modifier): Modifiers = this / that
 }
 
 //------------------------------------------------------------------------------------------------------------
