@@ -52,6 +52,9 @@ object X
 //  with the time between the points specified as Beats
 case class Dynamics(val x: TimedDynamics*) extends Modifier 
 {
+  def modifying(music: Music): Music =
+    new WithDynamics (this, music)
+
   //  Get the computed PointDynamics value for a time within the repeated application of the TimedDynamics sequence
   def getAtTime(time: TimeState) = 
   {
@@ -118,4 +121,18 @@ object Dynamics
 private[euterpea] case class ContextDynamics(
     val startTime: TimeState,    //  The time at which the Dynamics pattern starts
     val dynamics: Dynamics)   //  The Dynamics to apply to every Note added
+
+//-------------------------
+
+//  Add the music, with the dynamics applied 
+
+private[euterpea] case class WithDynamics( dyn: Dynamics, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(dynamics = ContextDynamics(context.timeState, dyn) :: context.dynamics))
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
+}
 

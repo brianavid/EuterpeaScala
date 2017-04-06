@@ -72,6 +72,10 @@ object Min7 extends Harmony(Harmony.triad(1).map(Harmony.minorIntervals) ++ Harm
 case class Broken( 
     val delay: Double  //  The delay between the onset of each note in the chord
   ) extends Modifier
+{
+  def modifying(music: Music): Music =
+    new WithBroken (this, music)
+}
 
 //  Class ArpeggioNotes is the set of notes in the Chord (1-base, low to high) which plays at a beat of the arpeggio
 case class ArpeggioNotes(notes: List[Int])
@@ -104,6 +108,11 @@ case class Arpeggio(
     val beat: Beat,             //  The beat of each note in the arpeggio
     val sequence: Vector[ArpeggioNotes] //  The sequence of the Chord's notes (low to high, 1-based, 0=Rest)
   ) extends Modifier
+{
+  def modifying(music: Music): Music =
+    new WithArpeggio (this, music)
+
+}
 
 //  An Arpeggio is created with a variable number of ArpeggioNotes values
 object Arpeggio
@@ -317,4 +326,33 @@ private[euterpea] object Chord
     //  Construct a Chord of these three notes - it will be arpeggiated on some pattern
     new Chord( Some(note), Harmony(Set(intervalUp, 0, intervalDown)))
   }
+}
+
+
+//-------------------------
+
+//  Add the music, ...
+
+private[euterpea] case class WithBroken( broken: Broken, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(broken=Some(broken)))
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
+}
+
+//-------------------------
+
+//  Add the music, ...
+
+private[euterpea] case class WithArpeggio( arpeggio: Arpeggio, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(arpeggio=Some(arpeggio)))
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
 }
