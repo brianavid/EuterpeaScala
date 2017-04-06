@@ -9,7 +9,8 @@ case class Note(
     display: String,                //  A string to display the note (for tracing only)
     numSharpsToSharpen: Int = 0,    //  The number of sharps in the key signature needed to sharpen this note
     octave: Int = 0,                //  The octave in which the note plays (default starts on Middle C)
-    ornament: Option[Ornament] = None)
+    ornament: Option[Ornament] = None,
+    chord: Option[Chord] = None)    //  If present, the Note will be the root of the chord (possibly based on tonality)
   extends Music
 {
   val MiddleC = 60
@@ -29,6 +30,16 @@ case class Note(
   //  The number of flats in the key signature needed to flatten this note
   def numFlatsToFlatten = if (numSharpsToSharpen == 0) 0 else 8-numSharpsToSharpen
   
+  //  Get the actual Note, which will be the root of the chord (if present) overriding other parameters
+  def getActualNote(context: SequenceContext) =
+  {
+    chord match
+    {
+      case None => this
+      case Some(c) => c.getRoot(context)
+    }
+  }
+  
   //  Add the Note to the sequence at the current timeState with the Instrument, Beat duration and Volume
   //  specified in the current SequenceContext
   def add(context: SequenceContext) =
@@ -36,7 +47,7 @@ case class Note(
     //  An ornamented Note plays as a sequence of adjacent Notes determined by the Ornament
     ornament match
     {
-      case None => addNote(context)
+      case None => getActualNote(context).addNote(context)
       case Some(o) => o.ornament(copy(ornament=None), context).add(context)
     }
   }

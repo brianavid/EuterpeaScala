@@ -68,6 +68,10 @@ object Dom7 extends Harmony(Harmony.triad(1).map(Harmony.majorIntervals) ++ Harm
 object Maj7 extends Harmony(Harmony.triad(1).map(Harmony.majorIntervals) ++ Harmony.seventh(1).map(Harmony.majorIntervals))
 object Min7 extends Harmony(Harmony.triad(1).map(Harmony.minorIntervals) ++ Harmony.seventh(1).map(Harmony.minorIntervals))
 
+//  A harmony object, which when applied to a Note will be the triad starting at that note in the current tonic scale
+object Triad extends Harmony(Set.empty)
+
+
 //  A Chord can be broken by the addition of a Broken modifier, which specifies note spacing
 case class Broken( 
     val delay: Double  //  The delay between the onset of each note in the chord
@@ -120,26 +124,73 @@ object Arpeggio
   def apply(beat: Beat, sequence: ArpeggioNotes*) = new Arpeggio(beat, sequence.toVector)
 }
 
-//  A chord is a Harmony with either an explicit root note or which is in a position relative to the current tonic 
+//  A chord is a Harmony with either an explicit rootNote note or which is in a position relative to the current tonic 
 //  A chord contains a list of transforms that can be applied to the harmony e.g. to add and remove intervals
 private[euterpea] case class Chord(
-    root: Option[Note],           //  An explicit root note
+    rootNote: Option[Note],       //  An explicit rootNote note
     harmony: Harmony,             //  An explicit harmony
-    chordPosition: Int = 1,   //  If the root is None, the chord position relative to the current tonic 
+    chordPosition: Int = 1,       //  If the rootNote is None, the chord position relative to the current tonic 
     addSeventh: Boolean = false,  //  Add a seventh to the chord?
     transforms: List[Harmony => Harmony] = Nil) extends Music 
 {
+  def root = 
+    {
+    new Note(0, "?", chord=Some(this))
+    }
+  
+  //  What is the rootNote note 
+  def getRoot(context: SequenceContext) = rootNote match
+  {
+    //  Do we have an explicit rootNote note and harmony? 
+    //  If so, the explicit rootNote note and harmony are the ones we start from
+    case Some(n) => n  
+    
+    //  Otherwise use the context.tonic as the rootNote note and construct a base harmony
+    //  from the chord position and the appropriate (major/minor) intervals for the tonic mode
+    case None => {
+      //  Get the appropriate (major/minor) intervals for the tonic mode
+      val intervals = if (context.isMinor) Harmony.minorIntervals else Harmony.majorIntervals
+      
+      //  Construct a base harmony from the chord position and tonic intervals 
+      val triad =  Harmony.triad(chordPosition).map(intervals)
+      Note(context.tonic.semitones+triad.min, "?")
+    }
+  }
+  
   //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
   //  sound at the same time.
   def add(context: SequenceContext) =
   {
-    //  Do we have an explicit root note and harmony? 
-    val (rootNote, baseHarmony: Harmony) = root match
+    //  Do we have an explicit rootNote note and harmony? 
+    val (root, baseHarmony: Harmony) = rootNote match
     {
-      //  If so, the explicit root note and harmony are the ones we start from
-      case Some(n) => (n, harmony)  
+      //  If so, the explicit rootNote note and non-empty harmony are the ones we start from
+      case Some(n) => 
+        {
+          val actualRoot = n.getActualNote(context)
+          if (!harmony.intervalSet.isEmpty)
+            (actualRoot, harmony)
+          else
+          {
+            //  But an explicit rootNote and empty harmony means a triad based on that rootNote
+            //  in the scale of the current tonality
+            
+            //  Get the appropriate (major/minor) intervals for the tonic mode
+            val intervals = if (context.isMinor) Harmony.minorIntervals else Harmony.majorIntervals
       
-      //  Otherwise use the context.tonic as the root note and construct a base harmony
+            //  Where (chromatically) in the tonic scale is the chord rootrootNote? 
+            val noteTonicOffset = (actualRoot.semitones - context.tonic.semitones) % 12
+         
+            //  Where (diatonically) in the scale intervals is the chord rootNote?
+            val fromNoteTonicIndex = intervals.indexWhere(_ >= noteTonicOffset)
+            
+            //  We build a triad (fixed) rooted at that rootNote, using the intervals of the current scale
+            val triad =  Harmony.triad(fromNoteTonicIndex).map(intervals)
+            (context.tonic, Harmony(triad, triad.min))
+          }
+        }
+      
+      //  Otherwise use the context.tonic as the rootNote note and construct a base harmony
       //  from the chord position and the appropriate (major/minor) intervals for the tonic mode
       case None => {
         //  Get the appropriate (major/minor) intervals for the tonic mode
@@ -171,8 +222,8 @@ private[euterpea] case class Chord(
       addTransforms(transforms)
     }
     
-    //  What notes does the Chord play? Transpose the root note up by each of the effective Harmony intervals
-    val notes = effectiveHarmony.intervals.map(rootNote/Transpose(_))
+    //  What notes does the Chord play? Transpose the rootNote note up by each of the effective Harmony intervals
+    val notes = effectiveHarmony.intervals.map(root/Transpose(_))
     
     //  Does the Chord have an Arpeggio modifier, to play the Chord's note as a sequence?
     context.arpeggio match

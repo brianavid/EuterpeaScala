@@ -142,7 +142,8 @@ object DocTune extends Function0[Music]
     CMin /: Rhythm(r) /: (G*3 - E - F*3 - D)
   }
   val tune11 = C - D - E - F - G/TurnDownUp(Thirtysecond)
-  def apply(): Music = tune11
+  val tune12 = IV.root/Triad
+  def apply(): Music = tune12
 }
 
 object Tunes 
