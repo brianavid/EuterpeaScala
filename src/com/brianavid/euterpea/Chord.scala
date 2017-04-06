@@ -1,4 +1,5 @@
 package com.brianavid.euterpea
+import language.implicitConversions
 
 //  A Harmony is a set of intervals, with the lowest interval being the root of the harmony
 //  The harmony can be relative to a specific root note or can be relative to the current
@@ -69,12 +70,46 @@ object Min7 extends Harmony(Harmony.triad(1).map(Harmony.minorIntervals) ++ Harm
 
 //  A Chord can be broken by the addition of a Broken modifier, which specifies note spacing
 case class Broken( 
-    val delay: Double)  //  The delay between the onset of each note in the chord
+    val delay: Double  //  The delay between the onset of each note in the chord
+  ) extends Modifier
+
+//  Class ArpeggioNotes is the set of notes in the Chord (1-base, low to high) which plays at a beat of the arpeggio
+case class ArpeggioNotes(notes: List[Int])
+object ArpeggioNotes
+{
+  //  A single Integer is a single notes of the Chord sounding at that beat)
+  implicit def arpeggioPointFromInteger (n: Int): ArpeggioNotes =
+    {
+      new ArpeggioNotes(List(n))
+    }
+  //  A tuple of two Integers are a two notes of the Chord sounding together at that beat)
+  implicit def arpeggioPointFromTuple2(ns: Tuple2[Int,Int]): ArpeggioNotes =
+    {
+      ArpeggioNotes(List(ns._1, ns._2))
+    }
+  //  A tuple of three Integers are a three notes of the Chord sounding together at that beat)
+  implicit def arpeggioPointFromTuple3(ns: Tuple3[Int,Int,Int]): ArpeggioNotes =
+    {
+      ArpeggioNotes(List(ns._1, ns._2, ns._3))
+    }
+  //  A tuple of four Integers are a four notes of the Chord sounding together at that beat)
+  implicit def arpeggioPointFromTuple4(ns: Tuple4[Int,Int,Int,Int]): ArpeggioNotes =
+    {
+      ArpeggioNotes(List(ns._1, ns._2, ns._3, ns._4))
+    }
+}
 
 //  A Chord can become an Arpeggio by the addition of an Arpeggio modifier, which specifies the beat and note pattern sequence
 case class Arpeggio( 
     val beat: Beat,             //  The beat of each note in the arpeggio
-    val sequence: Vector[Int])  //  The sequence of the Chord's notes (low to high, 1-based, 0=Rest) 
+    val sequence: Vector[ArpeggioNotes] //  The sequence of the Chord's notes (low to high, 1-based, 0=Rest)
+  ) extends Modifier
+
+//  An Arpeggio is created with a variable number of ArpeggioNotes values
+object Arpeggio
+{
+  def apply(beat: Beat, sequence: ArpeggioNotes*) = new Arpeggio(beat, sequence.toVector)
+}
 
 //  A chord is a Harmony with either an explicit root note or which is in a position relative to the current tonic 
 //  A chord contains a list of transforms that can be applied to the harmony e.g. to add and remove intervals
@@ -83,18 +118,8 @@ private[euterpea] case class Chord(
     harmony: Harmony,             //  An explicit harmony
     chordPosition: Int = 1,   //  If the root is None, the chord position relative to the current tonic 
     addSeventh: Boolean = false,  //  Add a seventh to the chord?
-    broken: Option[Broken] = None,  //  For a broken chord, the delay between the onset of each note in the chord
-    arpeggio: Option[Arpeggio] = None,  //  For an arpeggio or ornament, the pattern (sequence and beat) 
     transforms: List[Harmony => Harmony] = Nil) extends Music 
 {
-  //  Make the chord a broken cord, adding a fraction of a beat delay to each note in the chord
-  def / (b: Broken) = copy(broken=Some(b))
-  def /: (b: Broken) = copy(broken=Some(b))
-    
-  //  Make the chord an arpeggiated cord, 
-  def / (a: Arpeggio) = copy(arpeggio=Some(a))
-  def /: (a: Arpeggio) = copy(arpeggio=Some(a))
-    
   //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
   //  sound at the same time.
   def add(context: SequenceContext) =
@@ -141,7 +166,7 @@ private[euterpea] case class Chord(
     val notes = effectiveHarmony.intervals.map(rootNote/Transpose(_))
     
     //  Does the Chord have an Arpeggio modifier, to play the Chord's note as a sequence?
-    arpeggio match
+    context.arpeggio match
     {
       case Some(Arpeggio(beat, sequence)) =>
       {
@@ -154,25 +179,30 @@ private[euterpea] case class Chord(
         //  For all notes up to (but not including) that patternSequenceCount limit, play each note, 
         //  each with an ever-increasing start timeState based on the arpeggio beat
         sequence.take(patternSequenceCount-1).zipWithIndex.map{
-          case (index: Int, i: Int) => 
+          case (ArpeggioNotes(List(0)), i) => 
             //  If the note index in the sequence is out of range (e.g. zero) add a Rest
-            if (index <= 0 || index > notes.length)
-              Rest.add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
-            else
-              //  Otherwise play the indexed note from those in the chord (indexed low-to-high, 1-based)
-              notes(index-1).add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
+            Rest.add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
+          case (ArpeggioNotes(indexes), i) => 
+            //  Otherwise play the indexed notes from those in the chord (indexed low-to-high, 1-based)
+            indexes.map(j => (if (j < 1 || j > notes.length) Rest else notes(j-1))).
+              reduceLeft(_ & _).
+              add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
         }
         
         //  For the last note in the pattern, also play it with an appropriate delay,
         //  but with a duration of the rest of the Chord's beat
         val lastInPattern = patternSequenceCount-1
         val remainingTiming = context.durationTiming(0).ticks - (beat.beatTicks * lastInPattern)
-        val index = sequence(patternSequenceCount-1)
-        if (index <= 0 || index > notes.length)
-          Rest.add(context.copy(beat=new Beat(remainingTiming), timeState=context.timeState+TimeState(beat * lastInPattern, 1, context.timeSig)))
-        else
-          notes(index-1).add(context.copy(beat=new Beat(remainingTiming), timeState=context.timeState+TimeState(beat * lastInPattern, 1, context.timeSig)))
-
+        sequence(patternSequenceCount-1) match {
+          case ArpeggioNotes(List(0)) => 
+            //  If the note index in the sequence is out of range (e.g. zero) add a Rest
+            Rest.add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * (patternSequenceCount-1), 1, context.timeSig)))
+          case ArpeggioNotes(indexes) => 
+            //  Otherwise play the indexed notes from those in the chord (indexed low-to-high, 1-based)
+            indexes.map(j => (if (j < 1 || j > notes.length) Rest else notes(j-1))).
+              reduceLeft(_ & _).
+              add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * (patternSequenceCount-1), 1, context.timeSig)))
+        }
         //  The length of the arpeggiated Chord remains the same as though not arpeggiated
         context.durationTiming(0) * context.scaleBeats / context.scaleNum
       }
@@ -180,7 +210,7 @@ private[euterpea] case class Chord(
       case None =>
       {
         //  For a broken chord, each note has a delay (increasing as you go up the chord)
-        val delayedNotes = broken match
+        val delayedNotes = context.broken match
         {
           case None => notes  //  I.e. NOT broken
           case Some(Broken(delay)) => 

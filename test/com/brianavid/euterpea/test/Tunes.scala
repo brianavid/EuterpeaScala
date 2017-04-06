@@ -34,9 +34,16 @@ object Blues extends Function0[Music]
 
 object ArpeggioTest extends Function0[Music]
 {
-  val pattern = Arpeggio(Thirtysecond,Vector(1,2,3,4,3,1))
+  val pattern = Arpeggio(Thirtysecond,1,2,3,4,3,(1,2,3))
   val modifiers = List(Tempo(60), CMaj, Instrument("Vibraphone"), Octave(-1)) 
-  def apply(): Music = modifiers /: (I7.c/pattern - II7.b/pattern - V7/pattern - I)
+  def apply(): Music = modifiers /: ((I7.c - II7.b - V7)/pattern - I)
+}
+
+object CompTest extends Function0[Music]
+{
+  val pattern = Arpeggio(Sixteenth,1,(2,3,4),(1,3),(2,3,4))
+  val modifiers = List(Tempo(60), CMaj, Instrument("Vibraphone")) 
+  def apply(): Music = modifiers /: ((I7.c - II7.b - V7 - I)/pattern)
 }
 
 object DiatonicTest extends Function0[Music]
@@ -124,7 +131,7 @@ object DocTune extends Function0[Music]
   val tune4 = A/Min - G/Maj - F/Maj - E/Maj
   val tune5 = I7.c - II7.b - V7 - I
   val tune7 = {
-    val pattern = Arpeggio(Thirtysecond,Vector(1,2,3,4,3,1))
+    val pattern = Arpeggio(Thirtysecond,1,2,3,4,3,1)
     I7.c/pattern - II7.b/pattern - V7/pattern - I
   }
   val tune8 = Transpose(I -> II) /: (C - D - E - F - G)
@@ -146,6 +153,7 @@ object Tunes
     "bugs" -> Bugs,
     "blues" -> Blues,
     "arpeggio" -> ArpeggioTest,
+    "comp" -> CompTest,
     "diatonic" -> DiatonicTest,
     "ornament" -> OrnamentTest,
     "pitchbend" -> PitchBendTest,

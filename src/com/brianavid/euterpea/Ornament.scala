@@ -22,56 +22,56 @@ abstract class Ornament
 //  Instance of an Ornament for a Turn, starting going Down, then Up
 case class TurnDownUp(beat: Beat, chomaticDown: Boolean = false) extends Ornament
 {
-  val arpeggio = Arpeggio(beat, Vector(Home, Down, Home, Up, Home))
+  val arpeggio = Arpeggio(beat, Home, Down, Home, Up, Home)
 }
 
 //  Instance of an Ornament for a Turn, starting going Up, then Down
 case class TurnUpDown(beat: Beat, chomaticDown: Boolean = false) extends Ornament
 {
-  val arpeggio = Arpeggio(beat, Vector(Home, Up, Home, Down, Home))
+  val arpeggio = Arpeggio(beat, Home, Up, Home, Down, Home)
 }
 
 //  Instance of an Ornament for a Turn, starting Down, then going Up
 case class TurnUp(beat: Beat, chomaticDown: Boolean = false) extends Ornament
 {
-  val arpeggio = Arpeggio(beat, Vector(Down, Home, Up, Home))
+  val arpeggio = Arpeggio(beat, Down, Home, Up, Home)
 }
 
 //  Instance of an Ornament for a Turn, starting Up, then going Down
 case class TurnDown(beat: Beat, chomaticDown: Boolean = false) extends Ornament
 {
-  val arpeggio = Arpeggio(beat, Vector(Up, Home, Down, Home))
+  val arpeggio = Arpeggio(beat, Up, Home, Down, Home)
 }
 
 //  Instance of an Ornament for a Mordent using the upper Note
 case class MordentUp(beat: Beat, chomaticDown: Boolean = true) extends Ornament
 {
-  val arpeggio = Arpeggio(beat, Vector(Home, Up, Home))
+  val arpeggio = Arpeggio(beat, Home, Up, Home)
 }
 
 //  Instance of an Ornament for a Mordent, using the lower Note
 case class MordentDown(beat: Beat, chomaticDown: Boolean = false) extends Ornament
 {
-  val arpeggio = Arpeggio(beat, Vector(Home, Down, Home))
+  val arpeggio = Arpeggio(beat, Home, Down, Home)
 }
 
 //  Instance of an Ornament for a Acciaccatura using the upper Note
 case class AcciaccaturaUp(beat: Beat, chomaticDown: Boolean = true) extends Ornament
 {
-  val arpeggio = Arpeggio(beat, Vector(Up, Home))
+  val arpeggio = Arpeggio(beat, Up, Home)
 }
 
 //  Instance of an Ornament for a Acciaccatura, using the lower Note
 case class AcciaccaturaDown(beat: Beat, chomaticDown: Boolean = false) extends Ornament
 {
-  val arpeggio = Arpeggio(beat, Vector( Down, Home))
+  val arpeggio = Arpeggio(beat,  Down, Home)
 }
 
 //  Instance of an Ornament for a Trill
 case class Trill(beat: Beat, chomaticDown: Boolean = true) extends Ornament
 {
-  val arpeggio = Arpeggio(beat, Vector(Home, Up, Home, Up, Home, Up, Home, Up, 
-                                       Home, Up, Home, Up, Home, Up, Home, Up, 
-                                       Home, Up, Home, Up, Home, Up, Home, Up, 
-                                       Home, Up, Home, Up, Home, Up, Home, Up))
+  val arpeggio = Arpeggio(beat, Home, Up, Home, Up, Home, Up, Home, Up, 
+                                Home, Up, Home, Up, Home, Up, Home, Up, 
+                                Home, Up, Home, Up, Home, Up, Home, Up, 
+                                Home, Up, Home, Up, Home, Up, Home, Up)
 }

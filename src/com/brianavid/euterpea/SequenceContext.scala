@@ -29,6 +29,8 @@ private[euterpea] case class SequenceContext (
   val keySig: KeySig = CMaj,                //  The key signature
   val tonic: Note = C,                      //  The current tonic (usually the key)
   val isMinor: Boolean = false,             //  Is the current key a minor?
+  val broken: Option[Broken] = None,        //  For a broken chord, the delay between the onset of each note in the chord
+  val arpeggio: Option[Arpeggio] = None,    //  For an arpeggio or ornament, the pattern (sequence and beat) 
   val currentInstrument: Int = 1,           //  The General Midi instrument on which notes are played
   val rhythmPattern: Vector[(Beat,Beat)] = Vector.empty,
   val dynamics: List[ContextDynamics] = Nil,//  The set of dynamics affecting the sequence

@@ -112,6 +112,8 @@ trait Music
     case Octave( num: Int) => new WithTranspose( num*12, this)
     case keySig: KeySig => new WithKeySig( keySig, this)
     case Modulate(keySig) => new WithModulation( keySig, this)
+    case broken: Broken => new WithBroken( broken, this)
+    case arpeggio: Arpeggio => new WithArpeggio(arpeggio, this)
     case Track( trackName: String) => new WithTrack( trackName, this)
     case Channel( channelName: String) => new WithChannel( channelName, this)
     case Instrument( instrument: Int) => new WithInstrument( instrument, this)
@@ -644,6 +646,34 @@ private[euterpea] case class WithRange( rangeLow: Note, rangeHigh: Note, music: 
   def add(context: SequenceContext) =
   {
     music.add(context.copy(rangeLow=rangeLow,rangeHigh=rangeHigh))
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
+}
+
+//-------------------------
+
+//  Add the music, ...
+
+private[euterpea] case class WithBroken( broken: Broken, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(broken=Some(broken)))
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
+}
+
+//-------------------------
+
+//  Add the music, ...
+
+private[euterpea] case class WithArpeggio( arpeggio: Arpeggio, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(arpeggio=Some(arpeggio)))
   }
   
   def duration(context: SequenceContext) = music.duration(context)
