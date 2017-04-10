@@ -161,6 +161,19 @@ private[euterpea] case class Chord(
   //  sound at the same time.
   def add(context: SequenceContext) =
   {
+    if (context.lyrics.isEmpty)
+      addChord(context)
+    else
+    {
+      context.writeLyrics(context.timeState.ticks)
+      addChord(context.copy(lyrics = Vector.empty))
+    }
+  }
+  
+  //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
+  //  sound at the same time.
+  def addChord(context: SequenceContext) =
+  {
     //  Do we have an explicit rootNote note and harmony? 
     val (root, baseHarmony: Harmony) = rootNote match
     {

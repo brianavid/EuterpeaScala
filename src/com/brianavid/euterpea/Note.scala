@@ -115,6 +115,7 @@ case class Note(
     val endTicks = startTicks + ((noteTiming - rhythmRest).ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt
     
     //  Add Midi events to start and end the note at the right pitch, volume and timing
+    context.writeLyrics(startTicks)
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, pitchInRange, context.volume+dynamics.volumeInc), startTicks))
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, channel, pitchInRange, 0), endTicks))
     

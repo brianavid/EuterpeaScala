@@ -101,6 +101,18 @@ object ContinuousControllerTest extends Function0[Music]
   def apply(): Music = line
 }
 
+object LyricsTest extends Function0[Music]
+{
+  val line1 = G/4 - F/4 - E - F - G/4 | E - F - G - A - G/4 - F - G | F - G - F - E - E - F - E - D   
+  val lyrics1 = Lyrics("Shen- khar-- ve--- na-- nhi-------")
+  val melody1 = line1/lyrics1
+  val line2 = D/4 - E/4 - F - G - E - F | G/4 - F - E - E - F - E - D | E - F - E - D - C/2
+  val lyrics2 = Lyrics("Ax-Lad a--khva- ve---- bu--l----")
+  val melody2 = line2/lyrics2
+  val melody = melody1 | melody2
+  def apply(): Music = EMaj /: Octave(-1) /: Eighth /: Tempo(60) /: melody
+}
+
 object Beats extends Function0[Music]
 {
   val bass = Drum(Drum.Bass_Drum_1)
@@ -163,6 +175,7 @@ object Tunes
     "volume" -> VolumeTest,
     "range" -> RangeTest,
     "continuous" -> ContinuousControllerTest,
+    "lyrics" -> LyricsTest,
     "beats" -> Beats)
   val tunes: Map[String,Function0[Music]] = tunesList.toMap
   

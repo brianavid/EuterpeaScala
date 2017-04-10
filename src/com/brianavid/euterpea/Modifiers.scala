@@ -207,7 +207,7 @@ private[euterpea] case class WithLyric( lyric: String, music: Music) extends Mus
 
     val track = context.getTrack
     track.add(new M.MidiEvent(new M.MetaMessage(0x05, bytearray, bytearray.length),context.timeState.ticks))    
-    music.add(context.copy())
+    music.add(context)
   }
   
   def duration(context: SequenceContext) = music.duration(context)

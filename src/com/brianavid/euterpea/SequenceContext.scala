@@ -34,6 +34,8 @@ private[euterpea] case class SequenceContext (
   val currentInstrument: Int = 1,           //  The General Midi instrument on which notes are played
   val rhythmPattern: Vector[(Beat,Beat)] = Vector.empty,
   val rhythmStartNotes: Int = 0,            //  At what note does the rhythm start?
+  val lyrics: Vector[String] = Vector.empty,
+  val lyricsStartNotes: Int = 0,            //  At what note do the lyrics start?
   val dynamics: List[ContextDynamics] = Nil,//  The set of dynamics affecting the sequence
   val rangeLow: Note = N,                   //  The lowest Note to be used - octave-shifting as needed 
   val rangeHigh: Note = N)                  //  The highest Note to be used - octave-shifting as needed
@@ -80,6 +82,21 @@ private[euterpea] case class SequenceContext (
     val bytearray = Array[Byte](keySigSharps, if (keySigIsMinor) 1 else 0)
     
     timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x59, bytearray, bytearray.length), timeState.ticks))    
+  }
+  
+  def writeLyrics(ticks: Int) =
+  {
+    if (lyrics.length != 0)
+    {
+      val lyricOffset = timeState.noteCount - lyricsStartNotes
+      if (lyricOffset < lyrics.length)
+      {
+        val lyric = lyrics(lyricOffset)
+        val bytearray = lyric.getBytes
+        getTrack.add(new M.MidiEvent(new M.MetaMessage(0x05, bytearray, bytearray.length),ticks))
+      }
+    }
+
   }
   
   //  Get or create the named track, and when creating add its name to the track
