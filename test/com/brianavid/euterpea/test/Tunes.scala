@@ -79,7 +79,7 @@ object RhythmTest extends Function0[Music]
 {
   val line = C - D - E - G - E - D - C(5) - B - A - F - A - B - C - D - E - G - E - D - C(5) - B - A - F - A - B - C
   val rhythm = N/4 - (N-N)/8 - N*3/8/3
-  def apply(): Music = Rhythm(rhythm) /: line
+  def apply(): Music = E - D - Rhythm(rhythm) /: line
 }
 
 object VolumeTest extends Function0[Music]

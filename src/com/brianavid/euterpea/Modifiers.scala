@@ -155,13 +155,13 @@ private[euterpea] case class WithRhythm( rhythmMusic: Music, music: Music) exten
   def add(context: SequenceContext) =
   {
     val rhythmPattern=rhythmMusic.rhythmTimings(context.copy(rhythmPattern = Vector.empty))
-    music.add(context.copy(rhythmPattern=rhythmPattern))
+    music.add(context.copy(rhythmPattern=rhythmPattern, rhythmStartNotes=context.timeState.noteCount))
   }
   
   def duration(context: SequenceContext) = 
   {
     val rhythmPattern=rhythmMusic.rhythmTimings(context.copy(rhythmPattern = Vector.empty))
-    music.duration(context.copy(rhythmPattern=rhythmPattern))
+    music.duration(context.copy(rhythmPattern=rhythmPattern, rhythmStartNotes=context.timeState.noteCount))
   }
 }
 

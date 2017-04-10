@@ -33,6 +33,7 @@ private[euterpea] case class SequenceContext (
   val arpeggio: Option[Arpeggio] = None,    //  For an arpeggio or ornament, the pattern (sequence and beat) 
   val currentInstrument: Int = 1,           //  The General Midi instrument on which notes are played
   val rhythmPattern: Vector[(Beat,Beat)] = Vector.empty,
+  val rhythmStartNotes: Int = 0,            //  At what note does the rhythm start?
   val dynamics: List[ContextDynamics] = Nil,//  The set of dynamics affecting the sequence
   val rangeLow: Note = N,                   //  The lowest Note to be used - octave-shifting as needed 
   val rangeHigh: Note = N)                  //  The highest Note to be used - octave-shifting as needed
@@ -41,7 +42,7 @@ private[euterpea] case class SequenceContext (
   def durationTiming(noteCount: Int) = 
   {
     if (noteCount != 0 && !rhythmPattern.isEmpty)
-        TimeState( rhythmPattern(timeState.noteCount % rhythmPattern.length)._1, noteCount, timeSig)
+        TimeState( rhythmPattern((timeState.noteCount - rhythmStartNotes) % rhythmPattern.length)._1, noteCount, timeSig)
       else if (noteCount != 0)
         TimeState( beat+tiedAddition, noteCount, timeSig)
       else
@@ -51,7 +52,7 @@ private[euterpea] case class SequenceContext (
   def rhythmRest =
   {
     if (!rhythmPattern.isEmpty)
-      TimeState( rhythmPattern(timeState.noteCount % rhythmPattern.length)._2, 0, timeSig)
+      TimeState( rhythmPattern((timeState.noteCount - rhythmStartNotes) % rhythmPattern.length)._2, 0, timeSig)
     else
       TimeState.empty(timeSig)
   }
