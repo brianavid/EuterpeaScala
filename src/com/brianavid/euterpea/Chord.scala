@@ -115,7 +115,6 @@ case class Arpeggio(
 {
   def modifying(music: Music): Music =
     new WithArpeggio (this, music)
-
 }
 
 //  An Arpeggio is created with a variable number of ArpeggioNotes values
@@ -157,16 +156,17 @@ private[euterpea] case class Chord(
     }
   }
   
-  //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
-  //  sound at the same time.
+  //  Add the Chord to the current sequence processing lyrics, and root extraction
   def add(context: SequenceContext) =
   {
     if (context.lyrics.isEmpty)
       addChord(context)
+    else if (context.extractRootNotes)
+      root.add(context.copy(extractRootNotes=false))
     else
     {
       context.writeLyrics(context.timeState.ticks)
-      addChord(context.copy(lyrics = Vector.empty))
+      add(context.copy(lyrics = Vector.empty))
     }
   }
   
@@ -392,6 +392,14 @@ private[euterpea] object Chord
   }
 }
 
+//-------------------------
+
+object Root extends Modifier
+{
+  def modifying(music: Music): Music =
+    new WithRoot (music)
+}
+
 
 //-------------------------
 
@@ -416,6 +424,20 @@ private[euterpea] case class WithArpeggio( arpeggio: Arpeggio, music: Music) ext
   def add(context: SequenceContext) =
   {
     music.add(context.copy(arpeggio=Some(arpeggio)))
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
+}
+
+//-------------------------
+
+//  Add the music, ...
+
+private[euterpea] case class WithRoot( music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(extractRootNotes=true))
   }
   
   def duration(context: SequenceContext) = music.duration(context)

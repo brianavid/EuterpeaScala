@@ -41,9 +41,12 @@ object ArpeggioTest extends Function0[Music]
 
 object CompTest extends Function0[Music]
 {
+  val chords = I7.c - II7.b - V7 - I
   val pattern = Arpeggio(Sixteenth,1,(2,3,4),(1,3),(2,3,4))
-  val modifiers = Tempo(60) /: CMaj /: Instrument("Vibraphone")
-  def apply(): Music = modifiers /: ((I7.c - II7.b - V7 - I)/pattern)
+  val modifiers = Tempo(60) /: CMaj
+  val bass = Channel("Bass") /: Track("Bass") /: Octave(-2) /: Instrument(Instruments.Synth_Bass_1) /: Root /: chords
+  val arp = Channel("Arp") /: Track("Arp") /: Instrument(Instruments.Vibraphone) /: (chords/pattern)
+  def apply(): Music = modifiers /: (arp & bass)
 }
 
 object DiatonicTest extends Function0[Music]
@@ -103,14 +106,14 @@ object ContinuousControllerTest extends Function0[Music]
 
 object LyricsTest extends Function0[Music]
 {
-  val line1 = G/4 - F/4 - E - F - G/4 | E - F - G - A - G/4 - F - G | F - G - F - E - E - F - E - D   
+  val melody1 = G/4 - F/4 - E - F - G/4 | E - F - G - A - G/4 - F - G | F - G - F - E - E - F - E - D   
   val lyrics1 = Lyrics("Shen- khar-- ve--- na-- nhi-------")
-  val melody1 = line1/lyrics1
-  val line2 = D/4 - E/4 - F - G - E - F | G/4 - F - E - E - F - E - D | E - F - E - D - C/2
+  val line1 = melody1/lyrics1
+  val melody2 = D/4 - E/4 - F - G - E - F | G/4 - F - E - E - F - E - D | E - F - E - D - C/2
   val lyrics2 = Lyrics("Ax-Lad a--khva- ve---- bu--l----")
-  val melody2 = line2/lyrics2
-  val melody = melody1 | melody2
-  def apply(): Music = EMaj /: Octave(-1) /: Eighth /: Tempo(60) /: melody
+  val line2 = melody2/lyrics2
+  val tune = line1 | line2
+  def apply(): Music = EMaj /: Octave(-1) /: Eighth /: Tempo(60) /: tune
 }
 
 object Beats extends Function0[Music]

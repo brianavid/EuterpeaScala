@@ -31,6 +31,7 @@ private[euterpea] case class SequenceContext (
   val isMinor: Boolean = false,             //  Is the current key a minor?
   val broken: Option[Broken] = None,        //  For a broken chord, the delay between the onset of each note in the chord
   val arpeggio: Option[Arpeggio] = None,    //  For an arpeggio or ornament, the pattern (sequence and beat) 
+  val extractRootNotes: Boolean = false,    //  True to extract root note from each chord
   val currentInstrument: Int = 1,           //  The General Midi instrument on which notes are played
   val rhythmPattern: Vector[(Beat,Beat)] = Vector.empty,
   val rhythmStartNotes: Int = 0,            //  At what note does the rhythm start?
