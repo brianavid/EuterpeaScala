@@ -56,10 +56,10 @@ private[euterpea] case class TimeState(
   def -(t: TimeState) = copy(ticks=ticks - t.ticks, noteCount=noteCount-t.noteCount)
   
   //  The timing of a number of notes
-  def * (number: Integer) = copy(ticks=ticks*number, noteCount=noteCount*number) //  Within a sequence of repeated chunks
+  def * (number: Integer) = copy(ticks=ticks*number) //  Within a sequence of repeated chunks
 
   //  The timing of one of a number of notes in a time interval
-  def / (number: Integer) = copy( ticks=ticks/number, noteCount=1) //  Within a sequence of repeated chunks
+  def / (number: Integer) = copy( ticks=ticks/number) //  Within a sequence of repeated chunks
 
   //  The timing within a the last of a sequence of fixed-sized chunks - used for Dynamics
   def % (chunk: TimeState) = copy( ticks=ticks%chunk.ticks, noteCount=0) //  Within a sequence of repeated chunks

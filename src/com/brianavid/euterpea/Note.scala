@@ -181,9 +181,9 @@ case object Rest extends Music
 {
   def add(context: SequenceContext) =
   {
-    context.durationTiming(1) * context.scaleBeats / context.scaleNum
+    context.durationTiming(0) * context.scaleBeats / context.scaleNum
   }
   
-  def duration(context: SequenceContext) = context.durationTiming(1) * context.scaleBeats / context.scaleNum
+  def duration(context: SequenceContext) = context.durationTiming(0) * context.scaleBeats / context.scaleNum
 }
 

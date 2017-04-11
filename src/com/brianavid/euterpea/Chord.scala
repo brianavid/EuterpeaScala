@@ -259,7 +259,7 @@ private[euterpea] case class Chord(
             //  Otherwise play the indexed notes from those in the chord (indexed low-to-high, 1-based)
             indexes.map(j => (if (j < 1 || j > notes.length) Rest else notes(j-1))).
               reduceLeft(_ & _).
-              add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
+              add(context.copy(beat=beat, scaleBeats=1, scaleNum=1, timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
         }
         
         //  For the last note in the pattern, also play it with an appropriate delay,
