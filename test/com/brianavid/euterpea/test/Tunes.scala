@@ -161,9 +161,32 @@ object DocTune extends Function0[Music]
   def apply(): Music = tune12
 }
 
+object Caledonia extends Function0[Music]
+{
+  val tune = {
+    val asMelody = Track("melody") / Channel("melody") / Instrument(Instruments.Cello)
+    val asHarmony = Track("harmony") / Channel("harmony") / Instrument(Instruments.Acoustic_Guitar_Nylon) / Arpeggio(8,1,2,3,1,3,1)
+    val asBass = Track("bass") / Channel("bass") / Instrument(Instruments.Acoustic_Bass)
+    
+    val notes1 = C - F - F/4/Dot - C | C - G - G/4/Dot - C | A - B - +C/4 - A - A | B - A - G -- F/4
+    val lyrics1 = Lyrics("I don't know if you can see the chan-ges that have come ov-er me-")
+    val melody1 = notes1/lyrics1
+    val harmony1 = (F/Maj | C/Maj | D/Min | -Bf/Maj)/2/Dot
+    val bass1 = harmony1/Root/Octave(-1)
+    val line1 = melody1/asMelody & harmony1/asHarmony & bass1/asBass
+    
+    val tune = Eighth /: (line1)
+    
+    TimeSig(3,4) /: FMaj /: Tempo(80) /: tune
+  }
+  
+  def apply(): Music = tune
+}
+
 object Tunes 
 {
   val tunesList = List(
+    "caledonia" -> Caledonia,
     "doc" -> DocTune,
     "birds" -> BirdsInTheSpringBaritone,
     "bugs" -> Bugs,

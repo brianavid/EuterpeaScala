@@ -159,15 +159,15 @@ private[euterpea] case class Chord(
   //  Add the Chord to the current sequence processing lyrics, and root extraction
   def add(context: SequenceContext) =
   {
-    if (context.lyrics.isEmpty)
-      addChord(context)
-    else if (context.extractRootNotes)
-      root.add(context.copy(extractRootNotes=false))
-    else
+    if (!context.lyrics.isEmpty)
     {
       context.writeLyrics(context.timeState.ticks)
       add(context.copy(lyrics = Vector.empty))
     }
+    else if (context.extractRootNotes)
+      root.add(context.copy(extractRootNotes=false))
+    else
+      addChord(context)
   }
   
   //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
@@ -244,7 +244,7 @@ private[euterpea] case class Chord(
       case Some(Arpeggio(beat, sequence)) =>
       {
         //  How many arpeggiated notes can play in the duration of the note?
-        val patternSequenceBeatRatio = context.durationTiming(0).ticks / beat.beatTicks
+        val patternSequenceBeatRatio = context.durationTiming(0).ticks * context.scaleBeats / context.scaleNum / beat.beatTicks
         
         //  How many notes in the pattern sequence will play?
         val patternSequenceCount = sequence.length min patternSequenceBeatRatio
