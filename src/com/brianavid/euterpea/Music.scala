@@ -70,7 +70,7 @@ trait Music
   
   //  Save the music as a Midi file, with the "strict" option to prevent timing and width changes 
   def save(path: String, strict: Boolean = false): Seq[(String,String)] = {
-    val (sequence, errors) = makeSequence(false)
+    val (sequence, errors) = makeSequence(strict)
     if (errors.length == 0)
       MS.write(sequence, 1, new File(path))
     errors.map(e => (e.position.display, e.message))
