@@ -127,10 +127,9 @@ private[euterpea] case class WithInstrument( instrument: Int, music: Music) exte
   {
     val track = context.getTrack
     val channel = context.channels.getOrElseUpdate(context.currentTrackName, context.channels.size)
-    val prevInstrument = context.currentInstrument 
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, instrument-1, 0), context.timeState.ticks))
+    if (context.currentInstrument != instrument)
+      track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, instrument-1, 0), context.timeState.ticks))
     val durationTiming = music.add(context.copy(currentInstrument = instrument))
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, prevInstrument-1, 0), context.timeState.ticks+durationTiming.ticks))
     durationTiming
   }
   
@@ -189,28 +188,25 @@ private[euterpea] case class WithRange( rangeLow: Note, rangeHigh: Note, music: 
 
 //-------------------------
 
-//  The Lyric class specifies a lyric in the current track at the current position
+//  The Pickup class ...
 
-case class Lyric(lyric: String) extends Modifier
+object Pickup extends Modifier
 {
   def modifying(music: Music): Music =
-    new WithLyric(lyric, music)
+    new WithPickup(music)
 }
 
-//  Add the music, which will be a single Note, with the lyric associated with the time of the note 
+//  Add the music, 
 
-private[euterpea] case class WithLyric( lyric: String, music: Music) extends Music
+private[euterpea] case class WithPickup( music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    val bytearray = lyric.getBytes
-
-    val track = context.getTrack
-    track.add(new M.MidiEvent(new M.MetaMessage(0x05, bytearray, bytearray.length),context.timeState.ticks))    
-    music.add(context)
+    val durationTiming = music.duration(context)
+    music.add(context.copy(timeState = context.timeState-durationTiming)) - durationTiming
   }
   
-  def duration(context: SequenceContext) = music.duration(context)
+  def duration(context: SequenceContext) = TimeState.empty(context.timeSig)
 }
 
 //-------------------------

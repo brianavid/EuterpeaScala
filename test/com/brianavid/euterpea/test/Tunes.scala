@@ -163,22 +163,56 @@ object DocTune extends Function0[Music]
 
 object Caledonia extends Function0[Music]
 {
-  val tune = {
-    val asMelody = Track("melody") / Channel("melody") / Instrument(Instruments.Cello)
-    val asHarmony = Track("harmony") / Channel("harmony") / Instrument(Instruments.Acoustic_Guitar_Nylon) / Arpeggio(8,1,2,3,1,3,1)
-    val asBass = Track("bass") / Channel("bass") / Instrument(Instruments.Acoustic_Bass)
+  def line(notes: Music, lyricText: String, chords: Music): Music =
+  {
+    val asMelody =  Track("melody") / Channel("melody") / 
+                    Instrument(Instruments.Cello)
+    val asHarmony = Track("harmony") / Channel("harmony") / 
+                    Instrument(Instruments.Acoustic_Guitar_Nylon) / 
+                    Arpeggio(8,1,2,(3,4),1,(3,4),1)
+    val asBass =    Track("bass") / Channel("bass") / 
+                    Instrument(Instruments.Acoustic_Bass)
     
-    val notes1 = C - F - F/4/Dot - C | C - G - G/4/Dot - C | A - B - +C/4 - A - A | B - A - G -- F/4
-    val lyrics1 = Lyrics("I don't know if you can see the chan-ges that have come ov-er me-")
-    val melody1 = notes1/lyrics1
-    val harmony1 = (F/Maj | C/Maj | D/Min | -Bf/Maj)/2/Dot
-    val bass1 = harmony1/Root/Octave(-1)
-    val line1 = melody1/asMelody & harmony1/asHarmony & bass1/asBass
-    
-    val tune = Eighth /: (line1)
-    
-    TimeSig(3,4) /: FMaj /: Tempo(80) /: tune
+    val melody = notes/8/Lyrics(lyricText)
+    val harmony = chords/2/Dot
+    val bass = harmony/Root/Octave(-1)
+
+    melody/asMelody & harmony/asHarmony & bass/asBass
   }
+  
+  val verse1Line1 = 
+    line(C - F - F/4/Dot - C | C - G - G/4/Dot - C | A - B - +C/4 - A - A | B - A - G -- F/4,
+         "I don't know if you can see the chan-ges that have come ov-er me.-",
+         F/Maj | C/Maj | D/Min | -Bf/Maj)
+         
+  val verse1Line2 =
+    line(C/Pickup | C - F - F/4/Dot - C | C - G - G/4/Dot - C | A/4 - B/4 - +C/4 | B/2/Dot | Rest/2,
+         "These last few days I've been a-fraid that_I might drift a-way.",
+         F/Maj | C/Maj | D/Min | -Bf/Maj | -Bf/Maj7)
+  
+  val verse1Line3 =
+    line((C - C)/Pickup | C - F - F/4 - D - C | C - G - G/4/Dot - C | A - B - +C/4 - A - A | B - A - G - F/4/Dot,
+         "So_I've been tell-ing old sto-ries, sing-ing songs, that make me think a-bout where I come from",
+         F/Maj | C/Maj | D/Min | -Bf/Maj)
+  
+  val verse1Line4 =
+    line(C - F - F/4/Dot - C | C - G - G/4/Dot - C | A/4 - B - B - +C/4 | B/2/Dot | Rest/2/Dot,
+         "That's the reas-on why I seem so far a-way to-day",
+         F/Maj | C/Maj | D/Min | -Bf/Maj | -Bf/Maj7)
+  
+  val verse1 = verse1Line1 | verse1Line2 | verse1Line3 | verse1Line4
+  
+  val tune = TimeSig(3,4) /: FMaj /: Tempo(80) /: (verse1)
+  
+  def apply(): Music = tune
+}
+
+object DaintyDavy extends Function0[Music]
+{
+  val notes = B/Dot - G/8 - E - (F -- G)/8 | A - C - F/Dot - Rest/8 | D - E/8 - F/8 - G - G | G - D - E - F |
+  A/Dot - (G - F - E - D - C)/8 | F - G/8 - A/8 - B - Rest/8 - G/8 | F - (G - A - C - D - E - F)/8 | G/2 - A - Rest   
+  val lyrics="Leeze me on your- cur-ly pow, Dain-ty- Da-vy Dain-ty Da-vy. Leeze me on- your- cur-ly- pow, my ain dear- Dain--ty- Da-vy."
+  val tune = FMaj /: Tempo(120) /: Octave(-1) /: (notes/Lyrics(lyrics))
   
   def apply(): Music = tune
 }
@@ -187,6 +221,7 @@ object Tunes
 {
   val tunesList = List(
     "caledonia" -> Caledonia,
+    "dainty" -> DaintyDavy,
     "doc" -> DocTune,
     "birds" -> BirdsInTheSpringBaritone,
     "bugs" -> Bugs,

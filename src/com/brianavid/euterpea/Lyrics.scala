@@ -1,4 +1,5 @@
 package com.brianavid.euterpea
+import javax.sound.{midi => M}
 
 case class Lyrics(lyricString: String) extends Modifier
 {
@@ -45,4 +46,31 @@ private[euterpea] case class WithLyrics( lyrics: Vector[String], lyricString: St
   
   def duration(context: SequenceContext) = music.duration(context)
 }
+
+//-------------------------
+
+//  The Lyric class specifies a single lyric in the current track at the current position
+
+case class Lyric(lyric: String) extends Modifier
+{
+  def modifying(music: Music): Music =
+    new WithLyric(lyric, music)
+}
+
+//  Add the music, which will be a single Note, with the lyric associated with the time of the note 
+
+private[euterpea] case class WithLyric( lyric: String, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    val bytearray = lyric.getBytes
+
+    val track = context.getTrack
+    track.add(new M.MidiEvent(new M.MetaMessage(0x05, bytearray, bytearray.length),context.timeState.ticks))    
+    music.add(context)
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
+}
+
 

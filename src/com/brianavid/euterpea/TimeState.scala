@@ -53,7 +53,7 @@ private[euterpea] case class TimeState(
     }
   
   //  Subtracting has no effect on timeSigChangeTime - used for tied notes
-  def -(t: TimeState) = copy(ticks=ticks - t.ticks, noteCount=noteCount-t.noteCount)
+  def -(t: TimeState) = copy(ticks=ticks - t.ticks)
   
   //  The timing of a number of notes
   def * (number: Integer) = copy(ticks=ticks*number) //  Within a sequence of repeated chunks
