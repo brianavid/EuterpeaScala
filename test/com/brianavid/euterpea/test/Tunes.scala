@@ -163,13 +163,13 @@ object DocTune extends Function0[Music]
 
 object Caledonia extends Function0[Music]
 {
-  def line(notes: Music, lyricText: String, chords: Music): Music =
+  def line(notes: Music, lyricText: String, chords: Music, lastChord: Boolean=false): Music =
   {
     val asMelody =  Track("melody") / Channel("melody") / 
                     Instrument(Instruments.Cello)
     val asHarmony = Track("harmony") / Channel("harmony") / 
                     Instrument(Instruments.Acoustic_Guitar_Nylon) / 
-                    Arpeggio(8,1,2,(3,4),1,(3,4),1)
+                    (if (lastChord) Broken(0.05) else Arpeggio(8,1,2,(3,4),1,(3,4),1))
     val asBass =    Track("bass") / Channel("bass") / 
                     Instrument(Instruments.Acoustic_Bass)
     
@@ -199,10 +199,32 @@ object Caledonia extends Function0[Music]
     line(C - F - F/4/Dot - C | C - G - G/4/Dot - C | A/4 - B - B - +C/4 | B/2/Dot | Rest/2/Dot,
          "That's the reas-on why I seem so far a-way to-day",
          F/Maj | C/Maj | D/Min | -Bf/Maj | -Bf/Maj7)
-  
+         
   val verse1 = verse1Line1 | verse1Line2 | verse1Line3 | verse1Line4
   
-  val tune = TimeSig(3,4) /: FMaj /: Tempo(80) /: (verse1)
+  val chorusLine1 =
+    line((A - B)/Pickup | +C - +C - +C - B - B - A | A - G/4/Dot -F - G | A/Dot - A/16 - A - +C - (A - G)/16 - F | D/2/Dot,
+         "Ah but Let me tell you that I love you and I think a-bout you all- the time",
+         F/Maj | C/Maj | D/Min | -Bf/Maj)
+         
+  val chorusLine2 =
+    line(D/Dot - F/16 - F/4 - F - D | D - C - C/4 - B - A | B - A - G/4/Dot - F | F/2,
+         "Cal-e-don-ia you're call-ing me and- now I'm go-ing home",
+         Bf/Maj | F/Maj | C/Maj | F/Maj)
+         
+  val chorusLine3 =
+    line((C)/Pickup | +C - +C - +C - B - B - A | A - G/4/Dot -F - G | A/Dot - A/16 - A - +C - (A - G)/16 - F | D/2/Dot,
+         "But if I should become a stran-ger you know that it would make me more- than sad",
+         F/Maj | C/Maj | D/Min | -Bf/Maj)
+         
+  val chorusLine4 =
+    line(D/Dot - F/16 - F/4 - F - A | A - G - G - F - (A--G)/16 - F | F/2,
+         "Cal-e-don-ia been ev-ery-thing I've ev--er had",
+         Bf/Maj | C/Maj | F/Maj)
+         
+  val chorus = chorusLine1 | chorusLine2 | chorusLine3 | chorusLine4 | line(Rest/2/Dot, "", F/Maj, true)
+  
+  val tune = TimeSig(3,4) /: FMaj /: Tempo(100) /: (verse1 | chorus)
   
   def apply(): Music = tune
 }

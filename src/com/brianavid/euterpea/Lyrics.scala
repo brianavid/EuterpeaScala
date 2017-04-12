@@ -5,24 +5,28 @@ case class Lyrics(lyricString: String) extends Modifier
 {
   val syllables : Vector[String] =
   {
-  	val lyricsNormalized = "  +".r.replaceAllIn(lyricString, " ").trim()
-  	val words = lyricsNormalized.split(' ')
-  	def splitWords(word: String): Array[String] = 
-  	{
-  	  if (word.head == '-')
-  	    "-" +: splitWords(word.tail)
-  	  else if (word.last == '-')
-  	    splitWords(word.init) :+ "-"
-  	  else
-  	  {
-  	    val dash = word.indexOf('-')
-  	    if (dash > 0)
-  	      Array(word.substring(0, dash+1)) ++ splitWords(word.substring(dash+1)) 
-  	    else
-  	      Array(word)
-  	  }
+  	if (lyricString.isEmpty)
+  	  Vector()
+  	else {
+      val lyricsNormalized = "  +".r.replaceAllIn(lyricString, " ").trim()
+    	val words = lyricsNormalized.split(' ')
+    	def splitWords(word: String): Array[String] = 
+    	{
+    	  if (word.head == '-')
+    	    "-" +: splitWords(word.tail)
+    	  else if (word.last == '-')
+    	    splitWords(word.init) :+ "-"
+    	  else
+    	  {
+    	    val dash = word.indexOf('-')
+    	    if (dash > 0)
+    	      Array(word.substring(0, dash+1)) ++ splitWords(word.substring(dash+1)) 
+    	    else
+    	      Array(word)
+    	  }
+    	}
+    	words.map(splitWords).flatten.map(s => s.replaceAll("_", " ")).toVector
   	}
-  	words.map(splitWords).flatten.map(s => s.replaceAll("_", " ")).toVector
   }
 
   def modifying(music: Music): Music =
