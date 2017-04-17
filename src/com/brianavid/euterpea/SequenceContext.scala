@@ -44,12 +44,17 @@ private[euterpea] case class SequenceContext (
   //  The TimeState of the current duration at the current tempo
   def durationTiming(noteCount: Int) = 
   {
-    if (noteCount != 0 && !rhythmPattern.isEmpty)
+    if (!rhythmPattern.isEmpty)
+    {
+      if (noteCount != 0)
         TimeState( rhythmPattern((timeState.noteCount - rhythmStartNotes) % rhythmPattern.length)._1, noteCount, timeSig)
-      else if (noteCount != 0)
-        TimeState( beat+tiedAddition, noteCount, timeSig)
       else
-        TimeState( beat, noteCount, timeSig)
+        TimeState.empty(timeSig)
+    }
+    else if (noteCount != 0)
+      TimeState( beat+tiedAddition, noteCount, timeSig)
+    else
+      TimeState( beat, noteCount, timeSig)
   }
   
   def rhythmRest =

@@ -90,7 +90,7 @@ private[euterpea] case class TimeState(
   
   //  How many bars (of the specified time signature duration) since the time signature last changed
   def barsSinceLastTimeSigChange(timeSig: TimeSig) = 
-    timeSinceLastTimeSigChange / (timeSig.number * timeSig.beat.beatTicks)
+    if (timeSig.number == 0) 0 else timeSinceLastTimeSigChange / (timeSig.number * timeSig.beat.beatTicks)
   
   //  How many bars are at in the music up to the current position
   def barsCount(timeSig: TimeSig) = 

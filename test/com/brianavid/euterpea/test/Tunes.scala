@@ -34,19 +34,19 @@ object Blues extends Function0[Music]
 
 object ArpeggioTest extends Function0[Music]
 {
-  val pattern = Arpeggio(Thirtysecond,1,2,3,4,3,(1,2,3))
-  val modifiers = Tempo(60) /: CMaj /: Instrument("Vibraphone") /: Octave(-1) 
-  def apply(): Music = modifiers /: ((I7.c - II7.b - V7)/pattern - I)
+  val pattern = Arpeggio(Thirtysecond,1,2,3,4,3,1)
+  val modifiers = Tempo(60) /: CMaj /: Instrument("Vibraphone")
+  def apply(): Music = modifiers /: ((VI7 - II7.b - V7)/pattern - I)
 }
 
 object CompTest extends Function0[Music]
 {
-  val chords = I7.c - II7.b - V7 - I
+  val chords = VI7 - II7.b - V7 - I
   val pattern = Arpeggio(Sixteenth,1,(2,3,4),(1,3),(2,3,4))
   val modifiers = Tempo(60) /: CMaj
   val bass = Channel("Bass") /: Track("Bass") /: Octave(-2) /: Instrument(Instruments.Synth_Bass_1) /: Root /: chords
   val arp = Channel("Arp") /: Track("Arp") /: Instrument(Instruments.Vibraphone) /: (chords/pattern)
-  def apply(): Music = modifiers /: (arp & bass)
+  def apply(): Music = modifiers /: arp // (arp & bass)
 }
 
 object DiatonicTest extends Function0[Music]
@@ -107,13 +107,13 @@ object ContinuousControllerTest extends Function0[Music]
 object LyricsTest extends Function0[Music]
 {
   val melody1 = G/4 - F/4 - E - F - G/4 | E - F - G - A - G/4 - F - G | F - G - F - E - E - F - E - D   
-  val lyrics1 = Lyrics("Shen- khar-- ve--- na-- nhi-------")
+  val lyrics1 = Lyrics("Shen- khar-- ve----na---khi-------")
   val line1 = melody1/lyrics1
   val melody2 = D/4 - E/4 - F - G - E - F | G/4 - F - E - E - F - E - D | E - F - E - D - C/2
   val lyrics2 = Lyrics("Ax-Lad a--khva- ve---- bu--l----")
   val line2 = melody2/lyrics2
-  val tune = line1 | line2
-  def apply(): Music = EMaj /: Octave(-1) /: Eighth /: Tempo(60) /: tune
+  val tune = line1// | line2
+  def apply(): Music = EMaj /: Eighth /: Tempo(60) /: tune
 }
 
 object Beats extends Function0[Music]
@@ -144,10 +144,10 @@ object DocTune extends Function0[Music]
   val tune3 = C - D - E - G +|+4 - E - D - C +|+1
   val threeBlindMice = E/"Three" - D/"blind" - C/2/"mice"
   val tune4 = A/Min - G/Maj - F/Maj - E/Maj
-  val tune5 = I7.c - II7.b - V7 - I
+  val tune5 = VI7 - II7.b - V7 - I
   val tune7 = {
     val pattern = Arpeggio(Thirtysecond,1,2,3,4,3,1)
-    I7.c/pattern - II7.b/pattern - V7/pattern - I
+    VI7/pattern - II7.b/pattern - V7/pattern - I
   }
   val tune8 = Transpose(I -> II) /: (C - D - E - F - G)
   val tune9 = (Vmp -> Vff) /:(C - D - E - G - E - D - C(5)) - (Vff -> Vmf) /: (B - A - F - A - B - C)
@@ -158,7 +158,7 @@ object DocTune extends Function0[Music]
   }
   val tune11 = C - D - E - F - G/TurnDownUp(Thirtysecond)
   val tune12 = IV.root/Triad
-  def apply(): Music = tune12
+  def apply(): Music = tune10
 }
 
 object Caledonia extends Function0[Music]
