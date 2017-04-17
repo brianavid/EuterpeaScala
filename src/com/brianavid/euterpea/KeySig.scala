@@ -30,10 +30,10 @@ object CsMin extends KeySig(4, Cs, true)
 object DMin extends KeySig(-1, D, true)
 object GMin extends KeySig(-2, G, true)
 object CMin extends KeySig(-3, C, true)
-object BfMin extends KeySig(-4, Bf, true)
-object EfMin extends KeySig(-5, Ef, true)
-object AfMin extends KeySig(-6, Af, true)
-object DfMin extends KeySig(-7, Df, true)
+object FMin extends KeySig(-4, F, true)
+object BfMin extends KeySig(-5, Bf, true)
+object EfMin extends KeySig(-6, Ef, true)
+object AfMin extends KeySig(-7, Af, true)
 
 //  The Modulate Modifier changes the current tonic key for harmonisation without altering the the key signature
 
