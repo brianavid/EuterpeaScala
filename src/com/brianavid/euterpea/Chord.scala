@@ -54,7 +54,11 @@ object Harmony
 {
   val majorIntervals = Vector(-1, 0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23)
   val minorIntervals = Vector(-1, 0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22)
-  def triad(root: Int): Set[Int] = Set(root, root+2, root+4)  //  I.e. 1, 3, 5 for triad(1)
+  def triad(root: Int, addSeventh: Boolean = false): Set[Int] = 
+    if (addSeventh)
+      Set(root, root+2, root+4, root+6)  //  I.e. 1, 3, 5, 7 for triad(1, true)
+    else
+      Set(root, root+2, root+4)  //  I.e. 1, 3, 5 for triad(1)
   def seventh(root: Int): Set[Int] = Set(root, root+6)        //  Add a seventh
   
   //  An empty harmony with no root and no intervals
@@ -209,13 +213,11 @@ private[euterpea] case class Chord(
         //  Get the appropriate (major/minor) intervals for the tonic mode
         val intervals = if (context.isMinor) Harmony.minorIntervals else Harmony.majorIntervals
         
-        //  Construct a base harmony from the chord position and tonic intervals, adding a dominant seventh if specified 
-        val triad =  Harmony.triad(chordPosition).map(intervals)
+        //  Construct a base harmony from the chord position and tonic intervals, adding a seventh from the tonic scale if specified 
+        val triad =  Harmony.triad(chordPosition, addSeventh).map(intervals)
         val root = triad.min
-        if (addSeventh) 
-          (context.tonic, Harmony(triad ++ Harmony.seventh(chordPosition).map(Harmony.minorIntervals), root))
-        else
-          (context.tonic, Harmony(triad, root))
+        
+        (context.tonic, Harmony(triad, root))
       }
     }
     
@@ -265,16 +267,16 @@ private[euterpea] case class Chord(
         //  For the last note in the pattern, also play it with an appropriate delay,
         //  but with a duration of the rest of the Chord's beat
         val lastInPattern = patternSequenceCount-1
-        val remainingTiming = context.durationTiming(0).ticks - (beat.beatTicks * lastInPattern)
+        val remainingTiming = new Beat(context.durationTiming(0).ticks - (beat.beatTicks * lastInPattern))
         sequence(patternSequenceCount-1) match {
           case ArpeggioNotes(List(0)) => 
             //  If the note index in the sequence is out of range (e.g. zero) add a Rest
-            Rest.add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * (patternSequenceCount-1), 1, context.timeSig)))
+            Rest.add(context.copy(beat=remainingTiming, timeState=context.timeState+TimeState(beat * (patternSequenceCount-1), 1, context.timeSig)))
           case ArpeggioNotes(indexes) => 
             //  Otherwise play the indexed notes from those in the chord (indexed low-to-high, 1-based)
             indexes.map(j => (if (j < 1 || j > notes.length) Rest else notes(j-1))).
               reduceLeft(_ & _).
-              add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * (patternSequenceCount-1), 1, context.timeSig)))
+              add(context.copy(beat=remainingTiming, timeState=context.timeState+TimeState(beat * (patternSequenceCount-1), 1, context.timeSig)))
         }
         //  The length of the arpeggiated Chord remains the same as though not arpeggiated
         context.durationTiming(0) * context.scaleBeats / context.scaleNum
