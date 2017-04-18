@@ -138,34 +138,6 @@ private[euterpea] case class WithInstrument( instrument: Int, music: Music) exte
 
 //-------------------------
 
-//  The Rhythm Modifier adds the modified music with the rhythm of its pattern (repeated as necessary)
-
-case class Rhythm(pattern: Music) extends Modifier
-{
-  def modifying(music: Music): Music =
-    new WithRhythm(pattern, music)
-}
-
-//  Add the music, with the duration of each Note, Drum or Rest taken in turn cyclically from  
-//  repetitions of the rhythm pattern of the rhythmMusic and not from the current Beat
-
-private[euterpea] case class WithRhythm( rhythmMusic: Music, music: Music) extends Music
-{
-  def add(context: SequenceContext) =
-  {
-    val rhythmPattern=rhythmMusic.rhythmTimings(context.copy(rhythmPattern = Vector.empty))
-    music.add(context.copy(rhythmPattern=rhythmPattern, rhythmStartNotes=context.timeState.noteCount))
-  }
-  
-  def duration(context: SequenceContext) = 
-  {
-    val rhythmPattern=rhythmMusic.rhythmTimings(context.copy(rhythmPattern = Vector.empty))
-    music.duration(context.copy(rhythmPattern=rhythmPattern, rhythmStartNotes=context.timeState.noteCount))
-  }
-}
-
-//-------------------------
-
 //  The Range class specifies a low and high Note to which all notes will be constrained by changing octaves
 
 case class Range(low: Note, high: Note) extends Modifier

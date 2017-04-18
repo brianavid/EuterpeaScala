@@ -246,7 +246,7 @@ private[euterpea] case class Chord(
       case Some(Arpeggio(beat, sequence)) =>
       {
         //  How many arpeggiated notes can play in the duration of the note?
-        val patternSequenceBeatRatio = context.durationTiming(0).ticks * context.scaleBeats / context.scaleNum / beat.beatTicks
+        val patternSequenceBeatRatio = context.durationTiming(0).ticks / beat.beatTicks
         
         //  How many notes in the pattern sequence will play?
         val patternSequenceCount = sequence.length min patternSequenceBeatRatio
@@ -279,7 +279,7 @@ private[euterpea] case class Chord(
               add(context.copy(beat=remainingTiming, timeState=context.timeState+TimeState(beat * (patternSequenceCount-1), 1, context.timeSig)))
         }
         //  The length of the arpeggiated Chord remains the same as though not arpeggiated
-        context.durationTiming(0) * context.scaleBeats / context.scaleNum
+        context.durationTiming(0)
       }
       
       case None =>
@@ -302,7 +302,7 @@ private[euterpea] case class Chord(
     }
   }
   
-  def duration(context: SequenceContext) = context.durationTiming(1) * context.scaleBeats / context.scaleNum
+  def duration(context: SequenceContext) = context.durationTiming(1)
   
   //  Modify the Chord by adding a transform which will modify the underlying Harmony as it is added  
   def b = copy(transforms = ((h: Harmony) => h.b) :: transforms)

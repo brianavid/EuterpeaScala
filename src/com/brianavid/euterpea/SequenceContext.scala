@@ -33,7 +33,7 @@ private[euterpea] case class SequenceContext (
   val arpeggio: Option[Arpeggio] = None,    //  For an arpeggio or ornament, the pattern (sequence and beat) 
   val extractRootNotes: Boolean = false,    //  True to extract root note from each chord
   val currentInstrument: Int = 1,           //  The General Midi instrument on which notes are played
-  val rhythmPattern: Vector[(Beat,Beat)] = Vector.empty,
+  val rhythmPattern: Vector[RhythmBeat] = Vector.empty,
   val rhythmStartNotes: Int = 0,            //  At what note does the rhythm start?
   val lyrics: Vector[String] = Vector.empty,
   val lyricsStartNotes: Int = 0,            //  At what note do the lyrics start?
@@ -47,20 +47,28 @@ private[euterpea] case class SequenceContext (
     if (!rhythmPattern.isEmpty)
     {
       if (noteCount != 0)
-        TimeState( rhythmPattern((timeState.noteCount - rhythmStartNotes) % rhythmPattern.length)._1, noteCount, timeSig)
+        TimeState( rhythmPattern((timeState.noteCount - rhythmStartNotes) % rhythmPattern.length).duration, noteCount, timeSig)
       else
         TimeState.empty(timeSig)
     }
     else if (noteCount != 0)
-      TimeState( beat+tiedAddition, noteCount, timeSig)
+      TimeState( beat+tiedAddition, noteCount, timeSig) * scaleBeats / scaleNum
     else
-      TimeState( beat, noteCount, timeSig)
+      TimeState( beat, noteCount, timeSig) * scaleBeats / scaleNum
   }
   
-  def rhythmRest =
+  def rhythmPreRest =
   {
     if (!rhythmPattern.isEmpty)
-      TimeState( rhythmPattern((timeState.noteCount - rhythmStartNotes) % rhythmPattern.length)._2, 0, timeSig)
+      TimeState( rhythmPattern((timeState.noteCount - rhythmStartNotes) % rhythmPattern.length).preRest, 0, timeSig)
+    else
+      TimeState.empty(timeSig)
+  }
+  
+  def rhythmPostRest =
+  {
+    if (!rhythmPattern.isEmpty)
+      TimeState( rhythmPattern((timeState.noteCount - rhythmStartNotes) % rhythmPattern.length).postRest, 0, timeSig)
     else
       TimeState.empty(timeSig)
   }

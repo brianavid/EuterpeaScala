@@ -39,7 +39,7 @@ private[euterpea] case class TimeState(
       
       //  Errors in t have their positions offset (recursively) by the current timeState duration
       //  And the errors of the new timeState are the union of those of the two added timeState
-      val combinedErrors = errors ++ t.errors.map(e => e.copy(position=e.position+this))
+      val combinedErrors = errors ++ t.errors.map(e => e.copy(position=e.position+copy(errors=Nil)))
       
       val newTimeState = new TimeState(
           ticks + t.ticks, 

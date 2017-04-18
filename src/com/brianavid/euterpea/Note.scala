@@ -94,11 +94,11 @@ case class Note(
         0
     val pitchInRange = pitch + pitchRangeOctaveAdjustment*12
     
-    //  How long does the note last (although only sounding for part of it)
-    val rhythmRest = context.rhythmRest
+    val rhythmPreRest = context.rhythmPreRest
+    val rhythmPostRest = context.rhythmPostRest
     
     //  How long does the note last (although only sounding for part of it)
-    val noteTiming = (context.durationTiming(1) + rhythmRest) * context.scaleBeats / context.scaleNum
+    val noteTiming = (context.durationTiming(1) + rhythmPreRest + rhythmPostRest)
         
     val dynamics = context.getDynamics
     
@@ -111,8 +111,8 @@ case class Note(
     //  How many ticks will the timing be altered by the dynamics?
     val timingInc = (Quarter.beatTicks.toDouble * timingIncFactor).toInt
     
-    val startTicks = (context.timeState + rhythmRest).ticks + timingInc
-    val endTicks = startTicks + ((noteTiming - rhythmRest).ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt
+    val startTicks = (context.timeState + rhythmPreRest).ticks + timingInc
+    val endTicks = startTicks + ((noteTiming - rhythmPreRest - rhythmPostRest).ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt
     
     //  Add Midi events to start and end the note at the right pitch, volume and timing
     context.writeLyrics(startTicks)
@@ -122,7 +122,7 @@ case class Note(
     noteTiming
   }
   
-  def duration(context: SequenceContext) = context.durationTiming(1) * context.scaleBeats / context.scaleNum
+  def duration(context: SequenceContext) = context.durationTiming(1)
   
   //  Allow integer parameter to specify the absolute octave - default is C(4) == MiddleC
   def apply(octave: Int) = new Note(semitones, s"$display($octave)", numSharpsToSharpen, this.octave+octave-4)
@@ -181,9 +181,9 @@ case object Rest extends Music
 {
   def add(context: SequenceContext) =
   {
-    context.durationTiming(0) * context.scaleBeats / context.scaleNum
+    context.durationTiming(0)
   }
   
-  def duration(context: SequenceContext) = context.durationTiming(0) * context.scaleBeats / context.scaleNum
+  def duration(context: SequenceContext) = context.durationTiming(0)
 }
 

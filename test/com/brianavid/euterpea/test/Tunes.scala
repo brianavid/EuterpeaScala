@@ -175,7 +175,11 @@ object Caledonia extends Function0[Music]
     
     val melody = notes/8/Lyrics(lyricText)
     val harmony = chords/2/Dot
-    val bass = harmony/Root/Octave(-1)
+    
+    val bassNotes = harmony/Root
+    val bassDownBeat = bassNotes/Rhythm(N/(Half+Eighth) - Rest/Eighth)
+    val bassUpBeat = bassNotes/Rhythm(Rest/(Half+Eighth) - N/Eighth)
+    val bass = Octave(-1) /: (bassDownBeat & bassUpBeat)
 
     melody/asMelody & harmony/asHarmony & bass/asBass
   }

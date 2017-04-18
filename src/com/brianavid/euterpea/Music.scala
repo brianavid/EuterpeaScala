@@ -43,6 +43,7 @@ trait Music
   
   //  Make a javax.sound.midi.Sequence object from the Music structure by adding the root of
   //  the AST to a default context
+  //  Returns the sequence and a time-sorted Seq of Error objects
   def makeSequence(strict: Boolean) = {
     //  The javax.sound.midi.Sequence object to be constructed
     val sequence = new M.Sequence(M.Sequence.PPQ, Beat.TPQN)
@@ -51,7 +52,7 @@ trait Music
     val context = SequenceContext(sequence, strict)
     val timeState = add( context )
     
-    (sequence, timeState.errors)    
+    (sequence, timeState.errors.sortBy(_.position.ticks))    
   }
   
   //  Check the music is well-formed
@@ -104,38 +105,6 @@ trait Music
   
   //  Repeat a piece of music a fixed number of times
   def * (repeat: Integer) = new Repeated(this, repeat)
-  
-  def rhythmTimings(context: SequenceContext) =
-  {
-    def getTimings(m: Music, context: SequenceContext) : List[(Beat,Beat)] =
-    {
-      def joinTimings(t1: List[(Beat,Beat)], t2: List[(Beat,Beat)]) =
-      {
-        if (t1.map(_._1.beatTicks).sum == 0)
-        {
-         (t2.head._1, t2.head._2 + new Beat(t1.map(_._2.beatTicks).sum)) :: t2.tail 
-        }
-        else t1 ::: t2
-      }
-      
-      //  The only things that affect rhythm are the sequence of Notes and bars and the 
-      //  Beat and BeatScale modifiers
-      //  Normally the rhythm will be a simple single note melody or drum pattern, which may
-      //  use the (unplayable) Note "?" for clarity
-      
-      m match
-      {
-        case m1 - m2 => joinTimings(getTimings(m1,context), getTimings(m2,context))
-        case BarJoin(m1,m2) => joinTimings(getTimings(m1,context), getTimings(m2,context))
-        case Repeated(m1,repeat) => (1 to repeat).map(i => getTimings(m1,context)).flatten.toList
-        case WithBeat(beat, m1) => getTimings(m1,context.copy(beat=beat))
-        case WithBeatScale(numberOfNotes, numberOfBeats, m1) => getTimings(m1,context.copy(scaleNum=numberOfNotes,scaleBeats=numberOfBeats))
-        case Rest =>  List((NoDuration, new Beat(m.duration(context).ticks)))
-        case _ => List((new Beat(m.duration(context).ticks), NoDuration))
-      }
-    }
-    getTimings(this, context).toVector
-  }
 }
 
 //-------------------------
