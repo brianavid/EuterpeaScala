@@ -44,11 +44,16 @@ case class Note(
   //  specified in the current SequenceContext
   def add(context: SequenceContext) =
   {
-    //  An ornamented Note plays as a sequence of adjacent Notes determined by the Ornament
-    ornament match
+    if (!context.noteRhythm.isEmpty)
+      NoteRhythm.add(context, this)
+    else
     {
-      case None => getActualNote(context).addNote(context)
-      case Some(o) => o.ornament(copy(ornament=None), context).add(context)
+      //  An ornamented Note plays as a sequence of adjacent Notes determined by the Ornament
+      ornament match
+      {
+        case None => getActualNote(context).addNote(context)
+        case Some(o) => o.ornament(copy(ornament=None), context).add(context)
+      }
     }
   }
   

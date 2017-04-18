@@ -75,5 +75,65 @@ private[euterpea] case class WithRhythm( rhythmMusic: Music, music: Music) exten
   }
 }
 
+//  The NoteRhythm Modifier applies to each individual Note, Drum or Chord in the modified
+//  music and causes that Note, Drum or Chord to be repeatedly played according to the rhythm pattern
+//  specified in its parameter
+
+case class NoteRhythm(pattern: Music) extends Modifier
+{
+  def modifying(music: Music): Music =
+    new WithNoteRhythm(pattern, music)
+}
+
+//  Helper object to add a single Note, Chord or Drum of the modified music
+object NoteRhythm
+{
+  //  Add the Note, Chord or Drum repeatedly according to the noteRhythm pattern 
+  def add(context: SequenceContext, music: Music) =
+  {
+    //  Recursively add the music as a sequence of RhythmBeats
+    def addBeats(context: SequenceContext, rhythmTimings: Seq[RhythmBeat], music: Music): TimeState =
+    {
+      //  If there are no RhythmBeat values left in the sequence, do nothing
+      if (rhythmTimings.isEmpty)
+      {
+        TimeState.empty(context.timeSig)
+      }
+      else
+      {
+        //  Get the first beat of the RhythmBeat sequence
+        val firstBeat = rhythmTimings.head
+        val firstBeatPre = TimeState(firstBeat.preRest, 0, context.timeSig)
+        val firstBeatPost = TimeState(firstBeat.postRest, 0, context.timeSig)
+
+        //  Add that first beat
+        val duration1 = music.add(context.copy(timeState=context.timeState+firstBeatPre, beat=firstBeat.duration, scaleNum=1, scaleBeats=1))
+        
+        //  Recursively add the same music with the rest of the RhythmBeat sequence 
+        val duration2 = addBeats(context.copy(timeState=context.timeState+firstBeatPre+duration1+firstBeatPost), rhythmTimings.tail, music)
+        
+        //  The duration of the NoteRhythm is the sum of the current RhythmBeat and the duration of the remainder
+        duration1 + duration2+firstBeatPre+firstBeatPost
+      }
+    }
+      
+    //  Add all the music using the RhythmBeat sequence in the context
+    addBeats(context.copy(noteRhythm=Vector.empty), context.noteRhythm, music)
+  }
+}
+
+private[euterpea] case class WithNoteRhythm( rhythmMusic: Music, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    val rhythmPattern=Rhythm.rhythmTimings(rhythmMusic, context.copy(noteRhythm=Vector.empty))
+    music.add(context.copy(noteRhythm=rhythmPattern))
+  }
+  
+  def duration(context: SequenceContext) = 
+  {
+    rhythmMusic.duration(context)
+  }
+}
 
 

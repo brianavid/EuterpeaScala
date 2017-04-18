@@ -5,6 +5,14 @@ case class Drum(noteNumber: Integer) extends Music
 {
   def add(context: SequenceContext) =
   {
+    if (!context.noteRhythm.isEmpty)
+      NoteRhythm.add(context, this)
+    else
+      addNote(context)  
+  }
+  
+  def addNote(context: SequenceContext) =
+  {
     val rhythmPreRest = context.rhythmPreRest
     val rhythmPostRest = context.rhythmPostRest
     

@@ -170,6 +170,8 @@ private[euterpea] case class Chord(
     }
     else if (context.extractRootNotes)
       root.add(context.copy(extractRootNotes=false))
+    else if (!context.noteRhythm.isEmpty)
+      NoteRhythm.add(context, this)
     else
       addChord(context)
   }
