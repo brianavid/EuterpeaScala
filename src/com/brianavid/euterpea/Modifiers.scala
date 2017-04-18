@@ -183,6 +183,30 @@ private[euterpea] case class WithPickup( music: Music) extends Music
 
 //-------------------------
 
+//  The Trim class prevents any notes in the last specified beat length
+//	for example to remove a trailing generated up-beat or to replace the last bar
+
+case class Trim(beat: Beat) extends Modifier
+{
+  def modifying(music: Music): Music =
+    new WithTrim(beat, music)
+}
+
+//  Add the music, 
+
+private[euterpea] case class WithTrim( beat: Beat, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    val durationTiming = music.duration(context)
+    music.add(context.copy(ticksLimit=durationTiming.ticks-beat.beatTicks))
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context) - TimeState(beat)
+}
+
+//-------------------------
+
 //  FUTURE MODIFIER CLASS DEFINITIONS GO HERE
 
 

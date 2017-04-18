@@ -39,12 +39,15 @@ private[euterpea] case class SequenceContext (
   val lyricsStartNotes: Int = 0,            //  At what note do the lyrics start?
   val dynamics: List[ContextDynamics] = Nil,//  The set of dynamics affecting the sequence
   val rangeLow: Note = N,                   //  The lowest Note to be used - octave-shifting as needed 
-  val rangeHigh: Note = N)                  //  The highest Note to be used - octave-shifting as needed
+  val rangeHigh: Note = N,                  //  The highest Note to be used - octave-shifting as needed
+  val ticksLimit: Int = Int.MaxValue)       //  The maximum length that can be added
 {
   //  The TimeState of the current duration at the current tempo
   def durationTiming(noteCount: Int) = 
   {
-    if (!rhythmPattern.isEmpty)
+    if (timeState.ticks >= ticksLimit)
+        TimeState.empty(timeSig)
+    else if (!rhythmPattern.isEmpty)
     {
       if (noteCount != 0)
         TimeState( rhythmPattern((timeState.noteCount - rhythmStartNotes) % rhythmPattern.length).duration, noteCount, timeSig)

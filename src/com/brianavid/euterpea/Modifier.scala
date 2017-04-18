@@ -30,6 +30,11 @@ object Modifier {
     Lyric(lyric)
 }
 
+//	The NoModifier object does nothing to its Music
+object NoModifier extends Modifier
+{
+  def modifying(music: Music): Music = music
+}
 
 //------------------------------------------------------------------------------------------------------------
 
