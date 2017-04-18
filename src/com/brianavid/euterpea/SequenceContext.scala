@@ -16,6 +16,7 @@ private[euterpea] case class SequenceContext (
   val tracks: mutable.Map[String,M.Track],  //  The mapping of track named onto sequence tracks
   val currentChannelName: String = "",      //  The current channel name 
   val channels: mutable.Map[String,Int],    //  The mapping of track named onto (all different) Midi channels
+  val pendingTimingChanges: mutable.Set[M.MidiEvent] = mutable.Set.empty,
   val transpose: Int = 0,                   //  Any specified prevailing chromatic transposition
   val dTrans: Option[(Chord,Chord)] = None, //  Any specified prevailing diatonic transposition
   val tempoBPM: Int,                        //  The current tempo, in beats per minute
@@ -45,6 +46,11 @@ private[euterpea] case class SequenceContext (
   //  The TimeState of the current duration at the current tempo
   def durationTiming(noteCount: Int) = 
   {
+    if (!pendingTimingChanges.isEmpty)
+    {
+      pendingTimingChanges.foreach(timingTrack.add(_))
+      pendingTimingChanges.clear()
+    }
     if (timeState.ticks >= ticksLimit)
         TimeState.empty(timeSig)
     else if (!rhythmPattern.isEmpty)
@@ -81,7 +87,7 @@ private[euterpea] case class SequenceContext (
     val bytearray = BigInt(60000000/bpm).toByteArray
     val pad = Array.fill[Byte](3-bytearray.length)(0)
     
-    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x51, pad++bytearray, 3),timeState.ticks))    
+    pendingTimingChanges += new M.MidiEvent(new M.MetaMessage(0x51, pad++bytearray, 3),timeState.ticks)    
   }
   
   //  Write the specified Time Signature to the timing track
@@ -91,14 +97,19 @@ private[euterpea] case class SequenceContext (
     val clickRate = if (number % 3 == 0 && number > 3) 3 * beatRate else beatRate
     
     val bytearray = Array[Byte](number, beat.timeSigDenom, clickRate.toByte, 8)
-    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x58, bytearray, bytearray.length),timeState.ticks))    
+    pendingTimingChanges += new M.MidiEvent(new M.MetaMessage(0x58, bytearray, bytearray.length),timeState.ticks)
   }
   
   //  Write the specified Key signature to the timing track 
   def writeKeySig(keySigSharps: Byte, keySigIsMinor: Boolean, timeState: TimeState) = {
-    val bytearray = Array[Byte](keySigSharps, if (keySigIsMinor) 1 else 0)
+    val currentKeySigSharps = 
+      if (keySigSharps >= 0) 
+        (keySigSharps + (7 * transpose) + 5) % 12 - 5  //  bias towards sharp
+      else
+        (keySigSharps + (7 * transpose) + 7) % 12 - 7  //  bias towards flat
+    val bytearray = Array[Byte](currentKeySigSharps.toByte, if (keySigIsMinor) 1 else 0)
     
-    timingTrack.add(new M.MidiEvent(new M.MetaMessage(0x59, bytearray, bytearray.length), timeState.ticks))    
+    pendingTimingChanges += new M.MidiEvent(new M.MetaMessage(0x59, bytearray, bytearray.length), timeState.ticks)    
   }
   
   def writeLyrics(ticks: Int) =
