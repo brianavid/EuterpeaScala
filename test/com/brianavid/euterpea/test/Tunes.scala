@@ -198,14 +198,14 @@ object Caledonia extends Function0[Music]
          F/Maj | C/Maj | D/Min | -Bf/Maj)
   
   val verse1Line4 =
-    line(C - F - F/4/Dot - C | C - G - G/4/Dot - C | A/4 - B - B - +C/4 | B/2/Dot | Rest/2/Dot,
+    line(C - F - F/4/Dot - C | C - G - G/4/Dot - C | A - B - +C/4/Dot - A | B/2/Dot | Rest/2/Dot,
          "That's the reas-on why I seem so far a-way to-day",
          F/Maj | C/Maj | D/Min | -Bf/Maj | -Bf/Maj7)
          
   val verse1 = verse1Line1 | verse1Line2 | verse1Line3 | verse1Line4
   
   val chorusLine1 =
-    line((A - B)/Pickup | +C - +C - +C - B - B - A | A - G/4/Dot -F - G | A/Dot - A/16 - A - +C - (A - G)/16 - F | D/2/Dot,
+    line((A - B)/Pickup | +C - +C - +C - B - B - A | A - G/4/Dot -F - G | A/Dot - A/16 - A - +C - (A -- G)/16 - F | D/2/Dot,
          "Ah but Let me tell you that I love you and I think a-bout you all- the time",
          F/Maj | C/Maj | D/Min | -Bf/Maj)
          
@@ -215,7 +215,7 @@ object Caledonia extends Function0[Music]
          Bf/Maj | F/Maj | C/Maj | F/Maj)
          
   val chorusLine3 =
-    line((C)/Pickup | +C - +C - +C - B - B - A | A - G/4/Dot -F - G | A/Dot - A/16 - A - +C - (A - G)/16 - F | D/2/Dot,
+    line((C)/Pickup | +C - +C - +C - B - B - A | A - G/4/Dot -F - G | A/Dot - A/16 - A - +C - (A -- G)/16 - F | D/2/Dot,
          "But if I should become a stran-ger you know that it would make me more- than sad",
          F/Maj | C/Maj | D/Min | -Bf/Maj)
          
