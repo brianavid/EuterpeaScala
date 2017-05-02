@@ -105,7 +105,7 @@ private[euterpea] case class SequenceContext (
         (keySigSharps + (7 * transpose) + 5) % 12 - 5  //  bias towards sharp
       else
         (keySigSharps + (7 * transpose) + 7) % 12 - 7  //  bias towards flat
-    val bytearray = Array[Byte](currentKeySigSharps.toByte, if (keySigIsMinor) 1 else 0)
+    val bytearray = Array[Byte](keySigSharps.toByte, if (keySigIsMinor) 1 else 0)
     
     pendingTimingChanges += new M.MidiEvent(new M.MetaMessage(0x59, bytearray, bytearray.length), timeState.ticks)    
   }
@@ -133,7 +133,7 @@ private[euterpea] case class SequenceContext (
       val bytearray = currentTrackName.getBytes
 
       tracks(currentTrackName)  = sequence.createTrack()
-      tracks(currentTrackName).add(new M.MidiEvent(new M.MetaMessage(0x03, bytearray, bytearray.length), timeState.ticks))    
+      tracks(currentTrackName).add(new M.MidiEvent(new M.MetaMessage(0x03, bytearray, bytearray.length), 0))    
     }
     tracks(currentTrackName) 
   }
