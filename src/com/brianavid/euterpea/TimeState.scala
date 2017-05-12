@@ -44,7 +44,7 @@ private[euterpea] case class TimeState(
       val newTimeState = new TimeState(
           ticks + t.ticks, 
           noteCount+t.noteCount, 
-          t.currentTimeSig,
+          if (t.currentTimeSig.number == 0) currentTimeSig else t.currentTimeSig,
           newTimeSigChangeTime, 
           controls.merge(t.controls), 
           newBarsAtTimeSigChange, 
