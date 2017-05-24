@@ -241,11 +241,72 @@ object DaintyDavy extends Function0[Music]
   def apply(): Music = tune
 }
 
+object JohnHardy extends Function0[Music]
+{
+  val lyrics1 = "John Har-dy was a desp-arate lit-tle man" 
+  val lyrics2 = "He car-ried a ra-zor each day" 
+  val lyrics3 = "He killed a man down in mob-ile- town" 
+  val lyrics4 = "You ought'-a seen John Har-dy get a-way" 
+  val lyrics5 = "You ought'-a seen John Har-dy get a-way" 
+  
+  val rhythm1 = N/8 - N - N - N - N - N/8 - N - N/16 - N/16 - N/Dot
+  val rhythm2 = N/8 - N/8 - N/8 - N - N - N/8 - N - N/(Half+Quarter+Eighth)
+  val rhythm3 = N - N/8/Dot - N/16 - N - N/8 - N/8 - N/8 - N/8 - N/8 - N/2
+  val rhythm4 = N/8 - N/16 - N/16 - N - N/8 - N/8 - N - N/16 - N/16 - N/Dot
+  val rhythm5 = N/8 - N/16 - N/16 - N - N/8 - N/8 - N - N/16 - N/16 - N/Dot
+  
+  val mNotes1 = C/Pickup - F - A - Bf - A - G - G - E - D - C 
+  val mNotes2 = C - F - F - A - Bf - A - G - G 
+  val mNotes3 = C - F - A - Bf - A - G - G - E - D - C  
+  val mNotes4 = C - E - E - E - D - C - C - -A - -G - E  
+  val mNotes5 = C - E - E - E - D - C - C - -A - -G - C  
+  
+  val hNotes1 = C/Pickup - A - +C - +D - +C - +C - +C - G - F - E 
+  val hNotes2 = C - A - A - +C - +D - +C - +C - +E 
+  val hNotes3 = A - +C - +C - +D - +C - +C - +C - G - F - E  
+  val hNotes4 = F - G - G - G - G - A - A - A - A - G  
+  val hNotes5 = F - G - G - G - G - F - F - F - F - E  
+  
+  val lNotes1 = C/Pickup - F - F - F - F - F - C - C - C - C 
+  val lNotes2 = C - F - F - F - F - F - F - C 
+  val lNotes3 = F - F - F - F - F - F - C - C - C - -A  
+  val lNotes4 = -F - C - C - C - C - -F - -F - -F - -F - C  
+  val lNotes5 = -F - C - C - C - C - -F - -F - -F - -F - -C  
+  
+  val mLine1 = mNotes1 / Rhythm(rhythm1) / Lyrics(lyrics1)
+  val mLine2 = mNotes2 / Rhythm(rhythm2) / Lyrics(lyrics2)
+  val mLine3 = mNotes3 / Rhythm(rhythm3) / Lyrics(lyrics3)
+  val mLine4 = mNotes4 / Rhythm(rhythm4) / Lyrics(lyrics4)
+  val mLine5 = mNotes5 / Rhythm(rhythm5) / Lyrics(lyrics5)
+  
+  val hLine1 = hNotes1 / Rhythm(rhythm1) / Lyrics(lyrics1)
+  val hLine2 = hNotes2 / Rhythm(rhythm2) / Lyrics(lyrics2)
+  val hLine3 = hNotes3 / Rhythm(rhythm3) / Lyrics(lyrics3)
+  val hLine4 = hNotes4 / Rhythm(rhythm4) / Lyrics(lyrics4)
+  val hLine5 = hNotes5 / Rhythm(rhythm5) / Lyrics(lyrics5)
+  
+  val lLine1 = lNotes1 / Rhythm(rhythm1) / Lyrics(lyrics1)
+  val lLine2 = lNotes2 / Rhythm(rhythm2) / Lyrics(lyrics2)
+  val lLine3 = lNotes3 / Rhythm(rhythm3) / Lyrics(lyrics3)
+  val lLine4 = lNotes4 / Rhythm(rhythm4) / Lyrics(lyrics4)
+  val lLine5 = lNotes5 / Rhythm(rhythm5) / Lyrics(lyrics5)
+  
+  val countIn = Rest * 4
+  val high = Track("Tenor") /: (countIn - hLine1 - hLine2 - hLine3 - hLine4 - hLine5)
+  val mid = Track("Baritone") /: (countIn - mLine1 - mLine2 - mLine3 - mLine4 - mLine5)
+  val low = Track("Bass") /: (countIn - lLine1 - lLine2 - lLine3 - lLine4 - lLine5)
+  
+  val tune = Octave(-1) /: Tempo(80) /: CMaj /: (high & mid & low)
+  
+  def apply(): Music = tune
+}
+
 object Tunes 
 {
   val tunesList = List(
     "caledonia" -> Caledonia,
     "dainty" -> DaintyDavy,
+    "hardy" -> JohnHardy,
     "doc" -> DocTune,
     "birds" -> BirdsInTheSpringBaritone,
     "bugs" -> Bugs,
