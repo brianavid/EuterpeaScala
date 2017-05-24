@@ -301,6 +301,14 @@ object JohnHardy extends Function0[Music]
   def apply(): Music = tune
 }
 
+object Guitar1 extends Function0[Music]
+{
+  val s1 = new Guitar.String
+  val s2 = new Guitar.String
+  val tune = C/s1 - D/s2 - E/s2 - G/s2 - +C/s1/2
+  def apply(): Music = tune
+}
+
 object Tunes 
 {
   val tunesList = List(
@@ -322,6 +330,7 @@ object Tunes
     "range" -> RangeTest,
     "continuous" -> ContinuousControllerTest,
     "lyrics" -> LyricsTest,
+    "guitar" -> Guitar1,
     "beats" -> Beats)
   val tunes: Map[String,Function0[Music]] = tunesList.toMap
   

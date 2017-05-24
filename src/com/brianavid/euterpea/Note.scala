@@ -119,12 +119,33 @@ case class Note(
     val startTicks = (context.timeState + rhythmPreRest).ticks + timingInc
     val endTicks = startTicks + ((noteTiming - rhythmPreRest - rhythmPostRest).ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt
     
+    //  If this Note is on a (Guitar) String, stop playing any previous Note on the same String 
+    context.onString match
+    {
+      case None => ()
+      case Some(string) => context.timeState.stopString(string, Some(startTicks))
+    }
+
     //  Add Midi events to start and end the note at the right pitch, volume and timing
     context.writeLyrics(startTicks)
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, pitchInRange, context.volume+dynamics.volumeInc), startTicks))
-    track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, channel, pitchInRange, 0), endTicks))
     
-    noteTiming
+    //  Is this Note on a (Guitar) String? 
+    context.onString match
+    {
+      case None => 
+      {
+        //  If this Note is NOT on a (Guitar) String, stop it playing at the computed end time 
+        track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, channel, pitchInRange, 0), endTicks))
+        noteTiming
+      }
+      case Some(string) => 
+      {
+        //  If this Note IS on a (Guitar) String, let it continue playing until another Note plays on that same String
+        //  recording in the TimeState what Note pitch is to be stopped when the String is next played.
+        noteTiming.copy(playingStrings = Map(string -> Some((track, channel, pitchInRange))))
+      }
+    }
   }
   
   def duration(context: SequenceContext) = context.durationTiming(1)
@@ -186,7 +207,21 @@ case object Rest extends Music
 {
   def add(context: SequenceContext) =
   {
-    context.durationTiming(0)
+    
+    val timing = context.durationTiming(0)
+    
+    //  If this Rest is on a (Guitar) String, stop playing any previous Note on the same String 
+    context.onString match
+    {
+      case None => timing
+      case Some(string) => 
+      {
+        context.timeState.stopString(string)
+        
+        //  Record that the string is no longer sounding
+        timing.copy(playingStrings = Map(string -> None))
+      }
+    }
   }
   
   def duration(context: SequenceContext) = context.durationTiming(0)

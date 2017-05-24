@@ -51,6 +51,7 @@ trait Music
     //  Add the music by recursively adding the root
     val context = SequenceContext(sequence, strict)
     val timeState = add( context )
+    timeState.stopAllStrings()
     
     (sequence, timeState.errors.sortBy(_.position.ticks))    
   }

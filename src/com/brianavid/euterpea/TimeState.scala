@@ -1,4 +1,5 @@
 package com.brianavid.euterpea
+import javax.sound.{midi => M}
 
 //  TimStates contain a list of Errors accumulated during the processing of the Music up to that point
 private[euterpea] case class Error(position: TimeState, message: String)
@@ -11,6 +12,7 @@ private[euterpea] case class Error(position: TimeState, message: String)
 //    -  the number of notes played (used for cyclic rhythm patterns)
 //    -  the time that the time signature last changed (for bar line validation)
 //    -  the list of errors accumulated up the that point in the music
+//    -  the mapping of Guitar strings to the notes still sounding on that string
 private[euterpea] case class TimeState(
     ticks: Int, 
     noteCount: Int , 
@@ -18,7 +20,8 @@ private[euterpea] case class TimeState(
     timeSigChangeTime: Option[Int],
     controls: ControlValues,
     barsAtTimeSigChange: Option[Int],
-    errors: List[Error])
+    errors: List[Error],
+    playingStrings: Map[Guitar.String, Option[(M.Track,Int/*channel*/,Int/*pitch*/)]] = Map.empty)
 {
   //  Timings can be added
   def +(t: TimeState): TimeState = 
@@ -48,7 +51,8 @@ private[euterpea] case class TimeState(
           newTimeSigChangeTime, 
           controls.merge(t.controls), 
           newBarsAtTimeSigChange, 
-          combinedErrors)
+          combinedErrors,
+          playingStrings ++ t.playingStrings)  //  Later string maps over-write
       newTimeState
     }
   
@@ -68,12 +72,31 @@ private[euterpea] case class TimeState(
   def max(t: TimeState) = 
     {
       val later = if (t.ticks > ticks) t else this
-      later.copy(controls=controls.merge(t.controls), errors=errors ++ t.errors)
+      later.copy(controls=controls.merge(t.controls), errors=(errors ++ t.errors), playingStrings=(playingStrings ++ t.playingStrings))
     }
   
   //  A copy of the TimeState which additionally has the current time as the timeSigChangeTime change, 
   //  indicating when the time signature last changed
   def settingTimeSigChange(timeSig: TimeSig) = copy(currentTimeSig=timeSig, timeSigChangeTime=Some(ticks), barsAtTimeSigChange=Some(barsCount(timeSig)))
+  
+  //  Stop playing any previous Note currently sounding on the specified (Guitar) String 
+  def stopString(string: Guitar.String, stopTicks: Option[Long] = None): Unit =
+  {
+    playingStrings.getOrElse(string, None) match
+    {
+      case None => ()
+      case Some((track, channel, pitch)) => 
+      {
+        track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, channel, pitch, 0), stopTicks.getOrElse(ticks)))
+      }
+    }
+  }
+  
+  //  Stop playing all previous Notes currently sounding on any (Guitar) String 
+  def stopAllStrings(): Unit =
+  {
+    for (s <- playingStrings.keys) stopString(s)
+  }
   
   //  A copy of the TimeState which additionally adds an error mssage at the current position
   def error(message: String) = 
