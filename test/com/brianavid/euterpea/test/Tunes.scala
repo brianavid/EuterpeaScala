@@ -309,6 +309,21 @@ object Guitar1 extends Function0[Music]
   def apply(): Music = tune
 }
 
+object Guitar2 extends Function0[Music]
+{
+  val g = Guitar.defaultTuning
+  val p1 = g.pick( (5, 2), (), 4, 3, 5, 2, 4, ())
+  val p2 = g.pick( 5, (), (4,2), (), 5, 3, 4, ())
+  val p1c = p1 on C/Maj
+  val p2c = p2 on C/Maj
+  val p3 = g.pick( (6, 2), (), 4, 3, 6, 2, 4, ())
+  val p4 = g.pick( 6, (), (4,2), (), 6, 3, 4, ())
+  val p3g = p3 on G/Maj
+  val p4g = p4 on G/Maj
+  val tune = Instrument(Instruments.Acoustic_Guitar_Steel) /: Octave(-1) /: Tempo(160) /: ((p1c-p2c-p3g-p4g)/8*4)
+  def apply(): Music = tune
+}
+
 object Tunes 
 {
   val tunesList = List(
@@ -330,7 +345,7 @@ object Tunes
     "range" -> RangeTest,
     "continuous" -> ContinuousControllerTest,
     "lyrics" -> LyricsTest,
-    "guitar" -> Guitar1,
+    "guitar" -> Guitar2,
     "beats" -> Beats)
   val tunes: Map[String,Function0[Music]] = tunesList.toMap
   

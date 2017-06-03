@@ -172,16 +172,24 @@ class PickFretted(
       
     val beat = context.beat
     
-    pattern.zipWithIndex.map{
-      case (PickedStrings(stringNumbers), i) if (stringNumbers.isEmpty) => 
-        Rest.add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
-      case (PickedStrings(stringNumbers), i) => 
-        pickedStringNotes(stringNumbers, beat * i).
-          add(context.copy(beat=beat, scaleBeats=1, scaleNum=1, 
-                           timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
+    def addPatternPicksInSequence(
+        currentStrings: PickedStrings, 
+        remainingPattern: Seq[PickedStrings], 
+        posWithinPattern: Int,
+        context: SequenceContext): TimeState =
+    {
+      val duration =  if (currentStrings.strings.isEmpty)
+        TimeState(beat)
+      else 
+        pickedStringNotes(currentStrings.strings, beat * posWithinPattern).add(context)
+      if (remainingPattern.isEmpty)
+        duration
+      else
+        duration + addPatternPicksInSequence(remainingPattern.head, remainingPattern.tail, posWithinPattern+1, 
+                                               context.copy(timeState = context.timeState+duration))
     }
     
-    duration(context)
+    addPatternPicksInSequence(pattern.head, pattern.tail, 0, context.copy(beat=beat, scaleBeats=1, scaleNum=1))
   }
   
   def duration(context: SequenceContext) = context.durationTiming(0) * pattern.length
