@@ -176,9 +176,8 @@ private[euterpea] case class Chord(
       addChord(context)
   }
   
-  //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
-  //  sound at the same time.
-  def addChord(context: SequenceContext) =
+  //  What notes does the Chord play?
+  def notes(context: SequenceContext) =
   {
     //  Do we have an explicit rootNote note and harmony? 
     val (root, baseHarmony: Harmony) = rootNote match
@@ -240,7 +239,15 @@ private[euterpea] case class Chord(
     }
     
     //  What notes does the Chord play? Transpose the rootNote note up by each of the effective Harmony intervals
-    val notes = effectiveHarmony.intervals.map(root/Transpose(_))
+    effectiveHarmony.intervals.map(i => Note(root.semitones + i, ""))
+  }
+  
+  //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
+  //  sound at the same time.
+  def addChord(context: SequenceContext) =
+  {
+    //  What notes does the Chord play?
+    val chordNotes = notes(context)
     
     //  Does the Chord have an Arpeggio modifier, to play the Chord's note as a sequence?
     context.arpeggio match
@@ -261,7 +268,7 @@ private[euterpea] case class Chord(
             Rest.add(context.copy(beat=beat, timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
           case (ArpeggioNotes(indexes), i) => 
             //  Otherwise play the indexed notes from those in the chord (indexed low-to-high, 1-based)
-            indexes.map(j => (if (j < 1 || j > notes.length) Rest else notes(j-1))).
+            indexes.map(j => (if (j < 1 || j > chordNotes.length) Rest else chordNotes(j-1))).
               reduceLeft(_ & _).
               add(context.copy(beat=beat, scaleBeats=1, scaleNum=1, 
                                timeState=context.timeState+TimeState(beat * i, 1, context.timeSig)))
@@ -277,7 +284,7 @@ private[euterpea] case class Chord(
             Rest.add(context.copy(beat=remainingTiming, timeState=context.timeState+TimeState(beat * (patternSequenceCount-1), 1, context.timeSig)))
           case ArpeggioNotes(indexes) => 
             //  Otherwise play the indexed notes from those in the chord (indexed low-to-high, 1-based)
-            indexes.map(j => (if (j < 1 || j > notes.length) Rest else notes(j-1))).
+            indexes.map(j => (if (j < 1 || j > chordNotes.length) Rest else chordNotes(j-1))).
               reduceLeft(_ & _).
               add(context.copy(beat=remainingTiming, scaleBeats=1, scaleNum=1, 
                                timeState=context.timeState+TimeState(beat * (patternSequenceCount-1), 1, context.timeSig)))
@@ -291,10 +298,10 @@ private[euterpea] case class Chord(
         //  For a broken chord, each note has a delay (increasing as you go up the chord)
         val delayedNotes = context.broken match
         {
-          case None => notes  //  I.e. NOT broken
+          case None => chordNotes  //  I.e. NOT broken
           case Some(Broken(delay)) => 
             {
-              notes.zipWithIndex.map{
+              chordNotes.zipWithIndex.map{
                 case (m:Music,i: Int) => (WithDynamics(Dynamics.delay(delay*i), m))
               }
             }
