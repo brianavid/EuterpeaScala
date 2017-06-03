@@ -12,6 +12,7 @@ class Beat(val beatTicks: Int) extends Modifier
   
   def dot = new Beat(beatTicks * 3 / 2) //  Note and a half
   def +(next: Beat) = new Beat(beatTicks + next.beatTicks) //  Simply added together
+  def -(next: Beat) = new Beat(beatTicks - next.beatTicks) //  Simply subtracted
   def *(repeat: Integer) = new Beat(beatTicks * repeat) //  Lengthened
 
   //  The Midi meta encoding of the (simple object) Duration for time signatures (only)
