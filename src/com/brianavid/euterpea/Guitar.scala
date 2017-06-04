@@ -19,9 +19,7 @@ case class Guitar(notes: Vector[Music]) {
   
   def pick(pattern: PickedStrings*) = new Pick(this, pattern.toList)
   
-  def strum(delay: Double) = new Strum( this, new StrummedStrings(notes.size, 1, delay))
-  def strum(startString: Int, endString: Int, delay: Double) = new Strum( this, 
-      new StrummedStrings(startString min notes.size max 1, endString min startString max 1, delay))
+  def strum(delay: Double) = new Pick(this, List(StrumLoHi(delay)((1 until notes.size) :_*)))
 }
 
 object Guitar
@@ -52,11 +50,15 @@ object Guitar
       assert(stringNumbers.forall(i => i >= 0 && i < guitar.notes.size))
     }
     
-    def note(guitar: Guitar, stringNumber: Int) = 
+    def note(guitar: Guitar, stringNumber: Int): Music = 
     {
-      val transpose = fingering.getOrElse(stringNumber, 0)
-      val openStringNote = guitar.notes(stringNumber)
-      if (transpose == 0) openStringNote else WithTranspose(transpose, openStringNote) 
+      if (stringNumber > 0 && stringNumber < guitar.notes.size)
+      {
+        val transpose = fingering.getOrElse(stringNumber, 0)
+        val openStringNote = guitar.notes(stringNumber)
+        if (transpose == 0) openStringNote else WithTranspose(transpose, openStringNote) 
+      } else
+        EmptyMusic
     }
   }
   
@@ -79,6 +81,11 @@ object Guitar
     }
   }
   
+  object Frets
+  {
+    def apply(fingers: (Int, Int)*): Frets = new Frets(FretPosition(fingers.toMap))
+  }
+  
   case class ChordPosition(chord:Chord, barre: Int = 0)
   {
     def frets(
@@ -93,8 +100,8 @@ object Guitar
         if (chordPitches.contains(stringPitch)) (stringNumber, offset)
         else stringFretPostition(stringNumber, offset+1)
       }
-      val stringFretPostitions = (1 until guitar.strings.size).map(i => stringFretPostition(i, 0))
-      FretPosition(stringFretPostitions.toMap)
+      val stringFretPositions = (1 until guitar.strings.size).map(i => stringFretPostition(i, 0)).toMap
+      FretPosition(stringFretPositions)
     }
   }
   
@@ -127,7 +134,8 @@ object Guitar
   def defaultTuning(): Guitar = tuning(-E, -A, D, G, B, +E)
 }
 
-case class PickedStrings(strings: Set[Int])
+case class StrumStyle(isUp: Boolean, delay: Double)
+case class PickedStrings(strings: Set[Int], strum: Option[StrumStyle] = None)
 
 object PickedStrings
 {
@@ -135,14 +143,28 @@ object PickedStrings
   implicit def PickedStringsFromInt(string: Int) = PickedStrings(Set(string))
   implicit def PickedStringsFrom2(strings: (Int,Int)) = PickedStrings(Set(strings._1, strings._2))
   implicit def PickedStringsFrom3(strings: (Int,Int,Int)) = PickedStrings(Set(strings._1, strings._2, strings._3))
-  implicit def PickedStringsFrom4(strings: (Int,Int,Int,Int)) = PickedStrings(Set(strings._1, strings._2, strings._4, strings._4))
+}
+
+case class Strum (isUp: Boolean, delay: Double)
+{
+  def apply(strings: Int*) = PickedStrings(strings.toSet,Some(StrumStyle(isUp,delay)))
+}
+
+object StrumLoHi 
+{
+  def apply(delay: Double) = Strum(false,delay)
+}
+
+object StrumHiLo
+{
+  def apply(delay: Double)(strings: Int*) = Strum(false,delay)
 }
 
 class Pick(
     guitar: Guitar,
     pattern: Seq[PickedStrings]) extends Guitar.Fingering 
 {
-  assert(pattern.forall(_.strings.forall(i => i >= 0 && i < guitar.notes.size)))
+  assert(pattern.forall(_.strings.forall(i => i != 0 && i < guitar.notes.size)))
   
   def / (frets: Guitar.Frets): Music = {
     frets.check(guitar)
@@ -167,8 +189,22 @@ class PickFretted(
       Guitar.WithString(guitar.strings(stringNumber), fretPos.note(guitar, stringNumber))
     }
     
-    def pickedStringNotes(stringNumbers: Set[Int], beats: Beat): Music = 
-      stringNumbers.map(pickedStringNote(_, beats)).reduce(_&_)
+    def pickedStringNotes(pickedStrings: PickedStrings, beats: Beat): Music = {
+      val notes = pickedStrings.strings.toVector.sorted.map(pickedStringNote(_, beats))
+      val strummedNotes = pickedStrings.strum match
+      {
+        case None => notes
+        case Some(StrumStyle(false,delay)) => 
+          notes.reverse.zipWithIndex.map{
+            case (m:Music,i: Int) => (WithDynamics(Dynamics.delay(delay*i), m))
+          }
+        case Some(StrumStyle(true,delay)) => 
+          notes.zipWithIndex.map{
+            case (m:Music,i: Int) => (WithDynamics(Dynamics.delay(delay*i), m))
+          }
+      }
+      strummedNotes.reduce(_&_)
+    }
       
     val beat = context.beat
     
@@ -181,7 +217,7 @@ class PickFretted(
       val duration =  if (currentStrings.strings.isEmpty)
         TimeState(beat)
       else 
-        pickedStringNotes(currentStrings.strings, beat * posWithinPattern).add(context)
+        pickedStringNotes(currentStrings, beat * posWithinPattern).add(context)
       if (remainingPattern.isEmpty)
         duration
       else
@@ -206,51 +242,4 @@ class PickChords(
   }
   
   def duration(context: SequenceContext) = context.durationTiming(0) * pattern.length
-}
-
-case class StrummedStrings(
-    startString: Int,
-    endString: Int,
-    delay: Double)
-{
-}
-
-class Strum(
-    guitar: Guitar,
-    strum: StrummedStrings) extends Guitar.Fingering 
-{
-  def / (frets: Guitar.Frets): Music = {
-    frets.check(guitar)
-    new StrumFretted(guitar, frets, strum)  
-  }
-  
-  def / (chords: Guitar.Chords): Music = {
-    new StrumChords(guitar, chords, strum)  
-  }
-}
-
-class StrumFretted(
-    guitar: Guitar,
-    frets: Guitar.Frets,
-    strum: StrummedStrings) extends Music
-{
-  def add(context: SequenceContext) = 
-  {
-    ???
-  }
-  
-  def duration(context: SequenceContext) = context.durationTiming(0)
-}
-
-class StrumChords(
-    guitar: Guitar,
-    chords: Guitar.Chords,
-    strum: StrummedStrings) extends Music
-{
-  def add(context: SequenceContext) = 
-  {
-    (new StrumFretted(guitar, chords.frets(guitar, context), strum)).add(context)
-  }
-  
-  def duration(context: SequenceContext) = context.durationTiming(0)
 }
