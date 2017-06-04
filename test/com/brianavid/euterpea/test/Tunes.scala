@@ -327,7 +327,7 @@ object Guitar2 extends Function0[Music]
 object Guitar3 extends Function0[Music]
 {
   val g = Guitar.defaultTuning
-  def st = StrumLoHi(0.04)
+  val st = StrumLoHi(0.04)
   val cChord = Guitar.Frets(2->1, 4->2, 5->3)
   val gChord = Guitar.Frets(1->3, 5->2, 6->3)
   def p1Alt(s1: Int, s2: Int) =
