@@ -311,7 +311,7 @@ object Guitar1 extends Function0[Music]
 
 object Guitar2 extends Function0[Music]
 {
-  val g = Guitar.defaultTuning
+  val g = Guitar.standardTuning
   val p1 = g.pick( (5, 2), (), 4, 3, 5, 2, 4, ())
   val p2 = g.pick( 5, (), (4,2), (), 5, 3, 4, ())
   val p1c = p1 on C/Maj
@@ -326,7 +326,7 @@ object Guitar2 extends Function0[Music]
 
 object Guitar3 extends Function0[Music]
 {
-  val g = Guitar.defaultTuning
+  val g = Guitar.standardTuning
   val st = StrumLoHi(0.04)
   val cChord = Frets(2->1, 4->2, 5->3)
   val gChord = Frets(1->3, 5->2, 6->3)
@@ -345,7 +345,7 @@ object Guitar3 extends Function0[Music]
 
 object Guitar4 extends Function0[Music]
 {
-  val g = Guitar.defaultTuning
+  val g = Guitar.standardTuning
   val cChord = Frets(2->1, 4->2, 5->3)
   val gChord = Frets(1->3, 5->2, 6->3)
   val p1c = g.strum(0.02)/cChord
@@ -356,7 +356,7 @@ object Guitar4 extends Function0[Music]
 
 object Guitar5 extends Function0[Music]
 {
-  val g = Guitar.defaultTuning
+  val g = Guitar.standardTuning
   val cChord = Frets(2->1, 4->2, 5->3)
   val gChord = Frets(1->3, 5->2, 6->3)
   val rhythm = Rhythm(N - N - (N-N)/8 - N - N - (N-N)/8 - N/2)
@@ -367,7 +367,7 @@ object Guitar5 extends Function0[Music]
 
 object Guitar6 extends Function0[Music]
 {
-  val g = Guitar.defaultTuning
+  val g = Guitar.standardTuning
   val st = StrumLoHi(0.04)
   val aChord = GuitarChord(A/Min)
   val gChord = GuitarChord(G/Maj)

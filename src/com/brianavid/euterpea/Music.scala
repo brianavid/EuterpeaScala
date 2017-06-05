@@ -110,13 +110,16 @@ trait Music
 
 //-------------------------
 
-//  
+//  Music which has no content or duration and plays no notes
 object EmptyMusic extends Music
 {
   def add(context: SequenceContext) =  TimeState(NoDuration)
   def duration(context: SequenceContext) =  TimeState(NoDuration)
 }
 
+//-------------------------
+
+//  Music which has no notes, but has duration and reports an error message when added
 case class ErrorMusic(message: String) extends Music
 {
   def add(context: SequenceContext) =  context.durationTiming(0).error(message)

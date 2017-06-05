@@ -1,29 +1,42 @@
 package com.brianavid.euterpea
 import scala.language.implicitConversions
 
-case class Guitar(notes: Vector[Music]) {
+//  A Guitar object wraps a set of strings, each of which plays a specific note
+//  The strings are numbered from 1 (highest note) upwards to the lowest
+//  Guitar strings are such that the Note played on one continues playing until another
+//  Note is played on the same string 
+
+case class Guitar private (notes: Vector[Music]) {
   
+  //  The set of strings
   val strings: Vector[Guitar.String] = notes.map(p => new Guitar.String())
   
+  //  A guitar with the same tuning shifted up by a number of semitones as though by a capo on the frets
   def capo(fret: Int) = new Guitar( notes.map{ case N => N; case n => WithTranspose(fret, n)})
   
-  def pitches(stringNumber: Int, offset: Int): Int =
+  //  The pitch of the note on a given string, offset by a fretNumber, and mapped to the octave-equivalent range 0..11
+  def pitches(stringNumber: Int, fretNumber: Int): Int =
   {
-    def musicPitch( m: Music, offset: Int): Int = m match {
+    def musicPitch( m: Music, fretNumber: Int): Int = m match {
       case N => -1
-      case n: Note => n.semitones + offset
-      case WithTranspose( t, m) => musicPitch(m, offset+t)
+      case n: Note => n.semitones + fretNumber
+      case WithTranspose( t, m) => musicPitch(m, fretNumber+t)
     }
-    musicPitch(notes(stringNumber), offset) % 12
+    musicPitch(notes(stringNumber), fretNumber) % 12
   }
   
+  //  Play a picked pattern on the Guitar, which will normally have frets specified (unless open tuned)
   def pick(pattern: PickedStrings*) = new Pick(this, pattern.toList)
   
+  //  Play a strummed pattern on all the strings of the Guitar, which will normally have frets specified (unless open tuned)
   def strum(delay: Double) = new Pick(this, List(StrumLoHi(delay)((1 until notes.size) :_*)))
 }
 
+//  The Guitar object defines the Guitar.String class and the Guitar.Fingering trait
+//  and provides the only public constructors for Guitar values
 object Guitar
 {
+  //  A Guitar.String that can be applied to any music
   class String extends Modifier
   {
     def modifying(music: Music): Music = {
@@ -43,24 +56,44 @@ object Guitar
     def duration(context: SequenceContext) = music.duration(context)
   }
   
-  trait Fingering
-  {
-    def / (frets: FretSequence): Music
-    def /: (frets: FretSequence) = this / frets 
-    def on (chord: GuitarChord): Music = this / chord
-  }
- 
+  //  Construct a guitar with specified tuning
   def tuning(notes: Note*): Guitar = 
   {
     new Guitar((N +: notes.reverse).toVector)
   }
   
-  def defaultTuning(): Guitar = tuning(-E, -A, D, G, B, +E)
+  //  Construct a guitar with standard Guitar tuning
+  def standardTuning(): Guitar = tuning(-E, -A, D, G, B, +E)
 }
 
-case class StrumStyle(isUp: Boolean, delay: Double)
-case class PickedStrings(strings: Set[Int], strum: Option[StrumStyle] = None)
 
+//  When a set of strings are picked together, they may be strummed by introducing a slight delay
+//  between the playing of each string. This is its Strum
+case class Strum (isUp: Boolean, delay: Double)
+{
+  //  A Strum value (with a specific delay and direction) can be applied as a function to a sequence of
+  //  stringNumbers Int parameters to cause those strings to be picked in a strummed manner 
+  def apply(stringNumbers: Int*) = PickedStrings(stringNumbers.toSet,Some(Strum(isUp,delay)))
+}
+
+//  Constructor object for a Strum that goes from low to high
+object StrumLoHi 
+{
+  def apply(delay: Double) = Strum(false,delay)
+}
+
+//  Constructor object for a Strum that goes from high to low
+object StrumHiLo
+{
+  def apply(delay: Double)(strings: Int*) = Strum(false,delay)
+}
+
+//  PickedStrings which are played (or strummed) at the same time
+case class PickedStrings(strings: Set[Int], strum: Option[Strum] = None)
+
+//  PickString values are usually constructed as integer string number or as tuples of two or three strings 
+//  plucked together. As a pattern may contains beats when no strings are picked, the empty "tuple" ("()")
+//  is the PickedStrings for the empty set.
 object PickedStrings
 {
   implicit def PickedStringsFromNone(strings: Unit) = PickedStrings(Set())
@@ -69,32 +102,27 @@ object PickedStrings
   implicit def PickedStringsFrom3(strings: (Int,Int,Int)) = PickedStrings(Set(strings._1, strings._2, strings._3))
 }
 
-case class Strum (isUp: Boolean, delay: Double)
-{
-  def apply(strings: Int*) = PickedStrings(strings.toSet,Some(StrumStyle(isUp,delay)))
-}
 
-object StrumLoHi 
-{
-  def apply(delay: Double) = Strum(false,delay)
-}
-
-object StrumHiLo
-{
-  def apply(delay: Double)(strings: Int*) = Strum(false,delay)
-}
-
-class Pick(
+//  The Pick class is Music which plays a Guitar pattern of PickedStrings with the actual Notes
+//  determined by the context.guitarFrets which must have been established by a FretSequence Modifier
+class Pick private [euterpea] (
     guitar: Guitar,
-    pattern: Seq[PickedStrings]) extends Guitar.Fingering with Music
+    pattern: Seq[PickedStrings]) extends Music
 {
   assert(pattern.forall(_.strings.forall(i => i >= 0 && i < guitar.notes.size)))
   
-  def / (frets: FretSequence): Music = {
+  //  Get the Music combining the PickedStrings pattern and the FretSequence
+  def fretted (frets: FretSequence): Music = {
     frets.check(guitar)
     new PickFretted(guitar, frets, pattern)  
   }
   
+  //  A convenience operator which avoids confusion with the wider use of the / operator for modifiers
+  //  to allow a pattern to play on a specific chord, taking advantage of the implicit conversion 
+  //  of the Chord to GuitarChord
+  def on (chord: GuitarChord): Music = this / chord
+
+  //  Add the PickFretted Music, after requiring that the context.guitarFrets value is present
   def add(context: SequenceContext) = 
   {
     if (context.guitarFrets.isEmpty)
@@ -103,10 +131,11 @@ class Pick(
     }
     else 
     {
-      (this/context.guitarFrets.get).add(context)
+      fretted(context.guitarFrets.get).add(context)
     }
   }
   
+  //  The duration of the PickFretted Music, after requiring that the context.guitarFrets value is present
   def duration(context: SequenceContext) = 
   {
     if (context.guitarFrets.isEmpty)
@@ -115,45 +144,63 @@ class Pick(
     }
     else 
     {
-      (this/context.guitarFrets.get).duration(context)
+      fretted(context.guitarFrets.get).duration(context)
     }
   }
 }
 
-class PickFretted(
+//  Pick a pattern of PickedStrings on a Guitar, with the string Notes determined by the 
+//  FretSequence sequence of FretPosition values
+private class PickFretted (
     guitar: Guitar,
     frets: FretSequence,
     pattern: Seq[PickedStrings]) extends Music
 {
+  //  Add notes corresponding the to combination of PickedStrings and FretSequence
   def add(context: SequenceContext) = 
   {
+    //  How far in the FretSequence (chord sequence) is this pattern  
     val ticksFromStartOfGuitarFrets = context.timeState.ticks - context.guitarFretsStartTime.getOrElse(context.timeState).ticks
     
-    def pickedStringNote(stringNumber: Int, beats: Beat): Music = 
+    //  What is the Note to be played on a particular string wit the FretPosition determined from the FretSequence
+    //  at a particular time (and number of beats within the pattern)
+    def pickedStringNote(stringNumber: Int, nBeats: Beat): Music = 
     {
-      val fretPos = frets.positionAfterTime(context.beat, beats.beatTicks+ticksFromStartOfGuitarFrets, guitar, context)
+      val fretPos = frets.positionAfterTime(context.beat, nBeats.beatTicks+ticksFromStartOfGuitarFrets, guitar, context)
       Guitar.WithString(guitar.strings(stringNumber), fretPos.frets.note(guitar, stringNumber))
     }
     
+    //  What are the set of Notes to be played at this point in the pattern, introducing slight delays
+    //  where necessary for strumming
     def pickedStringNotes(pickedStrings: PickedStrings, beats: Beat): Music = {
+      //  Get all the notes to be played in string order
       val notes = pickedStrings.strings.toVector.sorted.map(pickedStringNote(_, beats))
+      
+      //  Are we strumming?
       val strummedNotes = pickedStrings.strum match
       {
+        //  No - just used the notes undelayed 
         case None => notes
-        case Some(StrumStyle(false,delay)) => 
+        
+        //  Yes - delay in one order or another
+        case Some(Strum(false,delay)) => 
           notes.reverse.zipWithIndex.map{
             case (m:Music,i: Int) => (WithDynamics(Dynamics.delay(delay*i), m))
           }
-        case Some(StrumStyle(true,delay)) => 
+        case Some(Strum(true,delay)) => 
           notes.zipWithIndex.map{
             case (m:Music,i: Int) => (WithDynamics(Dynamics.delay(delay*i), m))
           }
       }
+      
+      //  And play the notes "together", each on a different string of course
       strummedNotes.reduce(_&_)
     }
-      
+    
+    //  The current beat for each point in the sequence
     val beat = context.beat
     
+    //  Add notes for the currentStrings at the current time, followed by (recursively) the remainingPattern
     def addPatternPicksInSequence(
         currentStrings: PickedStrings, 
         remainingPattern: Seq[PickedStrings], 
@@ -161,18 +208,27 @@ class PickFretted(
         context: SequenceContext): TimeState =
     {
       val duration =  if (currentStrings.strings.isEmpty)
-        TimeState(beat)
+        //  No Notes to play at this beat 
+        TimeState(beat)  
       else 
+        //  Play those picked Notes (strumming as needed)
         pickedStringNotes(currentStrings, beat * posWithinPattern).add(context)
+        
+      //  Is this the end of the pattern? 
       if (remainingPattern.isEmpty)
         duration
       else
+        //  No - recursively play the rest of the notes.
+        //    Note that this relies on the TimeState addition to correctly merge the state of 
+        //    the playing Notes on each String in correct time order
         duration + addPatternPicksInSequence(remainingPattern.head, remainingPattern.tail, posWithinPattern+1, 
                                                context.copy(timeState = context.timeState+duration))
     }
     
+    //  Start the recursive addition of the PickedStrings sequence with the head of the pattern
     addPatternPicksInSequence(pattern.head, pattern.tail, 0, context.copy(beat=beat, scaleBeats=1, scaleNum=1))
   }
   
+  //  The duration of the PickFretted is the current Beat multipled by the length of the pattern
   def duration(context: SequenceContext) = context.durationTiming(0) * pattern.length
 }
