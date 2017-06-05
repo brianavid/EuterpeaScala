@@ -6,8 +6,9 @@ trait Modifier
   //	Abstract method to apply the Modifier to Music
   def modifying(music: Music): Music
   
-  //  Two Modifier values combined with /: (but not /) is a MultipleModifiers value
-  def /: (that: Modifier): MultipleModifiers = new MultipleModifiers(List(that, this))
+  //  Two Modifier values combined with / or /: is a MultipleModifiers value
+  def / (that: Modifier): MultipleModifiers = new MultipleModifiers(List(that, this))
+  def /: (that: Modifier): MultipleModifiers = this / that
 }
 
 object Modifier {
@@ -43,8 +44,9 @@ case class MultipleModifiers (modifiers: List[Modifier]) extends Modifier
   def modifying(music: Music): Music =
     modifiers.foldLeft(music)((mus, mod) => mus/mod)
   
-  //  A Modifiers value and a Modifier value combined with /: (but not /) is a (longer) Modifiers value
-  override def /: (that: Modifier): MultipleModifiers = new MultipleModifiers(that :: modifiers)
+  //  A Modifiers value and a Modifier value combined with / or /: is a (longer) Modifiers value
+  override def / (that: Modifier): MultipleModifiers = new MultipleModifiers(that :: modifiers)
+  override def /: (that: Modifier): MultipleModifiers = this / that
 }
 
 //------------------------------------------------------------------------------------------------------------

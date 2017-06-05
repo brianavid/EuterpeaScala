@@ -165,12 +165,12 @@ object Caledonia extends Function0[Music]
 {
   def line(notes: Music, lyricText: String, chords: Music, lastChord: Boolean=false): Music =
   {
-    val asMelody =  Track("melody") /: Channel("melody") /: 
+    val asMelody =  Track("melody") / Channel("melody") / 
                     Instrument(Instruments.Cello)
-    val asHarmony = Track("harmony") /: Channel("harmony") /: 
-                    Instrument(Instruments.Acoustic_Guitar_Nylon) /: 
+    val asHarmony = Track("harmony") / Channel("harmony") / 
+                    Instrument(Instruments.Acoustic_Guitar_Nylon) / 
                     (if (lastChord) Broken(0.05) else Arpeggio(8,1,2,(3,4),1,(3,4),1))
-    val asBass =    Track("bass") /: Channel("bass") /: 
+    val asBass =    Track("bass") / Channel("bass") / 
                     Instrument(Instruments.Acoustic_Bass)
     
     val melody = notes/8/Lyrics(lyricText)
@@ -402,7 +402,12 @@ object Tunes
     "range" -> RangeTest,
     "continuous" -> ContinuousControllerTest,
     "lyrics" -> LyricsTest,
-    "guitar" -> Guitar6,
+    "guitar1" -> Guitar1,
+    "guitar2" -> Guitar2,
+    "guitar3" -> Guitar3,
+    "guitar4" -> Guitar4,
+    "guitar5" -> Guitar5,
+    "guitar6" -> Guitar6,
     "beats" -> Beats)
   val tunes: Map[String,Function0[Music]] = tunesList.toMap
   
