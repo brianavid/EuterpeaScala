@@ -43,87 +43,11 @@ object Guitar
     def duration(context: SequenceContext) = music.duration(context)
   }
   
-  case class FretPosition(fingering: Map[Int,Int])
-  {
-    def stringNumbers = fingering.keys
-    def check(guitar: Guitar) = {
-      assert(stringNumbers.forall(i => i >= 0 && i < guitar.notes.size))
-    }
-    
-    def note(guitar: Guitar, stringNumber: Int): Music = 
-    {
-      if (stringNumber > 0 && stringNumber < guitar.notes.size)
-      {
-        val transpose = fingering.getOrElse(stringNumber, 0)
-        val openStringNote = guitar.notes(stringNumber)
-        if (transpose == 0) openStringNote else WithTranspose(transpose, openStringNote) 
-      } else
-        EmptyMusic
-    }
-  }
-  
-  object FretPosition
-  {
-    def apply(fingers: (Int, Int)*): FretPosition = FretPosition(fingers.toMap)
-  }
-  
-  case class Frets(initial: FretPosition, changes: (Beat, FretPosition)*)
-  {
-    def check(guitar: Guitar) = {
-      initial.check(guitar)
-      changes.foreach(_._2.check(guitar))
-      }
-    
-    def positionAfterTime(beats: Beat): FretPosition = 
-    {
-      if (changes.isEmpty || beats.beatTicks < changes.head._1.beatTicks) initial
-      else Frets(changes.head._2, changes.tail: _*).positionAfterTime(beats - changes.head._1)
-    }
-  }
-  
-  object Frets
-  {
-    def apply(fingers: (Int, Int)*): Frets = new Frets(FretPosition(fingers.toMap))
-  }
-  
-  case class ChordPosition(chord:Chord, barre: Int = 0)
-  {
-    def frets(
-      guitar: Guitar,
-      context: SequenceContext): FretPosition = 
-    {
-      val chordNotes = chord.notes(context)
-      val chordPitches = chordNotes.map{case n: Note => n.semitones}.map(_%12)
-      def stringFretPostition(stringNumber: Int, offset: Int): (Int, Int) = 
-      {
-        val stringPitch = guitar.pitches(stringNumber, offset)
-        if (chordPitches.contains(stringPitch)) (stringNumber, offset)
-        else stringFretPostition(stringNumber, offset+1)
-      }
-      val stringFretPositions = (1 until guitar.strings.size).map(i => stringFretPostition(i, 0)).toMap
-      FretPosition(stringFretPositions)
-    }
-  }
-  
-  case class Chords(initial: ChordPosition, changes: (Beat, ChordPosition)*)
-  {
-    def frets(
-      guitar: Guitar,
-      context: SequenceContext) = Frets(initial.frets(guitar, context), changes.map(c => (c._1, c._2.frets(guitar, context))) : _*)
-  }
-  
-  object Chords
-  {
-    implicit def singleGuitarChord(chord: Chord) = Chords(ChordPosition(chord))
-  }
-
   trait Fingering
   {
-    def / (frets: Frets): Music
-    def /: (frets: Frets) = this / frets 
-    def / (chords: Chords): Music
-    def /: (chords: Chords) = this / chords
-    def on (chords: Chords): Music = this / chords
+    def / (frets: FretSequence): Music
+    def /: (frets: FretSequence) = this / frets 
+    def on (chord: GuitarChord): Music = this / chord
   }
  
   def tuning(notes: Note*): Guitar = 
@@ -162,31 +86,53 @@ object StrumHiLo
 
 class Pick(
     guitar: Guitar,
-    pattern: Seq[PickedStrings]) extends Guitar.Fingering 
+    pattern: Seq[PickedStrings]) extends Guitar.Fingering with Music
 {
-  assert(pattern.forall(_.strings.forall(i => i != 0 && i < guitar.notes.size)))
+  assert(pattern.forall(_.strings.forall(i => i >= 0 && i < guitar.notes.size)))
   
-  def / (frets: Guitar.Frets): Music = {
+  def / (frets: FretSequence): Music = {
     frets.check(guitar)
     new PickFretted(guitar, frets, pattern)  
   }
   
-  def / (chords: Guitar.Chords): Music = {
-    new PickChords(guitar, chords, pattern)  
+  def add(context: SequenceContext) = 
+  {
+    if (context.guitarFrets.isEmpty)
+    {
+      TimeState(0).error("Guitar music is missing required Frets or Chord modifiers")
+    }
+    else 
+    {
+      (this/context.guitarFrets.get).add(context)
+    }
+  }
+  
+  def duration(context: SequenceContext) = 
+  {
+    if (context.guitarFrets.isEmpty)
+    {
+      TimeState(0)
+    }
+    else 
+    {
+      (this/context.guitarFrets.get).duration(context)
+    }
   }
 }
 
 class PickFretted(
     guitar: Guitar,
-    frets: Guitar.Frets,
+    frets: FretSequence,
     pattern: Seq[PickedStrings]) extends Music
 {
   def add(context: SequenceContext) = 
   {
+    val ticksFromStartOfGuitarFrets = context.timeState.ticks - context.guitarFretsStartTime.getOrElse(context.timeState).ticks
+    
     def pickedStringNote(stringNumber: Int, beats: Beat): Music = 
     {
-      val fretPos = frets.positionAfterTime(beats)
-      Guitar.WithString(guitar.strings(stringNumber), fretPos.note(guitar, stringNumber))
+      val fretPos = frets.positionAfterTime(context.beat, beats.beatTicks+ticksFromStartOfGuitarFrets, guitar, context)
+      Guitar.WithString(guitar.strings(stringNumber), fretPos.frets.note(guitar, stringNumber))
     }
     
     def pickedStringNotes(pickedStrings: PickedStrings, beats: Beat): Music = {
@@ -226,19 +172,6 @@ class PickFretted(
     }
     
     addPatternPicksInSequence(pattern.head, pattern.tail, 0, context.copy(beat=beat, scaleBeats=1, scaleNum=1))
-  }
-  
-  def duration(context: SequenceContext) = context.durationTiming(0) * pattern.length
-}
-
-class PickChords(
-    guitar: Guitar,
-    chords: Guitar.Chords,
-    pattern: Seq[PickedStrings]) extends Music
-{
-  def add(context: SequenceContext) = 
-  {
-    (new PickFretted(guitar, chords.frets(guitar, context), pattern)).add(context)
   }
   
   def duration(context: SequenceContext) = context.durationTiming(0) * pattern.length

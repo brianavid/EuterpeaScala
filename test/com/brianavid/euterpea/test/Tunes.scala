@@ -165,12 +165,12 @@ object Caledonia extends Function0[Music]
 {
   def line(notes: Music, lyricText: String, chords: Music, lastChord: Boolean=false): Music =
   {
-    val asMelody =  Track("melody") / Channel("melody") / 
+    val asMelody =  Track("melody") /: Channel("melody") /: 
                     Instrument(Instruments.Cello)
-    val asHarmony = Track("harmony") / Channel("harmony") / 
-                    Instrument(Instruments.Acoustic_Guitar_Nylon) / 
+    val asHarmony = Track("harmony") /: Channel("harmony") /: 
+                    Instrument(Instruments.Acoustic_Guitar_Nylon) /: 
                     (if (lastChord) Broken(0.05) else Arpeggio(8,1,2,(3,4),1,(3,4),1))
-    val asBass =    Track("bass") / Channel("bass") / 
+    val asBass =    Track("bass") /: Channel("bass") /: 
                     Instrument(Instruments.Acoustic_Bass)
     
     val melody = notes/8/Lyrics(lyricText)
@@ -328,8 +328,8 @@ object Guitar3 extends Function0[Music]
 {
   val g = Guitar.defaultTuning
   val st = StrumLoHi(0.04)
-  val cChord = Guitar.Frets(2->1, 4->2, 5->3)
-  val gChord = Guitar.Frets(1->3, 5->2, 6->3)
+  val cChord = Frets(2->1, 4->2, 5->3)
+  val gChord = Frets(1->3, 5->2, 6->3)
   def p1Alt(s1: Int, s2: Int) =
     g.pick( (s1, 2), (), s2, 3, s1, 2, s2, ())
   def p2Alt(s1: Int, s2: Int) =
@@ -346,11 +346,38 @@ object Guitar3 extends Function0[Music]
 object Guitar4 extends Function0[Music]
 {
   val g = Guitar.defaultTuning
-  val cChord = Guitar.Frets(2->1, 4->2, 5->3)
-  val gChord = Guitar.Frets(1->3, 5->2, 6->3)
+  val cChord = Frets(2->1, 4->2, 5->3)
+  val gChord = Frets(1->3, 5->2, 6->3)
   val p1c = g.strum(0.02)/cChord
   val p1g = g.strum(0.02)/gChord
   val tune = Instrument(Instruments.Acoustic_Guitar_Steel) /: Octave(-1) /: Tempo(160) /: (Rest - (p1c*4 - p1g*4))
+  def apply(): Music = tune
+}
+
+object Guitar5 extends Function0[Music]
+{
+  val g = Guitar.defaultTuning
+  val cChord = Frets(2->1, 4->2, 5->3)
+  val gChord = Frets(1->3, 5->2, 6->3)
+  val rhythm = Rhythm(N - N - (N-N)/8 - N - N - (N-N)/8 - N/2)
+  val p1c = (g.strum(0.02)*9) / rhythm / (cChord/1 - gChord/1)
+  val tune = Instrument(Instruments.Acoustic_Guitar_Steel) /: Octave(-1) /: Tempo(160) /: (Rest - (p1c))
+  def apply(): Music = tune
+}
+
+object Guitar6 extends Function0[Music]
+{
+  val g = Guitar.defaultTuning
+  val st = StrumLoHi(0.04)
+  val aChord = GuitarChord(A/Min)
+  val gChord = GuitarChord(G/Maj)
+  val fChord = GuitarChord(F/Maj)
+  val eChord = GuitarChord(E/Maj)
+  val chordSequence = (aChord*2 - gChord*2 - fChord*2 - eChord*2)/1
+  def p1 = g.pick( (0, 2), (), 4, 3, 0, 2, 4, ())
+  def p2 = g.pick( 0, (), st(4,2), (), 0, 3, 4, ())
+  def pattern = (p1 - p2)/8 *4
+  val tune = Instrument(Instruments.Acoustic_Guitar_Steel) /: Octave(-1) /: Tempo(160) /: (pattern/chordSequence)
   def apply(): Music = tune
 }
 
@@ -375,7 +402,7 @@ object Tunes
     "range" -> RangeTest,
     "continuous" -> ContinuousControllerTest,
     "lyrics" -> LyricsTest,
-    "guitar" -> Guitar3,
+    "guitar" -> Guitar6,
     "beats" -> Beats)
   val tunes: Map[String,Function0[Music]] = tunesList.toMap
   

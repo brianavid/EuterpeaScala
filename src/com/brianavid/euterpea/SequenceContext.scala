@@ -42,7 +42,9 @@ private[euterpea] case class SequenceContext (
   val dynamics: List[ContextDynamics] = Nil,//  The set of dynamics affecting the sequence
   val rangeLow: Note = N,                   //  The lowest Note to be used - octave-shifting as needed 
   val rangeHigh: Note = N,                  //  The highest Note to be used - octave-shifting as needed
-  val onString: Option[Guitar.String] = None)
+  val onString: Option[Guitar.String] = None,  //  An optional Guitar string on which thew note may sound
+  val guitarFrets: Option[FretSequence] = None,//  The Guitar Frets sequence which give pitches to the pick/strum patterns 
+  val guitarFretsStartTime: Option[TimeState] = None)  //  The time at which the current guitarFrets started
 {
   //  The TimeState of the current duration at the current tempo
   def durationTiming(noteCount: Int) = 

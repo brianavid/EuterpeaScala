@@ -117,6 +117,12 @@ object EmptyMusic extends Music
   def duration(context: SequenceContext) =  TimeState(NoDuration)
 }
 
+case class ErrorMusic(message: String) extends Music
+{
+  def add(context: SequenceContext) =  context.durationTiming(0).error(message)
+  def duration(context: SequenceContext) =  context.durationTiming(0)
+}
+
 //-------------------------
 
 //  Combining two pieces of music sequentially by adding the first at the current timeState and then the second

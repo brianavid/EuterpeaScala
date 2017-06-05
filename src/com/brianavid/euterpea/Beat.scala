@@ -5,10 +5,12 @@ import language.implicitConversions
 //  At its basic, it is a Whole, Half, Quarter, Eighth ... note
 //  Beats can be added together, dotted, or lengthened by repetition
 
-class Beat(val beatTicks: Int) extends Modifier 
+class Beat(val beatTicks: Int) extends Modifier with FretsModifier
 {
   def modifying(music: Music): Music =
     new WithBeat (this, music)
+  def modifyingFrets(fs: FretSequence): FretSequence =
+    new FretSequenceWithBeat (this, fs)
   
   def dot = new Beat(beatTicks * 3 / 2) //  Note and a half
   def +(next: Beat) = new Beat(beatTicks + next.beatTicks) //  Simply added together
@@ -51,10 +53,12 @@ case class Dot(beat: Beat) extends Beat(beat.beatTicks * 3 / 2) //  Note and a h
 
 //  The BeatScale Modifier scales the beat to allow e.g. triplets and quintuplets  
 
-case class BeatScale(val numberOfNotes: Integer, val numberOfBeats: Integer) extends Modifier
+case class BeatScale(val numberOfNotes: Integer, val numberOfBeats: Integer) extends Modifier with FretsModifier
 {
   def modifying(music: Music): Music =
     new WithBeatScale (numberOfNotes, numberOfBeats, music)
+  def modifyingFrets(fs: FretSequence): FretSequence =
+    new FretSequenceWithBeatScaling (numberOfNotes, numberOfBeats, fs)
 }
 object Dot extends BeatScale(2,3)
 object DotDot extends BeatScale(4,7)
