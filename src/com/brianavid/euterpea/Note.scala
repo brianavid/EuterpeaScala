@@ -119,8 +119,17 @@ case class Note(
     val startTicks = (context.timeState + rhythmPreRest).ticks + timingInc
     val endTicks = startTicks + ((noteTiming - rhythmPreRest - rhythmPostRest).ticks * (context.getNoteWidth + dynamics.noteWidthInc)).toInt
     
+    //  Is this Note on a (Guitar) String? 
+    //  With a Guitar modifier, let the Guitar choose the string for the Note
+    val onString = (context.onString,context.onGuitar) match
+    {
+      case (None,None) => None
+      case (Some(string),_) => Some(string)
+      case (None,Some(guitar)) => guitar.pitchString(pitchInRange)
+    }
+    
     //  If this Note is on a (Guitar) String, stop playing any previous Note on the same String 
-    context.onString match
+    onString match
     {
       case None => ()
       case Some(string) => context.timeState.stopString(string, Some(startTicks))
@@ -131,7 +140,7 @@ case class Note(
     track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_ON, channel, pitchInRange, context.volume+dynamics.volumeInc), startTicks))
     
     //  Is this Note on a (Guitar) String? 
-    context.onString match
+    onString match
     {
       case None => 
       {

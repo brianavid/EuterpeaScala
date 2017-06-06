@@ -6,7 +6,7 @@ import scala.language.implicitConversions
 //  Guitar strings are such that the Note played on one continues playing until another
 //  Note is played on the same string 
 
-case class Guitar private (notes: Vector[Music]) {
+case class Guitar private (notes: Vector[Music]) extends Modifier {
   
   //  The set of strings
   val strings: Vector[Guitar.String] = notes.map(p => new Guitar.String())
@@ -14,15 +14,31 @@ case class Guitar private (notes: Vector[Music]) {
   //  A guitar with the same tuning shifted up by a number of semitones as though by a capo on the frets
   def capo(fret: Int) = new Guitar( notes.map{ case N => N; case n => WithTranspose(fret, n)})
   
+  //  The pitch (in absolute semitones for a single Note or a transposed Note
+  def musicPitch( m: Music, fretNumber: Int = 0): Int = m match {
+    case N => -1
+    case n: Note => n.absoluteSemitones + fretNumber
+    case WithTranspose( t, m) => musicPitch(m, fretNumber+t)
+  }
+  
   //  The pitch of the note on a given string, offset by a fretNumber, and mapped to the octave-equivalent range 0..11
   def pitches(stringNumber: Int, fretNumber: Int): Int =
   {
-    def musicPitch( m: Music, fretNumber: Int): Int = m match {
-      case N => -1
-      case n: Note => n.semitones + fretNumber
-      case WithTranspose( t, m) => musicPitch(m, fretNumber+t)
-    }
     musicPitch(notes(stringNumber), fretNumber) % 12
+  }
+  
+  //  The absolute pitch of the note on a given string
+  lazy val stringNotes = strings zip (notes.map(m => musicPitch(m)))
+  
+  //  The string best suited to play a particular pitch - the one which would use the lowest fret
+  def pitchString(pitch: Int): Option[Guitar.String] =
+  {
+    //  For each string, what fret would be used to play the note?
+    val stringFrets = stringNotes.map(sn => (sn._1, sn._2 - pitch))
+    
+    //  For all ones with a non-negative fret position, pick the one with the lowest fret
+    val nearestString = stringFrets.filter(_._2 >= 0).sortBy(_._2).take(1)
+    if (nearestString.isEmpty) None else Some(nearestString.head._1)
   }
   
   //  Play a picked pattern on the Guitar, which will normally have frets specified (unless open tuned)
@@ -30,6 +46,9 @@ case class Guitar private (notes: Vector[Music]) {
   
   //  Play a strummed pattern on all the strings of the Guitar, which will normally have frets specified (unless open tuned)
   def strum(delay: Double) = new Pick(this, List(StrumLoHi(delay)((1 until notes.size) :_*)))
+  
+  //  A Guitar can be a Modifier, and the Music will play notes on a Guitar-selected string
+  def modifying( music: Music) = WithGuitar(this, music)
 }
 
 //  The Guitar object defines the Guitar.String class and the Guitar.Fingering trait
@@ -46,7 +65,7 @@ object Guitar
 
   //  Add the music, played on the Guitar string, so that notes sound until a later note sounds on the same string
   
-  private[euterpea] case class WithString( string: String, music: Music) extends Music
+  private[euterpea] case class WithString( string: Guitar.String, music: Music) extends Music
   {
     def add(context: SequenceContext) =
     {
@@ -64,6 +83,18 @@ object Guitar
   
   //  Construct a guitar with standard Guitar tuning
   def standardTuning(): Guitar = tuning(-E, -A, D, G, B, +E)
+}
+
+//  Add the music, played on the Guitar-selected string, so that notes sound until a later note sounds on the same string
+  
+private[euterpea] case class WithGuitar(guitar: Guitar, music: Music) extends Music
+{
+  def add(context: SequenceContext) =
+  {
+    music.add(context.copy(onGuitar=Some(guitar)))
+  }
+  
+  def duration(context: SequenceContext) = music.duration(context)
 }
 
 

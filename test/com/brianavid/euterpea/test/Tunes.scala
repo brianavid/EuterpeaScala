@@ -380,7 +380,17 @@ object Guitar6 extends Function0[Music]
   val pattern = (p1 - p2)/8 *4
   val tune = Instrument(Instruments.Acoustic_Guitar_Steel) /: Octave(-1) /: Tempo(160) /: ((pattern/chordSequence)*2)
   def apply(): Music = tune
-}
+}  
+
+object Guitar7 extends Function0[Music]
+{
+  val g = Guitar.standardTuning.capo(1)
+  val notes = B/Dot - G/8 - E - (F -- G)/8 | A - C - F/Dot - Rest/8 | D - E/8 - F/8 - G - G | G - D - E - F |
+              A/Dot - (G - F - E - D - C)/8 | F - G/8 - A/8 - B - Rest/8 - G/8 | F - (G - A - C - D - E - F)/8 | G/2 - A - Rest   
+  val tune = Instrument(Instruments.Acoustic_Guitar_Nylon) /: Octave(-1) /: FMaj /: Tempo(120) /: g /: (notes)
+  def apply(): Music = tune
+}  
+
 
 object Tunes 
 {
@@ -409,6 +419,7 @@ object Tunes
     "guitar4" -> Guitar4,
     "guitar5" -> Guitar5,
     "guitar6" -> Guitar6,
+    "guitar7" -> Guitar7,
     "beats" -> Beats)
   val tunes: Map[String,Function0[Music]] = tunesList.toMap
   
