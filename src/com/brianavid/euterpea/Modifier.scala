@@ -1,5 +1,6 @@
 package com.brianavid.euterpea
 import language.implicitConversions
+import scala.collection.mutable.ListBuffer
 
 trait Modifier
 {
@@ -7,7 +8,7 @@ trait Modifier
   def modifying(music: Music): Music
   
   //  Two Modifier values combined with / or /: is a MultipleModifiers value
-  def / (that: Modifier): MultipleModifiers = new MultipleModifiers(List(that, this))
+  def / (that: Modifier): MultipleModifiers = new MultipleModifiers(ListBuffer(this, that))
   def /: (that: Modifier): MultipleModifiers = this / that
 }
 
@@ -39,13 +40,13 @@ object NoModifier extends Modifier
 //------------------------------------------------------------------------------------------------------------
 
 //  Two or more Modifier values, combined as a MultipleModifiers is also a Modifier, acting as the combination of all contained modifiers
-case class MultipleModifiers (modifiers: List[Modifier]) extends Modifier
+case class MultipleModifiers (modifiers: ListBuffer[Modifier]) extends Modifier
 {
   def modifying(music: Music): Music =
     modifiers.foldLeft(music)((mus, mod) => mus/mod)
   
   //  A Modifiers value and a Modifier value combined with / or /: is a (longer) Modifiers value
-  override def / (that: Modifier): MultipleModifiers = new MultipleModifiers(that :: modifiers)
+  override def / (that: Modifier): MultipleModifiers = new MultipleModifiers(modifiers :+ that)
   override def /: (that: Modifier): MultipleModifiers = this / that
 }
 

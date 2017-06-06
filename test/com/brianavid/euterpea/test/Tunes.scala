@@ -165,12 +165,12 @@ object Caledonia extends Function0[Music]
 {
   def line(notes: Music, lyricText: String, chords: Music, lastChord: Boolean=false): Music =
   {
-    val asMelody =  Track("melody") / Channel("melody") / 
+    val asMelody =  Track("melody") /: Channel("melody") /: 
                     Instrument(Instruments.Cello)
-    val asHarmony = Track("harmony") / Channel("harmony") / 
-                    Instrument(Instruments.Acoustic_Guitar_Nylon) / 
+    val asHarmony = Track("harmony") /: Channel("harmony") /:
+                    Instrument(Instruments.Acoustic_Guitar_Nylon) /: 
                     (if (lastChord) Broken(0.05) else Arpeggio(8,1,2,(3,4),1,(3,4),1))
-    val asBass =    Track("bass") / Channel("bass") / 
+    val asBass =    Track("bass") /: Channel("bass") /: 
                     Instrument(Instruments.Acoustic_Bass)
     
     val melody = notes/8/Lyrics(lyricText)
@@ -369,15 +369,16 @@ object Guitar6 extends Function0[Music]
 {
   val g = Guitar.standardTuning
   val st = StrumLoHi(0.04)
-  val aChord = GuitarChord(A/Min)
-  val gChord = GuitarChord(G/Maj)
-  val fChord = GuitarChord(F/Maj)
-  val eChord = GuitarChord(E/Maj)
-  val chordSequence = (aChord*2 - gChord*2 - fChord*2 - eChord*2)/1
+  val aMin = GuitarChord(A/Min)
+  val gMaj = GuitarChord(G/Maj)
+  val fMaj = GuitarChord(F/Maj)
+  val eMaj = GuitarChord(E/Maj)                                                                                                                  
+  val e7 = GuitarChord(E/Dom7)                                                                                                                
+  val chordSequence = (aMin*2 - gMaj*2 - fMaj*2 - eMaj - e7)/1
   def p1 = g.pick( (0, 2), (), 4, 3, 0, 2, 4, ())
-  def p2 = g.pick( 0, (), st(4,2), (), 0, 3, 4, ())
-  def pattern = (p1 - p2)/8 *4
-  val tune = Instrument(Instruments.Acoustic_Guitar_Steel) /: Octave(-1) /: Tempo(160) /: (pattern/chordSequence)
+  val p2 = g.pick( 0, (), st(4,2), (), 0, 3, 4, ())
+  val pattern = (p1 - p2)/8 *4
+  val tune = Instrument(Instruments.Acoustic_Guitar_Steel) /: Octave(-1) /: Tempo(160) /: ((pattern/chordSequence)*2)
   def apply(): Music = tune
 }
 
