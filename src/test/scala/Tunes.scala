@@ -378,7 +378,9 @@ object Guitar6 extends Function0[Music]
   def p1 = g.pick( (0, 2), (), 4, 3, 0, 2, 4, ())
   val p2 = g.pick( 0, (), st(4,2), (), 0, 1, 4, ())
   val pattern = (p1 - p2)/8 *4
-  val tune = Instrument(Instruments.Acoustic_Guitar_Steel) /: Octave(-1) /: Tempo(160) /: ((pattern/chordSequence)*2)
+  val tune = Instrument(Instruments.Acoustic_Guitar_Steel) /: 
+             Octave(-1) /: Tempo(160) /: Dynamics.swing(8, 0.05) /: 
+             ((pattern/chordSequence)*2)
   def apply(): Music = tune
 }  
 

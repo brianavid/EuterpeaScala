@@ -194,14 +194,14 @@ case class ChordPosition(chord:Chord, barre: Int)
     //  Find the collection of stringFretPositions for the chord as a map of stringNumber to fretNumber for all strings
     val stringFretPositions = (1 until guitar.strings.size).map(i => stringFretPostition(i, barre)).toMap
     
-    //  What is the rootPitch of the chord
-    val rootPitch = chord.rootNote.get.absoluteSemitones%12
+    //  What is the bottom of the chord
+    val bottom = chord.getLowest(context).absoluteSemitones%12
     
     //  And so what string (high to low) has that root note
     def findRootStringNumber(stringNumber: Int): Option[Int] =
     {
       if (stringNumber <= 0) None
-      else if (guitar.pitches(stringNumber, stringFretPositions(stringNumber)) == rootPitch) Some(stringNumber)
+      else if (guitar.pitches(stringNumber, stringFretPositions(stringNumber)) == bottom) Some(stringNumber)
       else findRootStringNumber(stringNumber-1)
     }
     val rootStringNumber = findRootStringNumber(guitar.strings.size-1)

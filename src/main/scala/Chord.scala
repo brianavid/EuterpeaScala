@@ -137,9 +137,9 @@ private[euterpea] case class Chord(
     transforms: List[Harmony => Harmony] = Nil) extends Music 
 {
   def root = 
-    {
+  {
     new Note(0, "?", chord=Some(this))
-    }
+  }
   
   //  What is the rootNote note 
   def getRoot(context: SequenceContext) = rootNote match
@@ -158,6 +158,11 @@ private[euterpea] case class Chord(
       val triad =  Harmony.triad(chordPosition).map(intervals)
       Note(context.tonic.semitones+triad.min, "?")
     }
+  }
+  
+  def getLowest(context: SequenceContext): Note =
+  {
+    notes(context).sortBy(_.absoluteSemitones).head
   }
   
   //  Add the Chord to the current sequence processing lyrics, and root extraction

@@ -27,7 +27,7 @@ case class Guitar private (notes: Vector[Music]) extends Modifier {
     musicPitch(notes(stringNumber), fretNumber) % 12
   }
   
-  //  The absolute pitch of the note on a given string
+  //  All strings, each zipped with the absolute pitch of the note on that string
   lazy val stringNotes = strings zip (notes.map(m => musicPitch(m)))
   
   //  The string best suited to play a particular pitch - the one which would use the lowest fret
@@ -104,7 +104,7 @@ case class Strum (isUp: Boolean, delay: Double)
 {
   //  A Strum value (with a specific delay and direction) can be applied as a function to a sequence of
   //  stringNumbers Int parameters to cause those strings to be picked in a strummed manner 
-  def apply(stringNumbers: Int*) = PickedStrings(stringNumbers.toSet,Some(Strum(isUp,delay)))
+  def apply(stringNumbers: Int*) = PickedStrings(stringNumbers.toSet,Some(this))
 }
 
 //  Constructor object for a Strum that goes from low to high
@@ -116,7 +116,7 @@ object StrumLoHi
 //  Constructor object for a Strum that goes from high to low
 object StrumHiLo
 {
-  def apply(delay: Double)(strings: Int*) = Strum(false,delay)
+  def apply(delay: Double) = Strum(true,delay)
 }
 
 //  PickedStrings which are played (or strummed) at the same time
