@@ -175,36 +175,44 @@ case class ChordPosition(chord:Chord, barre: Int)
     guitar: Guitar,
     context: SequenceContext): FretPosition = 
   {
-    //  What notes are in the chord?
-    val chordNotes = chord.notes(context)
-    
-    //  What octave-equivalent pitches are these notes
-    val chordPitches = chordNotes.map{case n: Note => n.absoluteSemitones}.map(_%12)
-    
-    //  Given a stringFretPostition string number and a lowest fret position (e.g. for a barre),
-    //  recursively find the fret position that results in a note contained in chordPitches,
-    //  increasing fretNumber until we find one
-    def stringFretPostition(stringNumber: Int, fretNumber: Int): (Int, Int) = 
-    {
-      val pitch = guitar.pitches(stringNumber, fretNumber)
-      if (chordPitches.contains(pitch)) (stringNumber, fretNumber)
-      else stringFretPostition(stringNumber, fretNumber+1)
-    }
-    
     //  Find the collection of stringFretPositions for the chord as a map of stringNumber to fretNumber for all strings
-    val stringFretPositions = (1 until guitar.strings.size).map(i => stringFretPostition(i, barre)).toMap
-    
-    //  What is the bottom of the chord
-    val bottom = chord.getLowest(context).absoluteSemitones%12
-    
-    //  And so what string (high to low) has that root note
-    def findRootStringNumber(stringNumber: Int): Option[Int] =
+    val stringFretPositions = 
     {
-      if (stringNumber <= 0) None
-      else if (guitar.pitches(stringNumber, stringFretPositions(stringNumber)) == bottom) Some(stringNumber)
-      else findRootStringNumber(stringNumber-1)
+      //  What notes are in the chord?
+      val chordNotes = chord.notes(context)
+      
+      //  What octave-equivalent pitches are these notes
+      val chordPitches = chordNotes.map{case n: Note => n.absoluteSemitones}.map(_%12)
+      
+      //  Given a stringFretPostition string number and a lowest fret position (e.g. for a barre),
+      //  recursively find the fret position that results in a note contained in chordPitches,
+      //  increasing fretNumber until we find one
+      def stringFretPostition(stringNumber: Int, fretNumber: Int): (Int, Int) = 
+      {
+        val pitch = guitar.pitches(stringNumber, fretNumber)
+        if (chordPitches.contains(pitch)) (stringNumber, fretNumber)
+        else stringFretPostition(stringNumber, fretNumber+1)
+      }
+
+      (1 until guitar.strings.size).map(i => stringFretPostition(i, barre)).toMap
     }
-    val rootStringNumber = findRootStringNumber(guitar.strings.size-1)
+    
+    //  Which string number has the  root of the Chord
+    val rootStringNumber = 
+    {
+      //  What is the bottom of the chord
+      val bottom = chord.getLowest(context).absoluteSemitones%12
+      
+      //  And so what string (high to low) has that root note
+      def findRootStringNumber(stringNumber: Int): Option[Int] =
+      {
+        if (stringNumber <= 0) None
+        else if (guitar.pitches(stringNumber, stringFretPositions(stringNumber)) == bottom) Some(stringNumber)
+        else findRootStringNumber(stringNumber-1)
+      }
+
+      findRootStringNumber(guitar.strings.size-1)
+    }
     
     //  A ChordPosition is a FretPosition for the computed stringFretPositions for the chord
     FretPosition(stringFretPositions, rootStringNumber)
@@ -230,7 +238,7 @@ case class GuitarChord(chordPosition: ChordPosition) extends FretSequence
 //  The GuitarChord object wraps a couple of constructors for FretSequence
 object GuitarChord
 {
-  //  The optional barre value for a GuitarChord means that fret numbers lower that that cannot be used
+  //  The optional barre value for a GuitarChord means that fret numbers lower than that cannot be used
   def apply(chord: Chord, barre: Int = 0): GuitarChord = new GuitarChord(ChordPosition(chord, barre))
   
   //  In the context of a FretSequence, a chord can be implicitly converted to a GuitarChord
