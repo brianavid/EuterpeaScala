@@ -43,7 +43,7 @@ object NoModifier extends Modifier
 case class MultipleModifiers (modifiers: ListBuffer[Modifier]) extends Modifier
 {
   def modifying(music: Music): Music =
-    modifiers.foldLeft(music)((mus, mod) => mus/mod)
+    modifiers.foldRight(music)((mod, mus) => mus/mod)
   
   //  A Modifiers value and a Modifier value combined with / or /: is a (longer) Modifiers value
   override def / (that: Modifier): MultipleModifiers = new MultipleModifiers(modifiers :+ that)

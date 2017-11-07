@@ -8,9 +8,9 @@ import language.implicitConversions
 class Beat(val beatTicks: Int) extends Modifier with FretsModifier
 {
   def modifying(music: Music): Music =
-    new WithBeat (this, music)
+    new WithBeat (this, new WithBeatScale (1, 1, music))
   def modifyingFrets(fs: FretSequence): FretSequence =
-    new FretSequenceWithBeat (this, fs)
+    new FretSequenceWithBeat (this, new FretSequenceWithBeatScaling (1, 1, fs))
   
   def dot = new Beat(beatTicks * 3 / 2) //  Note and a half
   def +(next: Beat) = new Beat(beatTicks + next.beatTicks) //  Simply added together
