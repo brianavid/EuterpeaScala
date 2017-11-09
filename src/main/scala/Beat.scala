@@ -8,9 +8,9 @@ import language.implicitConversions
 class Beat(val beatTicks: Int) extends Modifier with FretsModifier
 {
   def modifying(music: Music): Music =
-    new WithBeat (this, new WithBeatScale (1, 1, music))
+    new WithBeat (this, music)
   def modifyingFrets(fs: FretSequence): FretSequence =
-    new FretSequenceWithBeat (this, new FretSequenceWithBeatScaling (1, 1, fs))
+    new FretSequenceWithBeat (this, fs)
   
   def dot = new Beat(beatTicks * 3 / 2) //  Note and a half
   def +(next: Beat) = new Beat(beatTicks + next.beatTicks) //  Simply added together
@@ -69,24 +69,34 @@ object DotDot extends BeatScale(4,7)
 
 private[euterpea] case class WithBeat(beat: Beat, music: Music) extends Music
 {
+  //  When changing the beat, if the BeatScale was no explicitly also set at the current 
+  //  depth in the Music structure, then also set the BeatScale back to the default 1:1
+  def contextForBeat(context: SequenceContext) =
+    if (context.scaleDepth == context.depth)
+      context.copy(beat=beat)
+    else
+      context.copy(beat=beat,scaleNum=1,scaleBeats=1,scaleDepth=context.depth)
+      
   def add(context: SequenceContext) =
   {
-    music.add(context.copy(beat=beat))
+    music.add(contextForBeat(context))
   }
   
-  def duration(context: SequenceContext) = music.duration(context.copy(beat=beat))
+  def duration(context: SequenceContext) = music.duration(contextForBeat(context))
 }
 
 //-------------------------
 
 //  Add the music, scaling the beat for (e.g.) triplets or quintuplets
+//  Also note the depth in the Music structure at which it is set, so that it may be reset by
+//  a lower Beat modifier
 
 private[euterpea] case class WithBeatScale(numberOfNotes: Integer, numberOfBeats: Integer, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    music.add(context.copy(scaleNum=numberOfNotes,scaleBeats=numberOfBeats))
+    music.add(context.copy(scaleNum=numberOfNotes,scaleBeats=numberOfBeats, scaleDepth=context.depth))
   }
   
-  def duration(context: SequenceContext) = music.duration(context.copy(scaleNum=numberOfNotes,scaleBeats=numberOfBeats))
+  def duration(context: SequenceContext) = music.duration(context.copy(scaleNum=numberOfNotes,scaleBeats=numberOfBeats, scaleDepth=context.depth))
 }

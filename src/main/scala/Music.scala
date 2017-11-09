@@ -110,11 +110,11 @@ trait Music
 
 //-------------------------
 
-//  Music which has no content or duration and plays no notes
+//  Music which has no content and plays no notes - used as the basis for a Chord
 object EmptyMusic extends Music
 {
-  def add(context: SequenceContext) =  TimeState(NoDuration)
-  def duration(context: SequenceContext) =  TimeState(NoDuration)
+  def add(context: SequenceContext) = context.durationTiming(0)
+  def duration(context: SequenceContext) =  context.durationTiming(0)
 }
 
 //-------------------------
@@ -130,20 +130,21 @@ case class ErrorMusic(message: String) extends Music
 
 //  Combining two pieces of music sequentially by adding the first at the current timeState and then the second
 //  at the timeState after the duration of the first
+//  The two parts are at a lower structural depth
 case class - (a: Music, b: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    val durationTiming1 = a.add(context.copy(tiedAddition=NoDuration))
-    val durationTiming2 = b.add(context.copy(timeState = context.timeState+durationTiming1))
+    val durationTiming1 = a.add(context.copy(tiedAddition=NoDuration, depth=context.depth+1))
+    val durationTiming2 = b.add(context.copy(timeState = context.timeState+durationTiming1, depth=context.depth+1))
     
     durationTiming1 + durationTiming2
   }
   
   def duration(context: SequenceContext) =
   {
-    val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration))
-    val durationTiming2 = b.duration(context.copy(timeState = context.timeState+durationTiming1))
+    val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration, depth=context.depth+1))
+    val durationTiming2 = b.duration(context.copy(timeState = context.timeState+durationTiming1, depth=context.depth+1))
     
     durationTiming1 + durationTiming2
   }
@@ -152,20 +153,21 @@ case class - (a: Music, b: Music) extends Music
 //-------------------------
 
 //  Combining two pieces of music sequentially, at the same time adjusting note width and volume to sound like a slur
+//  The two parts are at a lower structural depth
 case class Slur(a: Music, b: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    val durationTiming1 = a.add(context.copy(noteWidth=1.0, tiedAddition=NoDuration))
-    val durationTiming2 = b.add(context.copy(noteWidth = context.noteWidth*0.7, volume = context.volume-Volume.VolumeInc, timeState = context.timeState+durationTiming1))
+    val durationTiming1 = a.add(context.copy(noteWidth=1.0, tiedAddition=NoDuration, depth=context.depth+1))
+    val durationTiming2 = b.add(context.copy(noteWidth = context.noteWidth*0.7, volume = context.volume-Volume.VolumeInc, timeState = context.timeState+durationTiming1, depth=context.depth+1))
     
     durationTiming1 + durationTiming2
   }
   
   def duration(context: SequenceContext) =
   {
-    val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration))
-    val durationTiming2 = b.duration(context.copy(timeState = context.timeState+durationTiming1))
+    val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration, depth=context.depth+1))
+    val durationTiming2 = b.duration(context.copy(timeState = context.timeState+durationTiming1, depth=context.depth+1))
     
     durationTiming1 + durationTiming2
   }
@@ -174,11 +176,12 @@ case class Slur(a: Music, b: Music) extends Music
 //-------------------------
 
 //  Combining two pieces of music sequentially, each of which must be whole bars
+//  The two parts are at a lower structural depth
 private[euterpea] case class BarJoin(a: Music, b: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
-    val durationTiming1 = a.add(context.copy(tiedAddition=NoDuration))
+    val durationTiming1 = a.add(context.copy(tiedAddition=NoDuration, depth=context.depth+1))
     val barPosition = context.timeState+durationTiming1
     
     val checkedDurationTiming = if (!(barPosition).isAtBar(context.timeSig))
@@ -188,15 +191,15 @@ private[euterpea] case class BarJoin(a: Music, b: Music) extends Music
     else
       durationTiming1
 
-    val durationTiming2 = b.add(context.copy(timeState = context.timeState+checkedDurationTiming))
+    val durationTiming2 = b.add(context.copy(timeState = context.timeState+checkedDurationTiming, depth=context.depth+1))
     
     checkedDurationTiming + durationTiming2
   }
   
   def duration(context: SequenceContext) =
   {
-    val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration))
-    val durationTiming2 = b.duration(context.copy(timeState = context.timeState+durationTiming1))
+    val durationTiming1 = a.duration(context.copy(tiedAddition=NoDuration, depth=context.depth+1))
+    val durationTiming2 = b.duration(context.copy(timeState = context.timeState+durationTiming1, depth=context.depth+1))
     
     durationTiming1 + durationTiming2
   }
