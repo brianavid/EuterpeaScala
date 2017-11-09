@@ -72,7 +72,9 @@ private[euterpea] case class TimeState(
   def max(t: TimeState) = 
     {
       val later = if (t.ticks > ticks) t else this
-      later.copy(controls=controls.merge(t.controls), errors=(errors ++ t.errors), playingStrings=(playingStrings ++ t.playingStrings))
+      val merged = later.copy(controls=controls.merge(t.controls), errors=(errors ++ t.errors), playingStrings=(playingStrings ++ t.playingStrings))
+      if (t.ticks == ticks) merged
+      else merged.error(s"Parallel music has different lengths: ${t.ticks} != $ticks")
     }
   
   //  A copy of the TimeState which additionally has the current time as the timeSigChangeTime change, 
@@ -133,7 +135,14 @@ private[euterpea] case class TimeState(
     val ticksInbar = timeSinceLastTimeSigChange % (currentTimeSig.number * currentTimeSig.beat.beatTicks)
     val beatInBar = ticksInbar / currentTimeSig.beat.beatTicks + 1
     val ticksInBeat = timeSinceLastTimeSigChange % currentTimeSig.beat.beatTicks
-    s"$bars:$beatInBar:$ticksInBeat"
+    if (ticksInBeat == 0)
+      s"$bars:$beatInBar/${currentTimeSig.number}"
+    else
+    {
+      def gcd(a: Int,b: Int): Int = if(b ==0) a else gcd(b, a%b)
+      val g = gcd(ticksInBeat,currentTimeSig.beat.beatTicks)
+      s"$bars:$beatInBar/${currentTimeSig.number}+${ticksInBeat/g}/${currentTimeSig.beat.beatTicks/g}"
+    }
   }
 }
 
@@ -142,5 +151,5 @@ private[euterpea] object TimeState
   //  Construct the TimeState object for the beat and number of notes
   def apply(beat: Beat) = new TimeState( beat.beatTicks, 0, TimeSig(0,NoDuration), None, ControlValues.empty, None, Nil)
   def apply(beat: Beat, noteCount: Int, timeSig: TimeSig) = new TimeState( beat.beatTicks, noteCount, timeSig, None, ControlValues.empty, None, Nil)
-  def empty(timeSig: TimeSig) = new TimeState(0, 0, timeSig, None, ControlValues.empty, Some(0), Nil)
+  def empty(timeSig: TimeSig) = new TimeState(0, 0, timeSig, None, ControlValues.empty, None, Nil)
 }
