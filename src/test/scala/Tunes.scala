@@ -183,12 +183,12 @@ object Caledonia extends Function0[Music]
   }
   
   val verse1Line1 = 
-    line(C - F - F/4/Dot - C | C - G - G/4/Dot - C | A - B - +C/4 - A - A | B - A - G -- F/4,
+    line(C - F - F/4/Dot - C | C - G - G/4/Dot - C | A - B - +C/4 - A - A | B - A - G -- F/4 - Rest,
          "I don't know if you can see the chan-ges that have come ov-er me.-",
          F/Maj | C/Maj | D/Min | -Bf/Maj)
          
   val verse1Line2 =
-    line(C/Pickup | C - F - F/4/Dot - C | C - G - G/4/Dot - C | A/4 - B/4 - +C/4 | B/2/Dot | Rest/2,
+    line(C/Pickup | C - F - F/4/Dot - C | C - G - G/4/Dot - C | A/4 - B/4 - +C/4 | B/2/Dot | Rest/2/Dot,
          "These last few days I've been a-fraid that_I might drift a-way.",
          F/Maj | C/Maj | D/Min | -Bf/Maj | -Bf/Maj7)
   
@@ -210,7 +210,7 @@ object Caledonia extends Function0[Music]
          F/Maj | C/Maj | D/Min | -Bf/Maj)
          
   val chorusLine2 =
-    line(D/Dot - F/16 - F/4 - F - D | D - C - C/4 - B - A | B - A - G/4/Dot - F | F/2,
+    line(D/Dot - F/16 - F/4 - F - D | D - C - C/4 - B - A | B - A - G/4/Dot - F | F/2 - Rest/4,
          "Cal-e-don-ia you're call-ing me and- now I'm go-ing home",
          Bf/Maj | F/Maj | C/Maj | F/Maj)
          
@@ -220,7 +220,7 @@ object Caledonia extends Function0[Music]
          F/Maj | C/Maj | D/Min | -Bf/Maj)
          
   val chorusLine4 =
-    line(D/Dot - F/16 - F/4 - F - A | A - G - G - F - (A--G)/16 - F | F/2,
+    line(D/Dot - F/16 - F/4 - F - A | A - G - G - F - (A--G)/16 - F | F/2 - Rest/4,
          "Cal-e-don-ia been ev-ery-thing I've ev--er had",
          Bf/Maj | C/Maj | F/Maj)
          
@@ -394,6 +394,26 @@ object Guitar7 extends Function0[Music]
 }  
 
 
+object SilentNight extends Function0[Music]
+{
+  val lh = (4/Dot) /: 
+            ( (B & +C & +E) - (A & +C & +E & +G) | (A & +C & (Gs/8 -- Fs/4)) - F
+            | (E & B) - -A | (D & Fs) - (-G & F)
+            | (B & +C & +E) - (A & +C & +E) | (B & +C & +E) - (A & +C & (Gs/8 -- Fs/4))
+            | (F & A)/2 - (Gf & Bf)/8 - (F & A)/8 | (Ef & G) - (Af & D)/8 -- (G & Cs)/4
+            | (C & E) - -F | -E - (-As & (G/8/Dot - Fs/16 - G/8))
+            | -F - -Fs | (-G & E) - (-A & Fs) 
+            | (D & A & +C) - -G | (B & +C & +E) - (A & +C & +E & +G) | (-G & E) - (-G & (G/8/Dot - F/16 - D/8))
+            | (B & +C & +E) - (A & +C & +E) | (B & +C & +E) - (A & +C & (Gs/8 -- Fs/4))
+            | (A & +Ef & +G) - (Bf & +E & +Af) | (G & +Df & +F) - (Gs & B & +F)/8 - (G & B & +Cs)/4
+            | (C & E & F) - -F | -E - (Bf & +Cs & E)
+            | ((+E & +F) - B - (C - D - E - F - Fs - Gs - A - B - +C - +D)/Octave(+1))/16 | (G/8/Dot - A/16 - G/8)/Octave(+1) - (Fs & +E)
+            )
+  val tune =   TimeSig(6,8) /: CMaj /: Tempo(60) /: (lh/Octave(-1))
+  def apply(): Music = tune
+}  
+
+
 object Tunes 
 {
   val tunesList = List(
@@ -422,7 +442,8 @@ object Tunes
     "guitar5" -> Guitar5,
     "guitar6" -> Guitar6,
     "guitar7" -> Guitar7,
-    "beats" -> Beats)
+    "beats" -> Beats,
+    "silent" -> SilentNight)
   val tunes: Map[String,Function0[Music]] = tunesList.toMap
   
   def main(args: Array[String]) {
