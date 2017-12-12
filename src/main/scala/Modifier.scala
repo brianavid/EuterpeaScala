@@ -47,7 +47,7 @@ case class MultipleModifiers (modifiers: ListBuffer[Modifier]) extends Modifier
   
   //  A Modifiers value and a Modifier value combined with / or /: is a (longer) Modifiers value
   override def / (that: Modifier): MultipleModifiers = new MultipleModifiers(modifiers :+ that)
-  override def /: (that: Modifier): MultipleModifiers = this / that
+  override def /: (that: Modifier): MultipleModifiers = that / this
 }
 
 //------------------------------------------------------------------------------------------------------------
