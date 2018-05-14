@@ -189,7 +189,7 @@ case class ChordPosition(chord:Chord, barre: Int)
       //  increasing fretNumber until we find one
       def stringFretPostition(stringNumber: Int, fretNumber: Int): (Int, Int) = 
       {
-        val pitch = guitar.pitches(stringNumber, fretNumber)
+        val pitch = guitar.stringPitch(stringNumber, fretNumber)
         if (chordPitches.contains(pitch)) (stringNumber, fretNumber)
         else stringFretPostition(stringNumber, fretNumber+1)
       }
@@ -207,7 +207,7 @@ case class ChordPosition(chord:Chord, barre: Int)
       def findRootStringNumber(stringNumber: Int): Option[Int] =
       {
         if (stringNumber <= 0) None
-        else if (guitar.pitches(stringNumber, stringFretPositions(stringNumber)) == bottom) Some(stringNumber)
+        else if (guitar.stringPitch(stringNumber, stringFretPositions(stringNumber)) == bottom) Some(stringNumber)
         else findRootStringNumber(stringNumber-1)
       }
 

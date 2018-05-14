@@ -22,7 +22,7 @@ case class Guitar private (notes: Vector[Music]) extends Modifier {
   }
   
   //  The pitch of the note on a given string, offset by a fretNumber, and mapped to the octave-equivalent range 0..11
-  def pitches(stringNumber: Int, fretNumber: Int): Int =
+  def stringPitch(stringNumber: Int, fretNumber: Int): Int =
   {
     musicPitch(notes(stringNumber), fretNumber) % 12
   }
