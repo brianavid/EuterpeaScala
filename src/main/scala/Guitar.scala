@@ -6,10 +6,31 @@ import scala.language.implicitConversions
 //  Guitar strings are such that the Note played on one continues playing until another
 //  Note is played on the same string 
 
-case class Guitar private (notes: Vector[Music]) extends Modifier {
+case class Guitar private (
+    notes: Vector[Music],
+    name: Option[Predef.String] = None) extends Modifier {
+  
+  //  A guitar can have a name, used to create multiple named channels when each string is on (one or more) separate channel(s)
+  def named(name: Predef.String) = Guitar(notes, Some(name))
+  
+  //  The channel number that the specified string plays on - distinct if guitar is named
+  def channelForString(string: Guitar.String, context: SequenceContext) =
+  {
+    name match
+    {
+      case None => context.channels.getOrElseUpdate(context.currentChannelName, context.channels.size)
+      case Some(name) => context.getChannel(s"$name.${string.stringNumber}")
+    }
+  }
+  
+  //  The set of all channels used by this guitar
+  def allChannels(context: SequenceContext) : Set[Int] =
+  {
+    strings.drop(1).map(channelForString(_,context)).toSet
+  }
   
   //  The set of strings
-  val strings: Vector[Guitar.String] = notes.map(p => new Guitar.String())
+  val strings: Vector[Guitar.String] = notes.indices.map(new Guitar.String(_)).toVector
   
   //  A guitar with the same tuning shifted up by a number of semitones as though by a capo on the frets
   def capo(fret: Int) = new Guitar( notes.map{ case N => N; case n => WithTranspose(fret, n)})
@@ -56,7 +77,7 @@ case class Guitar private (notes: Vector[Music]) extends Modifier {
 object Guitar
 {
   //  A Guitar.String that can be applied to any music
-  class String extends Modifier
+  class String(val stringNumber: Int = 0) extends Modifier
   {
     def modifying(music: Music): Music = {
       new WithString(this, music)
@@ -260,6 +281,6 @@ private class PickFretted (
     addPatternPicksInSequence(pattern.head, pattern.tail, 0, context.copy(beat=beat, scaleBeats=1, scaleNum=1))
   }
   
-  //  The duration of the PickFretted is the current Beat multipled by the length of the pattern
+  //  The duration of the PickFretted is the current Beat multiplied by the length of the pattern
   def duration(context: SequenceContext) = context.durationTiming(0) * pattern.length
 }

@@ -1,7 +1,12 @@
 package com.brianavid.euterpea
 import javax.sound.{midi => M}
 
-//  TimStates contain a list of Errors accumulated during the processing of the Music up to that point
+private[euterpea] case class NoteOnString(
+    track: M.Track,
+    channel: Int,
+    pitch: Int)
+
+//  TimeStates contain a list of Errors accumulated during the processing of the Music up to that point
 private[euterpea] case class Error(position: TimeState, message: String)
 
 //  The TimeState class is a representation of the state of a point of time of Music,
@@ -21,7 +26,7 @@ private[euterpea] case class TimeState(
     controls: ControlValues,
     barsAtTimeSigChange: Option[Int],
     errors: List[Error],
-    playingStrings: Map[Guitar.String, Option[(M.Track,Int/*channel*/,Int/*pitch*/)]] = Map.empty)
+    playingStrings: Map[Guitar.String, Option[NoteOnString]] = Map.empty)
 {
   //  Timings can be added
   def +(t: TimeState): TimeState = 
@@ -81,17 +86,21 @@ private[euterpea] case class TimeState(
   //  indicating when the time signature last changed
   def settingTimeSigChange(timeSig: TimeSig) = copy(currentTimeSig=timeSig, timeSigChangeTime=Some(ticks), barsAtTimeSigChange=Some(barsCount(timeSig)))
   
-  //  Stop playing any previous Note currently sounding on the specified (Guitar) String 
+  //  Stop playing any previous Note(s) currently sounding on the specified (Guitar) String 
   def stopString(string: Guitar.String, stopTicks: Option[Long] = None): Unit =
   {
-    playingStrings.getOrElse(string, None) match
-    {
-      case None => ()
-      case Some((track, channel, pitch)) => 
+    def stopOneNoteOnString(noteOnString: Option[NoteOnString]): Unit =
+      noteOnString match
       {
-        track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, channel, pitch, 0), stopTicks.getOrElse(ticks)))
+        case None => ()
+        case Some(n) => 
+        {
+          n.track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.NOTE_OFF, n.channel, n.pitch, 0), stopTicks.getOrElse(ticks)))
+        }
       }
-    }
+    
+    if (playingStrings.contains(string))
+      stopOneNoteOnString(playingStrings(string))
   }
   
   //  Stop playing all previous Notes currently sounding on any (Guitar) String 
@@ -100,11 +109,11 @@ private[euterpea] case class TimeState(
     for (s <- playingStrings.keys) stopString(s)
   }
   
-  //  A copy of the TimeState which additionally adds an error mssage at the current position
+  //  A copy of the TimeState which additionally adds an error message at the current position
   def error(message: String) = 
-    {
+  {
     copy(errors=Error(this, message) :: errors)
-    }
+  }
   
   //  How long since the time signature last changed 
   def timeSinceLastTimeSigChange = ticks - timeSigChangeTime.getOrElse(0)

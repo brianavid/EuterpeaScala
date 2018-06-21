@@ -145,14 +145,20 @@ private[euterpea] case class SequenceContext (
   }
   
   //  Get or allocate the named Midi channel
-  def getChannel = 
+  def getChannel(channelName: String) = 
   {
-    if (!channels.contains(currentChannelName)) 
+    if (!channels.contains(channelName)) 
     {
       //  Allocate a new Channel number, excluding any already in use (such as Drums at 10)
-      channels(currentChannelName) = ((1 to 16).toSet -- channels.values).head
+      channels(channelName) = ((1 to 16).toSet -- channels.values).head
     }
-    channels(currentChannelName) 
+    channels(channelName) 
+  }
+  
+  //  Get or allocate the named Midi channel
+  def getChannel: Int = 
+  {
+    getChannel(currentChannelName) 
   }
   
   def getDynamics = 

@@ -63,9 +63,6 @@ case class Note(
     //  Get the track identified by the track name, creating it if it does not exist
     val track = context.getTrack
     
-    //  Get the Midi channel identified by the track name, creating it if it does not exist
-    val channel = context.channels.getOrElseUpdate(context.currentChannelName, context.channels.size)
-    
     //  Get the pitch of the note in the current key signature
     val pitchInKey = 
     {
@@ -128,6 +125,13 @@ case class Note(
       case (None,Some(guitar)) => guitar.pitchString(pitchInRange)
     }
     
+    //  Get the Midi channel identified by the track name, creating it if it does not exist
+    val channel = (onString,context.onGuitar) match
+    {
+      case (Some(string),Some(guitar)) => guitar.channelForString(string, context)
+      case (_,_) => context.channels.getOrElseUpdate(context.currentChannelName, context.channels.size)
+    }
+    
     //  If this Note is on a (Guitar) String, stop playing any previous Note on the same String 
     onString match
     {
@@ -152,7 +156,7 @@ case class Note(
       {
         //  If this Note IS on a (Guitar) String, let it continue playing until another Note plays on that same String
         //  recording in the TimeState what Note pitch is to be stopped when the String is next played.
-        noteTiming.copy(playingStrings = Map(string -> Some((track, channel, pitchInRange))))
+        noteTiming.copy(playingStrings = context.timeState.playingStrings.updated(string, Some(NoteOnString(track, channel, pitchInRange))))
       }
     }
   }
@@ -228,7 +232,7 @@ case object Rest extends Music
         context.timeState.stopString(string)
         
         //  Record that the string is no longer sounding
-        timing.copy(playingStrings = Map(string -> None))
+        timing.copy(playingStrings = timing.playingStrings.updated(string, None))
       }
     }
   }

@@ -305,7 +305,7 @@ object Guitar1 extends Function0[Music]
 {
   val s1 = new Guitar.String
   val s2 = new Guitar.String
-  val tune = C/s1 - D/s2 - E/s2 - G/s2 - +C/s1/2
+  val tune = Instrument(Instruments.Acoustic_Guitar_Steel) /: Octave(-1) /: (C/s1 - (D -- E)/s2 - G/s2 - +C/s1/2)
   def apply(): Music = tune
 }
 
@@ -386,10 +386,10 @@ object Guitar6 extends Function0[Music]
 
 object Guitar7 extends Function0[Music]
 {
-  val g = Guitar.standardTuning.capo(1)
+  val g = Guitar.standardTuning.capo(1).named("G")
   val notes = B/Dot - G/8 - E - (F -- G)/8 | A - C - F/Dot - Rest/8 | D - E/8 - F/8 - G - G | G - D - E - F |
               A/Dot - (G - F - E - D - C)/8 | F - G/8 - A/8 - B - Rest/8 - G/8 | F - (G - A - C - D - E - F)/8 | G/2 - A - Rest   
-  val tune = Instrument(Instruments.Acoustic_Guitar_Nylon) /: Octave(-1) /: FMaj /: Tempo(120) /: g /: (notes)
+  val tune = g /: Instrument(Instruments.Acoustic_Guitar_Nylon) /: Octave(-1) /: FMaj /: Tempo(120) /: (notes)
   def apply(): Music = tune
 }  
 
@@ -406,10 +406,43 @@ object SilentNight extends Function0[Music]
             | (D & A & +C) - -G | (B & +C & +E) - (A & +C & +E & +G) | (-G & E) - (-G & (G/8/Dot - F/16 - D/8))
             | (B & +C & +E) - (A & +C & +E) | (B & +C & +E) - (A & +C & (Gs/8 -- Fs/4))
             | (A & +Ef & +G) - (Bf & +E & +Af) | (G & +Df & +F) - (Gs & B & +F)/8 - (G & B & +Cs)/4
-            | (C & E & F) - -F | -E - (Bf & +Cs & E)
+            | (C & E & Bf) - -F | -E - (Bf & +Cs & +E)
             | ((+E & +F) - B - (C - D - E - F - Fs - Gs - A - B - +C - +D)/Octave(+1))/16 | (G/8/Dot - A/16 - G/8)/Octave(+1) - (Fs & +E)
+            | (D & A & +C)/2/Dot | Rest/8 - (-G & F) - (G & +F)/4 | (-C & -G)/1/Dot 
+            | (B & +C & +E) - (A & +C & +E) | (B & +C & +E) - (A & +C & (Gs/8 -- Fs/4))
+            | E - -A | (D & A & +C)/4 - (G & B)/8 - (C & G & +C)
             )
-  val tune =   TimeSig(6,8) /: CMaj /: Tempo(60) /: (lh/Octave(-1))
+            
+  val rh = ( (G - +C)/16 - +G/4 - (Rest - +F - +E - +C - A - G)/16 
+           | (E - G)/16 - D/4 - ((Ef & G)/4/Dot & (B - A - B)/8)
+           | (D & G)/4/Dot - ((Df & Gf & Bf) - +Df - +Df - +Gf - +Gf  - +Bf)/16 
+           | ((C & E)/4/Dot & (B - A - B)/8) - (G/4/Dot & (-Bf/8 - -A/4) & (Ef/8 - D/32 - Ef/32 - D/8/Dot)) 
+           | G/8/Dot - A/16 - G/8 - (Rest - +F - +E - +C - A - G)/16 +|+ (Eighth+Sixteenth)  - A/16 - G/8 - E/4/Dot
+           | {
+               val v1 = ( +D/4 - +D/8 - B/4/Dot
+                        | +C/4 - +C/8 - G/4/Dot
+                        | A/4 - A/8 - +C/8/Dot - B/16 - A/8
+                        | G/8/Dot - A/16 - G/8 - Rest/4/Dot
+                        | A/4 - A/8 - +C/8/Dot - B/16 - A/8
+                        | G/8/Dot - A/16 - G/8 - B/8/Dot - +C/16 - B/8
+                        | +D/4 - +D/8 - Rest/4/Dot
+                        | Rest/4/Dot - (Rest - F - E - C - -A - -G)/16 +|+ (Quarter+Eighth) - Rest/4/Dot
+                        )
+               val v2 = ( (Ef & G)/2 - ((E & Gs) - (Ef & G))/8
+                        | (Df & F)/4/Dot - (C & F)/8 - (E & -B)/4
+                        | ((-Bf & D) - (Ef & G))/4/Dot
+                        | ((Fs & D) - (Cs & E))/4/Dot
+                        | ((E & +E) - (Ef & +D))/4/Dot
+                        | ((D & +C) - (E & +C))/4/Dot
+                        | (F & G)/4/Dot - (A & +F)/8/Dot - (F & +D)/16 - (D & B)/8
+                        | (+C - +E)/4/Dot
+                        | C/8/Dot - -G/16 - -E/8 - (-A & C & G)/4/Dot
+                        )
+               v1 & v2
+             }
+           | (Rest/2/Dot)*16
+           ) 
+  val tune =   TimeSig(6,8) /: CMaj /: Tempo(40) /: (lh/Octave(-1) & rh/Vf)
   def apply(): Music = tune
 }  
 

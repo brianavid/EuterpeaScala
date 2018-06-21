@@ -126,11 +126,20 @@ private[euterpea] case class WithInstrument( instrument: Int, music: Music) exte
   def add(context: SequenceContext) =
   {
     val track = context.getTrack
-    val channel = context.channels.getOrElseUpdate(context.currentTrackName, context.channels.size)
+    
     if (context.currentInstrument != instrument)
-      track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, instrument-1, 0), context.timeState.ticks))
-    val durationTiming = music.add(context.copy(currentInstrument = instrument))
-    durationTiming
+    {
+      val channels = (context.onGuitar) match
+      {
+        case Some(guitar) => guitar.allChannels(context)
+        case _ => Set(context.channels.getOrElseUpdate(context.currentChannelName, context.channels.size))
+      }
+      
+      for (channel <- channels)
+        track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, instrument-1, 0), context.timeState.ticks))
+    }
+    
+    music.add(context.copy(currentInstrument = instrument))
   }
   
   def duration(context: SequenceContext) = music.duration(context)

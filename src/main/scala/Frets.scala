@@ -113,7 +113,7 @@ case class FretSequenceWithBeatScaling(numberOfNotes: Integer, numberOfBeats: In
   def check(guitar: Guitar) = fretSequence.check(guitar)
 }
 
-//  A FretSequence comprising a pair of sequentially joined FretSequence uses the elapsed tim within
+//  A FretSequence comprising a pair of sequentially joined FretSequence uses the elapsed time within
 //  the sequence to select one or the other as appropriate
 case class FretSequencePair(first: FretSequence, second: FretSequence) extends FretSequence
 {
