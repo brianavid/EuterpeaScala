@@ -8,7 +8,7 @@ trait Modifier
   def modifying(music: Music): Music
   
   //  Two Modifier values combined with / or /: is a MultipleModifiers value
-  def / (that: Modifier): MultipleModifiers = new MultipleModifiers(ListBuffer(this, that))
+  def / (that: Modifier): MultipleModifiers = new MultipleModifiers(ListBuffer(that, this))
   def /: (that: Modifier): MultipleModifiers = this / that
 }
 
@@ -46,8 +46,8 @@ case class MultipleModifiers (modifiers: ListBuffer[Modifier]) extends Modifier
     modifiers.foldRight(music)((mod, mus) => mus/mod)
   
   //  A Modifiers value and a Modifier value combined with / or /: is a (longer) Modifiers value
-  override def / (that: Modifier): MultipleModifiers = new MultipleModifiers(modifiers :+ that)
-  override def /: (that: Modifier): MultipleModifiers = that / this
+  override def / (that: Modifier): MultipleModifiers = new MultipleModifiers(that +: modifiers)
+  override def /: (that: Modifier): MultipleModifiers = this / that
 }
 
 //------------------------------------------------------------------------------------------------------------
