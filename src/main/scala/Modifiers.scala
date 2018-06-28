@@ -109,37 +109,48 @@ private[euterpea] case class WithChannel( channelName: String, music: Music) ext
 //  It can be specified as an integer value (with constants defined in the Instruments object)
 //  or as an instrument name string
 
-case class Instrument(instrument: Int) extends Modifier
+case class Instrument(patch: Music.Patch) extends Modifier
 {
   def modifying(music: Music): Music =
-    new WithInstrument(instrument, music)
+    new WithInstrument(patch, music)
 }
 
 object Instrument {
-  def apply(instrumentName: String) = new Instrument(Instruments.instrumentByName.getOrElse(instrumentName, 1))
+  def apply(instrumentName: String) = new Instrument(Music.instruments.getOrElse(instrumentName, Music.errorPatch))
+  def apply(program: Int) = new Instrument(new Music.Patch(0, program-1))
 }
 
 //  Add the music, with a changed current instrument number (from the General Midi set of instruments
 
-private[euterpea] case class WithInstrument( instrument: Int, music: Music) extends Music
+private[euterpea] case class WithInstrument( instrument: Music.Patch, music: Music) extends Music
 {
   def add(context: SequenceContext) =
   {
     val track = context.getTrack
     
-    if (context.currentInstrument != instrument)
+    if (instrument == Music.errorPatch)
     {
-      val channels = (context.onGuitar) match
-      {
-        case Some(guitar) => guitar.allChannels(context)
-        case _ => Set(context.channels.getOrElseUpdate(context.currentChannelName, context.channels.size))
-      }
-      
-      for (channel <- channels)
-        track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, instrument-1, 0), context.timeState.ticks))
+      (ErrorMusic("No such instrument") - music).add(context)
     }
+    else 
+    {
+      if (context.currentInstrument != instrument)
+      {
+        val channels = (context.onGuitar) match
+        {
+          case Some(guitar) => guitar.allChannels(context)
+          case _ => Set(context.channels.getOrElseUpdate(context.currentChannelName, context.channels.size))
+        }
+        
+        for (channel <- channels)
+        {
+          track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.CONTROL_CHANGE, channel, Controller.Bank_Select, instrument.bank), context.timeState.ticks))
+          track.add(new M.MidiEvent(new M.ShortMessage(M.ShortMessage.PROGRAM_CHANGE, channel, instrument.program, 0), context.timeState.ticks))
+        }
+      }
     
-    music.add(context.copy(currentInstrument = instrument))
+      music.add(context.copy(currentInstrument = instrument))
+    }
   }
   
   def duration(context: SequenceContext) = music.duration(context)

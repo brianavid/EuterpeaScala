@@ -166,18 +166,18 @@ object Caledonia extends Function0[Music]
   def line(notes: Music, lyricText: String, chords: Music, lastChord: Boolean=false): Music =
   {
     val asMelody =  Track("melody") /: Channel("melody") /: 
-                    Instrument(Instruments.Cello)
+                    Instrument("Ohh Voices")
     val asHarmony = Track("harmony") /: Channel("harmony") /:
-                    Instrument(Instruments.Acoustic_Guitar_Nylon) /: 
+                    Instrument("Nylon String Guitar") /: 
                     (if (lastChord) Broken(0.05) else Arpeggio(8,1,2,(3,4),1,(3,4),1))
     val asBass =    Track("bass") /: Channel("bass") /: 
-                    Instrument(Instruments.Acoustic_Bass)
+                    Instrument("Acoustic Bass")
     
     val melody = notes/8/Lyrics(lyricText)
     val harmony = chords/2/Dot
  
     val bassRhythm = if (lastChord) NoModifier else NoteRhythm(N/(Half+Eighth) - N/Eighth)
-    val bass = Octave(-1) /: bassRhythm /: Root /: harmony
+    val bass = Octave(-1) /: Vp /: bassRhythm /: Root /: harmony
 
     melody/asMelody & harmony/asHarmony & bass/asBass
   }
@@ -479,6 +479,14 @@ object Tunes
     "silent" -> SilentNight)
   val tunes: Map[String,Function0[Music]] = tunesList.toMap
   
+  private def instrumentSort(i1: (String,Music.Patch), i2: (String,Music.Patch)): Boolean =
+  {
+    if (i1._2.bank == i2._2.bank) 
+      i1._2.program.compareTo(i2._2.program) < 0 
+    else 
+      i1._2.bank.compareTo(i2._2.bank) < 0
+  }
+  
   def main(args: Array[String]) {
     def usage(): Seq[(String,String)] = {
       Console.println("Tunes (play|save|strict) <tune> [<path>]")
@@ -489,12 +497,17 @@ object Tunes
       for (error <- errors) Console.println(s"${error._1} : ${error._2}")
       Nil
     }
-    val numArgsRequired = List("check" -> 0, "all" -> 0, "play" -> 1, "save" -> 2, "strict" -> 2).toMap 
+    val numArgsRequired = List("instruments" -> 0, "check" -> 0, "all" -> 0, "play" -> 1, "save" -> 2, "strict" -> 2).toMap 
     if (args.length < 1 || !numArgsRequired.contains(args(0)) || args.length < numArgsRequired(args(0)))
     {
       usage()
     }
     else args(0) match {
+      case "instruments" =>
+        for ((name,patch) <- Music.instruments.toIndexedSeq.sortWith(instrumentSort))
+        {
+          Console.println(s"$name")
+        }
       case "check" =>
         for ((name,tune) <- tunesList) 
         {

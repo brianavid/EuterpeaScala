@@ -32,12 +32,13 @@ trait Music
   
   //  Play the constructed javax.sound.midi.Sequence object on the system's Midi sequencer
   private def playSequence(sequence: M.Sequence) {
-    val seq = MS.getSequencer
-    seq.open()
+    val seq = Music.sequencer
+    
     seq.setSequence(sequence)
     seq.start()
     Thread.sleep(sequence.getMicrosecondLength/1000+1000);
     seq.stop();
+    
     seq.close();
   }
   
@@ -106,6 +107,53 @@ trait Music
   
   //  Repeat a piece of music a fixed number of times
   def * (repeat: Integer) = new Repeated(this, repeat)
+}
+
+//  Music object containing the singleton Midi synthesizer and sequencer 
+//  into which good quality sounds have been loaded 
+object Music 
+{
+  //  The single default Sequencer, linked to play on the default Synthesizer 
+  lazy val sequencer = 
+  {
+    val seq = MS.getSequencer
+    seq.open()
+    
+    val seqTrans = seq.getTransmitter();
+    val synthRcvr = synthesizer.getReceiver(); 
+    seqTrans.setReceiver(synthRcvr);    
+    
+    seq
+  }
+  
+  //  The single default Synthesizer into which good quality sounds are loaded
+  lazy val synthesizer = {
+    val syn = MS.getSynthesizer
+    syn.open()
+    
+    val sbf1 = new File("G:\\SoundFonts\\FluidR3_GM.SF2")
+    val sb1 = MS.getSoundbank(sbf1)
+    if (syn.isSoundbankSupported(sb1))
+      syn.loadAllInstruments(sb1)
+    
+//    val sbf2 = new File("G:\\SoundFonts\\Guitar Bank 2.SF2")
+//    val sb2 = MS.getSoundbank(sbf2)
+//    if (syn.isSoundbankSupported(sb2))
+//      syn.loadAllInstruments(sb2)
+    
+      syn
+  }
+  
+  //  A Midi patch is a bank number and a program within that batch
+  case class Patch(val bank: Int, val program: Int)
+  val initialPatch = new Patch(0, 0)
+  val errorPatch = new Patch(-1, -1)
+  
+  //  The set of all loaded instruments as a map from name to Patch
+  def instruments: Map[String,Patch] =
+  {
+    synthesizer.getLoadedInstruments.map(i => (i.getName, new Patch (i.getPatch.getBank, i.getPatch.getProgram))).toMap
+  }
 }
 
 //-------------------------
