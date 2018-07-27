@@ -244,7 +244,7 @@ private[euterpea] case class Chord(
     }
     
     //  What notes does the Chord play? Transpose the rootNote note up by each of the effective Harmony intervals
-    effectiveHarmony.intervals.map(i => Note(root.semitones + i, ""))
+    effectiveHarmony.intervals.map(i => Note(root.semitones + root.octave*12 + i, ""))
   }
   
   //  Add the Chord to the current sequence so that all the notes (transposed by the Harmony intervals) 
