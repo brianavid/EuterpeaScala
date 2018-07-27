@@ -78,7 +78,7 @@ private[euterpea] case class TimeState(
     {
       val later = if (t.ticks > ticks) t else this
       val merged = later.copy(controls=controls.merge(t.controls), errors=(errors ++ t.errors), playingStrings=(playingStrings ++ t.playingStrings))
-      if (t.ticks == ticks) merged
+      if (t.ticks == 0 || ticks == 0 || t.ticks == ticks) merged
       else merged.error(s"Parallel music has different lengths: ${t.ticks} != $ticks")
     }
   

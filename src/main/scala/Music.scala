@@ -158,11 +158,11 @@ object Music
 
 //-------------------------
 
-//  Music which has no content and plays no notes - used as the basis for a Chord
+//  Music which has no content and plays no notes - used as the basis for a Chord or a sequence
 object EmptyMusic extends Music
 {
-  def add(context: SequenceContext) = context.durationTiming(0)
-  def duration(context: SequenceContext) =  context.durationTiming(0)
+  def add(context: SequenceContext) = TimeState.empty(context.timeSig)
+  def duration(context: SequenceContext) =  TimeState.empty(context.timeSig)
 }
 
 //-------------------------
