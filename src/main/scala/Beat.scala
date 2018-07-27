@@ -62,6 +62,7 @@ case class BeatScale(val numberOfNotes: Integer, val numberOfBeats: Integer) ext
 }
 object Dot extends BeatScale(2,3)
 object DotDot extends BeatScale(4,7)
+object HalfDot extends BeatScale(4,5)
 
 //-------------------------
 
