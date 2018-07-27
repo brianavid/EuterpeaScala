@@ -161,6 +161,112 @@ object DocTune extends Function0[Music]
   def apply(): Music = tune10
 }
 
+object AllTheLoveInTheWorld  extends Function0[Music]
+{
+  val chordSequence = List(+D/Maj7, B/Min.b, +Cs/Min7, Fs/Min.c, +D/Maj7, B/Min.b, +Cs/Min7, Fs/Min.c, 
+                            B/Min.add9, B/Min.b, Fs/Min.c, Fs/Min.c, B/Min.add9, B/Min.b, Fs/Min, Fs/Min.b) 
+  val chords = chordSequence.foldLeft(EmptyMusic: Music)((m, c) => m - (c/1))
+  val chordLine = Track("chords") /: Channel("chords") /: Instrument(Instruments.Vibraphone) /: chords
+  val melodyIntro = Rest/4 - (+C - +C)/8 - (+C - +F - +C)/4/3 | B/1 | Rest/4 - (B - B)/8 - (B - +E - B)/4/3 | A/1 
+  val melodyV1 = (Rest - A - A - B - B - +C)/8 - +C/4 |  (Rest - A - A - B - B - +C - +C - A)/8 | +C/2/DotDot - A/8 | B/8 - A/8 - Fs/2/Dot
+  val melodyLine = Track("melody") /: Channel("melody") /: Instrument(Instruments.Acoustic_Grand_Piano) /: (melodyIntro *2 - melodyV1 * 2) 
+  val tune = Tempo(90) /: DMaj /: Octave(-1) /: (Rest/1 - (melodyLine & chordLine))
+  def apply(): Music = tune
+}
+
+object BabyPlaysAround  extends Function0[Music]
+{
+  val chords1 = (-A/Maj - -A/Dom7.b | D/Maj - D/Maj.sus | 
+                -A/Maj - B/Maj.b | -E/Maj - Cs/Min7 | 
+                D/Maj - (B/Min7 -- B/Min7.dim)/4 | +Cs/Min7 - Fs/Min)/2
+  val chords2 = (-B/Maj.b - -B/Maj.b | B/Min7 - (B/Min7/4 - E/Maj/4) |
+                -A/Maj - -A/Dom7.d | D/Maj.b - D/Min.b | 
+                -A/Maj - B/Maj.b | -E/Maj - Cs/Min7 | 
+                D/Maj.b - D/Min.b | +Cs/Min7 - Fs/Min | 
+                -B/Maj.b - E/Maj.add11 | A/Maj - E/Dom7.d)/2
+  val chords3 = (D/Maj.b - -A/Dom7.c | D/Maj - Cs/Min.dim | 
+                E/Min7 - A/Dom7 | D/Maj - Ds/Maj.dim | 
+                F/Maj.dim - F/Maj.dim | Fs/Min - B/Min7 | 
+                D/Min - E/Maj.sus | F/Maj.aug - F/Maj.aug | F/Maj.aug - E/Dom7)/2
+  val chords4 = chords1
+  val chords5 = (B/Maj.b - B/Maj.b | F/Maj.add6 - F/Maj.add6 | D/Maj - D/Maj |
+                F/Maj7 - F/Dom7 | E/Min7 - -B/Maj7.b | E/Min - D/Min7 | 
+                A/Maj - A/Maj | F/Maj - F/Maj | F/Maj - F/Maj | A/Dom7/1)/2
+                
+  val melody1 = (Rest/4/Dot - (A - B)/16 - +Cs/8 - A/Dot) / Lyrics("It's not op-en") |
+                (Rest/8 - (A - +D - +C - A - A - B)/16 - A/4 - Rest/4) /Lyrics("to disc-uss-ion a-ny more") |
+                (Rest/4 - (Rest - A - A/8/Dot - B - A - F)/16 - F/4) / Lyrics("She's out a-gain to-night") | 
+                (Rest/4 - G/16 - G/8 - G/16 - G/8 - E/8 - E/4) / Lyrics("and I'm a-lone once more")|
+                (Rest/4 - (F - E - D)/8/3 - A/4/Dot - B/8) / Lyrics("She's all I have worth") |
+                (Rest/8 - +C/4 - B/8 - A/4/Dot - F/8) / Lyrics("wait-ing for, but")
+               
+  val melody2 = (Rest/2 - (+C - B - A - G)/8 | B/1) / Lyrics("ba-by plays a-round") |
+                (Rest/4 - (Rest - E - A - B)/16 - A/HalfDot - (A - B - +D)/16) / Lyrics("And so it seems I've al-ways") |
+                ((+C - A - A - B)/8 - A/4 - Rest/4) / Lyrics("been the last to know") |
+                (Rest/4 - (Rest - A)/16 - A/8 - (B - A)/16 - F/8 - F/4) / Lyrics("to hold on to that girl") |
+                (Rest/4 - G/16 - G/8 - G/16 - G/16 - E/8 - E/4/HalfDot) / Lyrics("I had to let her go") |
+                (Rest/4 - (F - E - D)/8/3 - A/4/Dot - B/8) / Lyrics("I wish to God I") |
+                ((+D - +D - +C - +C)/8 - A/2) / Lyrics("did-n't love her so") |
+                (Rest/4/DotDot - E/16 - (+C - B - A - B)/8) / Lyrics("'cos ba-by plays a") |
+                (A/2 - Rest/8/Dot - A/16 - (A - B - A)/8/3) / Lyrics("round. I try to be")
+                
+  val melody3 = (F/2 - Rest/8 - A/16 - A/8/Dot - A/16 - F/16) / Lyrics("strong. Hold on to my") | 
+                (F/2 - Rest/2) / Lyrics("pride.") |
+                (Rest/4/HalfDot - (-A - E - F)/16 - (Gn - E - B - Gn)/8) / Lyrics("She does-n't e-ven lnow it's") |
+                (A/4 - (Rest - F - F - Gn)/16 - (A - F)/8 - +C/4) / Lyrics("wrong, how much I hurt in-side") |
+                (Rest/4  - (G - G - A)/8/3 - (B - G - +D - B)/8) / Lyrics("and heav-en knows i've tried but") |
+                (Rest/8 - +E/2 - (+D - +D - B)/8) / Lyrics("ba-by plays a") |
+                ((+D -- +Cn)/8 - Rest/8 - (A - E)/16 - (E - E)/8 - Rest/4) / Lyrics("round-, just a play thing.") |
+                (Rest/4 - (Rest - D - Fn - D)/16 - (Fn - D)/8 - G/4) / Lyrics("It's hard to rec-on-cile") |
+                ((Rest - Fn - Fn - Fn)/8 - Fn/8 - E/4/Dot) / Lyrics("the facts I'm fac-ing")
+                
+  val melody4 = (Rest/4/Dot - (A - B)/16 - +Cs/8 - A/Dot) / Lyrics("It's not op-en") |
+                (Rest/8 - (A - +D - +C - A - A - B)/16 - A/4 - Rest/4) /Lyrics("to disc-uss-ion a-ny more") |
+                (Rest/4 - (Rest - A - A/8/Dot - B - A - F)/16 - F/4) / Lyrics("She walks these shin-y streets") | 
+                (Rest/4 - G/16 - G/8 - G/16 - G/8 - E/8 - E/4) / Lyrics("I walk the worn out floor")|
+                (Rest/4 - (F - E - D)/8/3 - A/4/Dot - B/8) / Lyrics("She's all I have worth") |
+                (Rest/8 - +C/4 - B/8 - A/4/Dot - F/8) / Lyrics("liv-ing for, but")
+                
+  val melody5 = (Rest/2/Dot - (+C - B)/8) / Lyrics("Ba-by") |
+                (A/2/Dot - (+C - +D)/8) / Lyrics("plays, ba-by") |
+                (A/2/Dot - (Rest - D)/8) / Lyrics("plays a") |
+                (A/1) / Lyrics("round") |
+                Rest/1 * 6
+                
+                
+    val tenor1 = (Rest/4/Dot - (A - B)/16 - +Cs/8 - A/Dot) / Lyrics("It's not op-en") |
+                 (Rest/8 - (A - +D - +C - A - A - B)/16 - A/4 - Rest/4) /Lyrics("to disc-uss-ion a-ny more") |
+                 (Rest/4 - (Rest - A - A/8/Dot - B - A - F)/16 - F/4) / Lyrics("She's out a-gain to-night") | 
+                 (Rest/4 - G/16 - G/8 - G/16 - G/8 - E/8 - E/4) / Lyrics("and I'm a-lone once more")|
+                 (Rest/4 - (F - E - D)/8/3 - A/4/Dot - B/8) / Lyrics("She's all I have worth") |
+                 (Rest/8 - +C/4 - B/8 - A/4/Dot - F/8) / Lyrics("wait-ing for, but")
+               
+    val bari1  = (Rest/4/Dot - (A - B)/16 - A/8 - E/Dot) / Lyrics("It's not op-en") |
+                 (Rest/8 - (F - A - A - F - F - A)/16 - Gn/4 - Rest/4) /Lyrics("to disc-uss-ion a-ny more") |
+                 (Rest/4 - (Rest - A - A/8/Dot - B - A - F)/16 - F/4) / Lyrics("She's out a-gain to-night") | 
+                 (Rest/4 - G/16 - G/8 - G/16 - G/8 - E/8 - E/4) / Lyrics("and I'm a-lone once more")|
+                 (Rest/4 - (F - E - D)/8/3 - A/4/Dot - B/8) / Lyrics("She's all I have worth") |
+                 (Rest/8 - +C/4 - B/8 - A/4/Dot - F/8) / Lyrics("wait-ing for, but")
+               
+    val bass1  = (A/2 - C/2) / Lyrics("No-") |
+                 (Rest/8 - (Rest - D - D - D - D - D)/16 - A/4 - Rest/4) /Lyrics("disc-uss-ion a-ny more") |
+                 (Rest/4 - (Rest - A - A/8/Dot - B - A - F)/16 - F/4) / Lyrics("She's out a-gain to-night") | 
+                 (Rest/4 - G/16 - G/8 - G/16 - G/8 - E/8 - E/4) / Lyrics("and I'm a-lone once more")|
+                 (Rest/4 - (F - E - D)/8/3 - A/4/Dot - B/8) / Lyrics("She's all I have worth") |
+                 (Rest/8 - +C/4 - B/8 - A/4/Dot - F/8) / Lyrics("wait-ing for, but")
+               
+
+  val chordLine = Track("chords") /: Channel("chords") /: Instrument(Instruments.Vibraphone) /: Octave(-1) /: Vpp /: (chords1 | chords2 | chords3 | chords4 | chords5)
+  val melodyLine = Track("melody") /: Channel("melody") /: Instrument(Instruments.Cello) /: Octave(-1) /: (melody1 | melody2 | melody3 | melody4 | melody5)
+  
+  val tenorLine = Track("Tenor") /: Channel("Tenor") /: Instrument(Instruments.Flute) /: Octave(0) /: (tenor1)
+  val bariLine  = Track("Baritone") /: Channel("Baritone") /: Instrument(Instruments.Cello) /: Octave(0) /: (bari1)
+  val bassLine  = Track("Bass") /: Channel("Bass") /: Instrument(Instruments.Choir_Aahs) /: Octave(0) /: Vp /: (bass1)
+  
+  val tune = Tempo(60)/: AMaj /: (Rest/1 - (tenorLine & bariLine & bassLine))
+  def apply(): Music = tune
+}
+
 object Caledonia extends Function0[Music]
 {
   def line(notes: Music, lyricText: String, chords: Music, lastChord: Boolean=false): Music =
@@ -476,7 +582,9 @@ object Tunes
     "guitar6" -> Guitar6,
     "guitar7" -> Guitar7,
     "beats" -> Beats,
-    "silent" -> SilentNight)
+    "silent" -> SilentNight,
+    "BabyPlaysAround" -> BabyPlaysAround,
+    "AllTheLoveInTheWorld" -> AllTheLoveInTheWorld)
   val tunes: Map[String,Function0[Music]] = tunesList.toMap
   
   private def instrumentSort(i1: (String,Music.Patch), i2: (String,Music.Patch)): Boolean =
@@ -509,10 +617,17 @@ object Tunes
           Console.println(s"$name")
         }
       case "check" =>
-        for ((name,tune) <- tunesList) 
+        if (args.length < 2)
         {
-          Console.println(name)
-          display(tune().check)
+          for ((name,tune) <- tunesList) 
+          {
+            Console.println(name)
+            display(tune().check)
+          }
+        }
+        else
+        {
+          display(tunes(args(1))().check)
         }
       case "all" =>
         for ((name,tune) <- tunesList) 
