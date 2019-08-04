@@ -150,7 +150,8 @@ private[euterpea] case class SequenceContext (
     if (!channels.contains(channelName)) 
     {
       //  Allocate a new Channel number, excluding any already in use (such as Drums at 10)
-      channels(channelName) = ((1 to 16).toSet -- channels.values).head
+      //  But if the name is numeric, use that as the channel number
+      channels(channelName) = util.Try(channelName.toInt).getOrElse(((1 to 16).toSet -- channels.values).head)
     }
     channels(channelName) 
   }

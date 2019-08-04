@@ -4,6 +4,7 @@ import javax.sound.{midi => M}
 import M.{MidiSystem => MS}
 import scala.collection.mutable
 import java.io.File
+import collection.JavaConverters._
 
 //------------------------------------------------------------------------------------------------------------
 
@@ -31,15 +32,16 @@ trait Music
   def duration(context: SequenceContext) : TimeState
   
   //  Play the constructed javax.sound.midi.Sequence object on the system's Midi sequencer
-  private def playSequence(sequence: M.Sequence) {
-    val seq = Music.sequencer
+  private def playSequence(sequence: M.Sequence, optDevName: Option[String]) {
+    val rcvDev = Music.outputDev(optDevName)
+    val seq = Music.sequencer(rcvDev)
     
     seq.setSequence(sequence)
     seq.start()
     Thread.sleep(sequence.getMicrosecondLength/1000+1000);
     seq.stop();
-    
     seq.close();
+    rcvDev.close()
   }
   
   //  Make a javax.sound.midi.Sequence object from the Music structure by adding the root of
@@ -64,10 +66,10 @@ trait Music
   }
   
   //  Play the music on the system's Midi sequencer
-  def play(): Seq[(String,String)] = {
+  def play(optDevName: Option[String] = None): Seq[(String,String)] = {
     val (sequence, errors) = makeSequence(false)
     if (errors.length == 0)
-      playSequence(sequence)
+      playSequence(sequence, optDevName)
     errors.map(e => (e.position.display, e.message))
   }
   
@@ -113,20 +115,34 @@ trait Music
 //  into which good quality sounds have been loaded 
 object Music 
 {
-  //  The single default Sequencer, linked to play on the default Synthesizer 
-  lazy val sequencer = 
+  def outputDev(optDevName: Option[String]): M.MidiDevice = 
   {
-    val seq = MS.getSequencer
+    optDevName match
+    {
+      case Some(devName) =>
+      {
+        val infos = MS.getMidiDeviceInfo.filter(_.getName == devName)
+        val devs = infos.map(MS.getMidiDevice(_))
+        val rcvDevs = devs.filter(_.getMaxReceivers != 0)
+        val rcvDev = rcvDevs(0)
+        rcvDev.open()
+        rcvDev
+      }
+      case None => synthesizer 
+    }
+  }
+  
+  def sequencer(rcvDev: M.MidiDevice): M.Sequencer = 
+  {
+    val seq = MS.getSequencer(false)
+    
+    seq.getTransmitter().setReceiver(rcvDev.getReceiver())
+    
     seq.open()
-    
-    val seqTrans = seq.getTransmitter();
-    val synthRcvr = synthesizer.getReceiver(); 
-    seqTrans.setReceiver(synthRcvr);    
-    
     seq
   }
   
-  //  The single default Synthesizer into which good quality sounds are loaded
+   //  The single default Synthesizer into which good quality sounds are loaded
   lazy val synthesizer = {
     val syn = MS.getSynthesizer
     syn.open()
@@ -143,6 +159,9 @@ object Music
     
       syn
   }
+  
+  //  The single default Sequencer, linked to play on the default Synthesizer 
+//  lazy val sequencer: M.Sequencer = sequencer(synthesizer)
   
   //  A Midi patch is a bank number and a program within that batch
   case class Patch(val bank: Int, val program: Int)

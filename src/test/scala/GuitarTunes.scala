@@ -27,7 +27,7 @@ object GuitarTunes
       for (error <- errors) Console.println(s"${error._1} : ${error._2}")
       Nil
     }
-    val errors = GuitarTune6().play
+    val errors = GuitarTune6().play()
     display(errors)
   }
 }

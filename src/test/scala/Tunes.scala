@@ -269,6 +269,22 @@ object BabyPlaysAround  extends Function0[Music]
 
 object Caledonia extends Function0[Music]
 {
+  def no_gm_line(notes: Music, lyricText: String, chords: Music, lastChord: Boolean=false): Music =
+  {
+    val asMelody =  Track("melody") /: Channel("2")
+    val asHarmony = Track("harmony") /: Channel("3") /: 
+                    (if (lastChord) Broken(0.05) else Arpeggio(8,1,2,(3,4),1,(3,4),1))
+    val asBass =    Track("bass") /: Channel("4")
+    
+    val melody = notes/8/Lyrics(lyricText)
+    val harmony = chords/2/Dot
+ 
+    val bassRhythm = if (lastChord) NoModifier else NoteRhythm(N/(Half+Eighth) - N/Eighth)
+    val bass = Octave(-1) /: Vp /: bassRhythm /: Root /: harmony
+
+    melody/asMelody & harmony/asHarmony & bass/asBass
+  }
+  
   def line(notes: Music, lyricText: String, chords: Music, lastChord: Boolean=false): Music =
   {
     val asMelody =  Track("melody") /: Channel("melody") /: 
@@ -639,9 +655,9 @@ object Tunes
       {
         val tune = tunes(args(1))()
         val errors = args(0) match {
-          case "play" => tune.play
+          case "play" => tune.play(if (args.length < 3) None else Some(args(2)))
           case "save" => tune.save(args(2))
-          case "strict" => tune.save(args(2), true); tune.play
+          case "strict" => tune.save(args(2), true); tune.play()
           case _ => usage()
         }
         display(errors)
